@@ -1,0 +1,370 @@
+erDiagram
+    %% ========================================
+    %% CORE IDENTITY - PROPER TYPE REGISTRY
+    %% ========================================
+    
+    users {
+        bigint id PK
+        uuid public_id UK
+        varchar name
+        varchar email UK
+        varchar phone "nullable"
+        boolean is_active "default true"
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    user_types {
+        bigint id PK
+        varchar code UK "employee,student,parent,vendor"
+        varchar name "display name"
+        boolean is_active "default true"
+        timestamp created_at
+    }
+    
+    user_type_assignments {
+        bigint id PK
+        bigint user_id FK
+        bigint user_type_id FK
+        boolean is_primary "default true"
+        timestamp assigned_at
+    }
+    
+    employee_profiles {
+        bigint id PK
+        bigint user_id FK "unique"
+        varchar employee_id UK
+        varchar nip "nullable"
+        varchar department "nullable"
+        varchar position "nullable"
+        date hire_date "nullable"
+        varchar employment_status "nullable"
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    student_profiles {
+        bigint id PK
+        bigint user_id FK "unique"
+        varchar student_id UK
+        varchar nisn UK "nullable"
+        varchar nis "nullable"
+        varchar nik "nullable"
+        varchar place_of_birth "nullable"
+        date date_of_birth "nullable"
+        varchar gender "nullable"
+        varchar religion "nullable"
+        text address "nullable"
+        varchar rt "nullable"
+        varchar rw "nullable"
+        varchar kelurahan "nullable"
+        varchar kecamatan "nullable"
+        varchar province "nullable"
+        varchar father_name "nullable"
+        varchar father_phone "nullable"
+        varchar mother_name "nullable"
+        varchar mother_phone "nullable"
+        int entry_year "nullable"
+        date enrollment_date "nullable"
+        varchar student_status "nullable"
+        boolean pip_recipient "default false"
+        varchar kip_number "nullable"
+        text notes "nullable"
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    roles {
+        bigint id PK
+        varchar name UK
+        varchar display_name
+    }
+    
+    user_roles {
+        bigint id PK
+        bigint user_id FK
+        bigint role_id FK
+    }
+    
+    %% ========================================
+    %% DEVICES
+    %% ========================================
+    
+    devices {
+        bigint id PK
+        uuid public_id UK
+        varchar device_name
+        varchar device_type
+        varchar location "nullable"
+        boolean is_active "default true"
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    device_configs {
+        bigint id PK
+        bigint device_id FK
+        varchar config_key
+        text config_value
+    }
+    
+    %% ========================================
+    %% ACADEMIC STRUCTURE (NEW - MINIMAL)
+    %% ========================================
+    
+    academic_years {
+        bigint id PK
+        varchar code UK "e.g. 2024/2025"
+        varchar name
+        date start_date
+        date end_date
+        boolean is_active "default false"
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    classes {
+        bigint id PK
+        varchar code UK "e.g. 10-RPL-1"
+        varchar name
+        int grade "nullable"
+        varchar major "nullable"
+        boolean is_active "default true"
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    class_enrollments {
+        bigint id PK
+        bigint user_id FK
+        bigint class_id FK
+        bigint academic_year_id FK
+        date enrollment_date "default current_date"
+        date withdrawal_date "nullable"
+        varchar status "default active"
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    %% ========================================
+    %% SCHEDULING
+    %% ========================================
+    
+    shift_templates {
+        bigint id PK
+        varchar name
+        time start_time
+        time end_time
+    }
+    
+    shift_assignments {
+        bigint id PK
+        bigint user_id FK
+        bigint shift_template_id FK
+        date effective_from
+        date effective_to "nullable"
+    }
+    
+    %% ========================================
+    %% ATTENDANCE - UNIFIED
+    %% ========================================
+    
+    attendance_records {
+        bigint id PK
+        uuid public_id UK
+        bigint user_id FK
+        date date
+        time clock_in "nullable"
+        time clock_out "nullable"
+        boolean is_present "nullable"
+        varchar method
+        varchar status
+        bigint evidence_id FK "nullable"
+        bigint manual_creator_id FK "nullable"
+        text notes "nullable"
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    attendance_evidences {
+        bigint id PK
+        uuid public_id UK
+        varchar source_type
+        bigint device_id FK "nullable"
+        uuid session_uuid "nullable"
+        float confidence "nullable"
+        text snapshot_uri "nullable"
+        json meta "nullable"
+        timestamp captured_at
+    }
+    
+    %% ========================================
+    %% AI PIPELINE
+    %% ========================================
+    
+    face_templates {
+        bigint id PK
+        uuid public_id UK
+        bigint user_id FK
+        float quality
+        boolean is_active "default true"
+        timestamp enrolled_at
+    }
+    
+    face_template_embeddings {
+        bigint template_id PK
+        bytea encoding
+    }
+    
+    face_detections {
+        bigint id PK
+        uuid detection_uuid UK
+        bigint device_id FK
+        timestamp detected_at
+        text frame_uri
+        json bbox
+        float detection_conf
+        float quality
+        varchar status
+        timestamp created_at
+    }
+    
+    face_detection_embeddings {
+        bigint detection_id PK
+        bytea encoding
+    }
+    
+    face_matches {
+        bigint id PK
+        bigint face_detection_id FK
+        bigint face_template_id FK
+        bigint user_id FK
+        float score
+        varchar status
+        timestamp created_at
+    }
+    
+    presence_sessions {
+        bigint id PK
+        uuid session_uuid UK
+        bigint device_id FK
+        timestamp first_seen
+        timestamp last_seen
+        boolean is_active "default true"
+        varchar status
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    session_identifications {
+        bigint id PK
+        bigint session_id FK
+        bigint user_id FK
+        float confidence
+        timestamp identified_at
+    }
+    
+    session_attendance_links {
+        bigint id PK
+        bigint session_id FK
+        bigint attendance_record_id FK
+        timestamp linked_at
+    }
+    
+    %% ========================================
+    %% OPTIONAL
+    %% ========================================
+    
+    guests {
+        bigint id PK
+        uuid public_id UK
+        varchar name
+        varchar email "nullable"
+        varchar phone "nullable"
+    }
+    
+    guest_visits {
+        bigint id PK
+        bigint guest_id FK
+        datetime check_in_time
+        bigint evidence_id FK "nullable"
+    }
+    
+    audit_logs {
+        bigint id PK
+        bigint user_id FK "nullable"
+        varchar action
+        varchar resource
+        varchar resource_id "nullable"
+        jsonb details "nullable"
+        varchar ip_address "nullable"
+        varchar user_agent "nullable"
+        int status_code
+        timestamp created_at
+    }
+
+    system_settings {
+        bigint id PK
+        varchar key UK
+        text value
+        text description "nullable"
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    %% ========================================
+    %% RELATIONSHIPS
+    %% ========================================
+    
+    %% Type Registry Pattern
+    users ||--o{ user_type_assignments : "has_types"
+    user_types ||--o{ user_type_assignments : "assigned_to"
+    
+    %% Profile Extensions
+    users ||--o| employee_profiles : "extended_by"
+    users ||--o| student_profiles : "extended_by"
+    
+    %% Roles & Permissions
+    users ||--o{ user_roles : "has"
+    roles ||--o{ user_roles : "assigned"
+    
+    %% Academic Structure (NEW)
+    users ||--o{ class_enrollments : "enrolled_in"
+    classes ||--o{ class_enrollments : "has_students"
+    academic_years ||--o{ class_enrollments : "during"
+    
+    %% Scheduling
+    users ||--o{ shift_assignments : "assigned"
+    shift_templates ||--o{ shift_assignments : "uses"
+    
+    %% Devices
+    devices ||--o{ device_configs : "configured"
+    
+    %% Attendance
+    users ||--o{ attendance_records : "has"
+    users ||--o{ attendance_records : "created_manually"
+    attendance_evidences ||--o| attendance_records : "proves"
+    devices ||--o{ attendance_evidences : "captured"
+    
+    %% Face Recognition
+    users ||--o{ face_templates : "enrolled"
+    face_templates ||--|| face_template_embeddings : "stored"
+    devices ||--o{ face_detections : "captures"
+    face_detections ||--|| face_detection_embeddings : "stored"
+    face_detections ||--o{ face_matches : "produces"
+    face_templates ||--o{ face_matches : "matched"
+    users ||--o{ face_matches : "identified"
+    
+    %% Sessions
+    devices ||--o{ presence_sessions : "located"
+    presence_sessions ||--o{ session_identifications : "identifies"
+    users ||--o{ session_identifications : "identified_as"
+    presence_sessions ||--o{ session_attendance_links : "links"
+    attendance_records ||--o| session_attendance_links : "linked"
+    
+    %% Guests
+    guests ||--o{ guest_visits : "makes"
+    attendance_evidences ||--o| guest_visits : "proves"
+
+    %% Monitoring & System
+    users ||--o{ audit_logs : "performed"
