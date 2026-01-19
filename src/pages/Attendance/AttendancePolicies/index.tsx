@@ -194,7 +194,7 @@ const AttendanceRules: React.FC = () => {
 
   return (
     <>
-      <PageMeta title="Attendance Policies | Sistem Absen" description="Configure attendance rules, schedules, and policies." />
+      <PageMeta title="Attendance Policies | Visia" description="Configure attendance rules, schedules, and policies." />
       <PageBreadcrumb pageTitle="Attendance Policies" />
 
       <div className="relative flex flex-col h-[calc(100vh-220px)] min-h-[600px]">

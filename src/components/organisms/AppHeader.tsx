@@ -93,7 +93,7 @@ const AppHeader: React.FC = () => {
               className="rounded-lg shadow-sm"
             />
             <span className="font-bold text-gray-900 dark:text-white">
-              Sistem Absen
+              Visia
             </span>
           </Link>
 

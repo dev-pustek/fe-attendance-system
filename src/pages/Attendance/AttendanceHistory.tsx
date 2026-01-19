@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { useSearchParams } from "react-router";
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { attendanceService } from "../../api/services/attendanceService";
 import {
@@ -11,6 +12,7 @@ import {
   CheckCircleIcon,
   CloseIcon,
   AlertIcon,
+  DocsIcon,
 } from "../../components/atoms/Icons";
 import PageMeta from "../../components/atoms/PageMeta";
 import PageBreadcrumb from "../../components/molecules/PageBreadcrumb";
@@ -51,8 +53,12 @@ const SkeletonCard = () => (
 );
 
 const AttendanceHistory: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const initialEventId = searchParams.get("eventId");
+  const initialTab = searchParams.get("tab") as AttendanceTab || 'gate';
+
   // Filters
-  const [activeTab, setActiveTab] = useState<AttendanceTab>('gate');
+  const [activeTab, setActiveTab] = useState<AttendanceTab>(initialTab);
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [statusFilter, setStatusFilter] = useState("all");
@@ -98,7 +104,7 @@ const AttendanceHistory: React.FC = () => {
 
   // --- Desktop Queries (Pagination) ---
   const { data: gateResponse, isLoading: isLoadingGate } = useQuery({
-    queryKey: ["gateHistory", page, limit, statusFilter, dateFrom, dateTo, academicYearId, majorId],
+    queryKey: ["gateHistory", page, limit, statusFilter, dateFrom, dateTo, academicYearId, majorId, initialEventId],
     queryFn: () =>
       attendanceService.getAttendanceHistory({
         page,
@@ -108,6 +114,7 @@ const AttendanceHistory: React.FC = () => {
         status: statusFilter !== 'all' ? statusFilter : undefined,
         academicYearId: academicYearId ? Number(academicYearId) : undefined,
         majorId: majorId ? Number(majorId) : undefined,
+        eventId: initialEventId || undefined,
       }),
     enabled: activeTab === 'gate' && !isMobile,
   });
@@ -150,7 +157,7 @@ const AttendanceHistory: React.FC = () => {
     isFetchingNextPage: isFetchingNextGate,
     isLoading: isLoadingGateMobile 
   } = useInfiniteQuery({
-    queryKey: ["gateHistoryMobile", limit, statusFilter, dateFrom, dateTo, academicYearId, majorId],
+    queryKey: ["gateHistoryMobile", limit, statusFilter, dateFrom, dateTo, academicYearId, majorId, initialEventId],
     queryFn: ({ pageParam = 1 }) =>
       attendanceService.getAttendanceHistory({
         page: pageParam,
@@ -160,6 +167,7 @@ const AttendanceHistory: React.FC = () => {
         status: statusFilter !== 'all' ? statusFilter : undefined,
         academicYearId: academicYearId ? Number(academicYearId) : undefined,
         majorId: majorId ? Number(majorId) : undefined,
+        eventId: initialEventId || undefined,
       }),
     getNextPageParam: (lastPage) => {
        const current = Number(lastPage.meta?.page || 1);
@@ -344,7 +352,7 @@ const AttendanceHistory: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 md:pb-0">
       <PageMeta
-        title="Attendance History | Sistem Absen"
+        title="Attendance History | Visia"
         description="View comprehensive attendance history records."
       />
       <PageBreadcrumb pageTitle="Attendance History" />
@@ -514,7 +522,7 @@ const AttendanceHistory: React.FC = () => {
                                <div className="flex items-center gap-3">
                                  {activeTab === 'gate' && (
                                     <>
-                                       <Avatar src={record.user?.photo} alt={record.user?.name} size="small" />
+                                       <Avatar src={record.user?.photo || record.user?.profile?.photo} alt={record.user?.name} size="small" />
                                        <div>
                                           <p className="text-sm font-medium text-gray-900 dark:text-white">{record.user?.name || 'Unknown'}</p>
                                           <p className="text-xs text-gray-500">
@@ -529,13 +537,15 @@ const AttendanceHistory: React.FC = () => {
                                  {/* (Other tabs remain same logic, just mobileData source) */}
                                  {activeTab === 'class' && (
                                     <>
-                                       <div className="size-8 rounded-full bg-brand-100 dark:bg-brand-500/20 flex items-center justify-center shrink-0">
-                                         <UserIcon className="size-4 text-brand-600 dark:text-brand-400" />
+                                       <div className="size-8 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center shrink-0">
+                                         <DocsIcon className="size-4 text-blue-600 dark:text-blue-400" />
                                        </div>
                                        <div>
-                                          <p className="text-sm font-medium text-gray-900 dark:text-white">{record.student?.name || '-'}</p>
+                                          <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                            {record.teachingSession?.classSubject?.subject?.name || 'Unknown Subject'}
+                                          </p>
                                           <p className="text-xs text-gray-500">
-                                            {(record.student?.profile?.nis || record.student?.nis || record.student?.email || '-')}
+                                            {record.teachingSession?.actualTeacher?.name || 'Unknown Teacher'}
                                           </p>
                                        </div>
                                     </>
@@ -694,7 +704,10 @@ const AttendanceHistory: React.FC = () => {
                   {activeTab === 'class' && (
                     <>
                       <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Student
+                        Subject
+                      </TableCell>
+                      <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Teacher
                       </TableCell>
                       <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         Session Date
@@ -759,7 +772,7 @@ const AttendanceHistory: React.FC = () => {
                           <TableCell className="px-5 py-4">
                             <div className="flex items-center gap-3">
                               <Avatar
-                                src={record.user?.photo}
+                                src={record.user?.photo || record.user?.profile?.photo}
                                 alt={record.user?.name || record.userId}
                                 size="small"
                                 className="shrink-0"
@@ -812,19 +825,30 @@ const AttendanceHistory: React.FC = () => {
                       {activeTab === 'class' && (
                         <>
                           <TableCell className="px-5 py-4">
-                            <div className="flex items-center gap-3">
-                              <div className="size-8 rounded-full bg-brand-100 dark:bg-brand-500/20 flex items-center justify-center shrink-0">
-                                <UserIcon className="size-4 text-brand-600 dark:text-brand-400" />
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-gray-900 dark:text-white">
-                                  {record.student?.name || '-'}
-                                </p>
-                                <p className="text-xs text-gray-500">
-                                  {record.method || 'manual'}
-                                </p>
-                              </div>
-                            </div>
+                            <span className="text-sm font-medium text-gray-900 dark:text-white block">
+                              {record.teachingSession?.classSubject?.subject?.name || '-'}
+                            </span>
+                            <span className="text-xs text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-500/10 px-1.5 py-0.5 rounded mt-1 inline-block">
+                              {record.teachingSession?.classSubject?.category || 'Subject'}
+                            </span>
+                          </TableCell>
+                          <TableCell className="px-5 py-4">
+                             <div className="flex items-center gap-2">
+                               <Avatar 
+                                 src={record.teachingSession?.actualTeacher?.photo} 
+                                 alt={record.teachingSession?.actualTeacher?.name || 'Teacher'} 
+                                 size="small"
+                                 className="shrink-0" 
+                               />
+                               <div className="flex flex-col">
+                                 <span className="text-sm text-gray-900 dark:text-white">
+                                   {record.teachingSession?.actualTeacher?.name || '-'}
+                                 </span>
+                                 {record.teachingSession?.isSubstitution && (
+                                   <span className="text-[10px] text-orange-500 bg-orange-50 dark:bg-orange-500/10 px-1 rounded w-fit">Sub</span>
+                                 )}
+                               </div>
+                             </div>
                           </TableCell>
                           <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
                             {record.teachingSession?.sessionDate ? format(parseISO(record.teachingSession.sessionDate), 'dd MMM yyyy') : '-'}

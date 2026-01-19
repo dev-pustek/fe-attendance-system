@@ -6,14 +6,13 @@ import { attendanceService } from '../../../api/services/attendanceService';
 import PageMeta from '../../../components/atoms/PageMeta';
 import PageBreadcrumb from '../../../components/molecules/PageBreadcrumb';
 import { 
-    MapPinIcon, 
     CheckCircleIcon, 
     QrCodeIcon 
 } from '@heroicons/react/24/outline';
 import Button from '../../../components/atoms/Button';
 import { Html5Qrcode } from 'html5-qrcode';
 import toast from 'react-hot-toast';
-import { format } from 'date-fns';
+import { format, differenceInMinutes } from 'date-fns';
 
 const StudentSchedule = () => {
     const { user } = useAuthStore();
@@ -113,10 +112,22 @@ const StudentSchedule = () => {
         const now = new Date();
         const isActive = !isCompleted && now >= startTime && now <= endTime; 
         
+        // Calculate Duration
+        const diffMinutes = differenceInMinutes(endTime, startTime);
+        const hours = Math.floor(diffMinutes / 60);
+        const mins = diffMinutes % 60;
+        const durationString = `${hours > 0 ? `${hours} hr ` : ''}${mins > 0 ? `${mins} min` : ''}`.trim();
+
+        // Data Accessors (using Safe Navigation / 'any' cast if types are incomplete)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const rawItem = item as any;
+        const teacherName = rawItem.session?.actualTeacher?.name || rawItem.template?.defaultTeacher?.name || rawItem.template?.classSubject?.teacher?.name || 'No Teacher Assigned';
+        const classCode = rawItem.session?.classSubject?.class?.code || rawItem.template?.classSubject?.class?.code || item.className; // Fallback to name if code missing
+        
         // Premium Card Handling
-        const activeGradient = "bg-gradient-to-br from-white to-brand-50 dark:from-[#1E1E1E] dark:to-brand-900/10";
-        const completedGradient = "bg-gradient-to-br from-white to-gray-50 dark:from-[#1E1E1E] dark:to-gray-900/10";
-        const inactiveGradient = "bg-white dark:bg-[#1E1E1E]";
+        const activeGradient = "bg-gradient-to-br from-white to-brand-50 dark:from-gray-800 dark:to-brand-900/20";
+        const completedGradient = "bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900/20";
+        const inactiveGradient = "bg-white dark:bg-gray-800";
 
         return (
             <div className={`relative h-full flex flex-col rounded-2xl border transition-all duration-300 group hover:shadow-xl ${
@@ -126,6 +137,13 @@ const StudentSchedule = () => {
                     : `${inactiveGradient} border-gray-200 dark:border-white/10 hover:border-brand-200 dark:hover:border-white/20`
             }`}>
                 
+                {/* Class Code (Top Left) */}
+                <div className="absolute top-4 left-6">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-500/10 px-2 py-1 rounded-md">
+                        {classCode}
+                    </span>
+                </div>
+
                 {/* Status Badge (Top Right) */}
                 <div className="absolute top-4 right-4">
                     {isCompleted ? (
@@ -150,16 +168,17 @@ const StudentSchedule = () => {
 
                 <div className="p-6 flex-1 flex flex-col">
                     {/* Header Info */}
-                    <div className="mt-8 mb-6">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5 block">
-                             {item.className}
-                        </span>
+                    <div className="mt-8 mb-4">
                         <h3 className="text-xl font-bold text-gray-900 dark:text-white leading-tight line-clamp-2 min-h-[3.5rem]">
                             {item.subjectName}
                         </h3>
-                         <div className="flex items-center gap-2 mt-2 text-sm text-gray-500 dark:text-gray-400 font-medium">
-                            <MapPinIcon className="size-4" />
-                            <span>Room {item.className}</span> 
+                        
+                        {/* Teacher Info */}
+                         <div className="flex items-center gap-2 mt-2 text-sm text-gray-600 dark:text-gray-300 font-medium w-fit">
+                            <div className="size-6 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-[10px] font-bold text-gray-500 dark:text-gray-300">
+                                {teacherName.charAt(0)}
+                            </div>
+                            <span>{teacherName}</span> 
                         </div>
                     </div>
 
@@ -169,6 +188,13 @@ const StudentSchedule = () => {
                             <span className="text-[10px] text-gray-400 uppercase tracking-wide font-semibold">Start</span>
                             <span className={`text-base font-mono font-bold ${isActive ? 'text-brand-600 dark:text-brand-400' : 'text-gray-900 dark:text-white'}`}>
                                 {format(startTime, 'HH:mm')}
+                            </span>
+                        </div>
+                        <div className="h-8 w-px bg-gray-200 dark:bg-white/10" />
+                        <div className="flex flex-col text-center">
+                            <span className="text-[10px] text-gray-400 uppercase tracking-wide font-semibold">Duration</span>
+                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 mt-1">
+                                {durationString}
                             </span>
                         </div>
                         <div className="h-8 w-px bg-gray-200 dark:bg-white/10" />
@@ -234,7 +260,7 @@ const StudentSchedule = () => {
             <PageMeta title="My Schedule | Student" description="View your daily classes and check in." />
             <PageBreadcrumb pageTitle="Today's Schedule" />
 
-            <div className="max-w-7xl mx-auto space-y-6 pb-20 px-4 sm:px-6">
+            <div className="max-w-7xl mx-auto space-y-6 pb-20">
                 {isLoading ? (
                     <div className="text-center py-12">Loading schedule...</div>
                 ) : !schedule?.data || schedule.data.length === 0 ? (

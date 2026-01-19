@@ -82,7 +82,7 @@ const AuditLogs: React.FC = () => {
   return (
     <>
       <PageMeta
-        title="Audit Logs | Sistem Absen"
+        title="Audit Logs | Visia"
         description="Comprehensive system activity and user action logs."
       />
 

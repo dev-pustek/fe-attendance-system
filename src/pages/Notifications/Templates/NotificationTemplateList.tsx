@@ -181,7 +181,7 @@ export default function NotificationTemplateList() {
   return (
     <>
       <PageMeta
-        title="Notification Templates | Sistem Absen"
+        title="Notification Templates | Visia"
         description="Manage system notification templates."
       />
       <PageBreadcrumb pageTitle="Notification Templates" />

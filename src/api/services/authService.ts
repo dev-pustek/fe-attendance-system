@@ -10,10 +10,28 @@ export const authService = {
       password,
     });
     
-    const { user, accessToken, refreshToken } = response.data;
-    useAuthStore.getState().setAuth(user, accessToken, refreshToken);
+    // Initial data from login
+    const { user: initialUser, accessToken, refreshToken } = response.data;
     
-    return response.data;
+    // Set initial auth
+    useAuthStore.getState().setAuth(initialUser, accessToken, refreshToken);
+
+    try {
+      // Fetch full profile to get roles and permissions
+      const meResponse = await apiClient.get<BaseResponse<User>>("/users/me");
+      const fullUser = meResponse.data as unknown as User;
+      
+      // Update store with full user data
+      useAuthStore.getState().setAuth(fullUser, accessToken, refreshToken);
+      
+      return {
+        ...response.data,
+        user: fullUser
+      };
+    } catch (error) {
+      console.error("Failed to fetch full profile after login", error);
+      return response.data;
+    }
   },
 
   studentLogin: async (nis: string, password: string): Promise<AuthResponse> => {

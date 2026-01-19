@@ -57,7 +57,7 @@ export default function SignInForm() {
               Welcome Back
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Silakan masuk dengan email dan password Anda.
+              Silakan masuk ke Visia dengan email dan password Anda.
             </p>
           </div>
           <div>

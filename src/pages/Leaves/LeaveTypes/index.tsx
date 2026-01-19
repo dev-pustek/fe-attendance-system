@@ -105,7 +105,7 @@ const LeaveTypes: React.FC = () => {
 
     return (
         <>
-            <PageMeta title="Leave Types | Sistem Absen" description="Manage leave categories and policies." />
+            <PageMeta title="Leave Types | Visia" description="Manage leave categories and policies." />
             <PageBreadcrumb pageTitle="Leave Types" />
 
             <div className="space-y-8">

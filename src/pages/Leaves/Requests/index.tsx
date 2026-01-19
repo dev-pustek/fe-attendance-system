@@ -299,7 +299,7 @@ const LeaveRequests: React.FC = () => {
 
     return (
         <>
-            <PageMeta title="Leave Requests | Sistem Absen" description="Manage employee leave submissions." />
+            <PageMeta title="Leave Requests | Visia" description="Manage employee leave submissions." />
             <PageBreadcrumb pageTitle="Leave Requests" />
 
             <div className="space-y-6">

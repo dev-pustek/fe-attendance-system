@@ -22,9 +22,9 @@ export default defineConfig({
       },
       includeAssets: ["favicon.ico", "apple-touch-icon.png", "mask-icon.svg"],
       manifest: {
-        name: "Sistem Absen - Attendance System",
-        short_name: "Absen",
-        description: "Modern & Efficient Attendance Management System",
+        name: "Visia - Smart Attendance System",
+        short_name: "Visia",
+        description: "Visia - Modern & Efficient Attendance Management System",
         theme_color: "#1a56db",
         icons: [
           {

@@ -164,7 +164,7 @@ const Guests: React.FC = () => {
   return (
     <>
       <PageMeta
-        title="Manage Guests | Sistem Absen"
+        title="Manage Guests | Visia"
         description="Manage visitor list."
       />
       <PageBreadcrumb pageTitle="Guests" />

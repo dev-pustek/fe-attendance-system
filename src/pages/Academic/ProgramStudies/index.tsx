@@ -163,7 +163,7 @@ const ProgramStudies: React.FC = () => {
 
   return (
     <>
-      <PageMeta title="Program Studies | Sistem Absen" description="Manage fields of study and departments." />
+      <PageMeta title="Program Studies | Visia" description="Manage fields of study and departments." />
       <PageBreadcrumb pageTitle="Program Studies" />
 
       <div className="space-y-6">

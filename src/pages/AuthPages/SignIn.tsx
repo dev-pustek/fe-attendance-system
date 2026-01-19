@@ -6,8 +6,8 @@ export default function SignIn() {
   return (
     <>
       <PageMeta
-        title="Sign In | Sistem Absen"
-        description="Masuk ke Sistem Absensi"
+        title="Sign In | Visia"
+        description="Masuk ke Visia"
       />
       <AuthTemplate>
         <SignInForm />

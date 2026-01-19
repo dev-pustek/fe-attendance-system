@@ -9,6 +9,7 @@ export interface User {
   createdAt: string;
   updatedAt: string;
   userTypes?: string[]; // Array of user type codes like ["student", "employee"]
+  roles?: Array<{ id: number; name: string; displayName: string }>; // User roles from backend
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   profile?: any | null; // Student or Employee profile data
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

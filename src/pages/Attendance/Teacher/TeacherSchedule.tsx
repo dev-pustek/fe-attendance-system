@@ -685,7 +685,7 @@ const TeacherSchedule: React.FC = () => {
 
   return (
     <>
-      <PageMeta title="My Schedule | Sistem Absen" description="View today's teaching schedule and record attendance." />
+      <PageMeta title="My Schedule | Visia" description="View today's teaching schedule and record attendance." />
       <PageBreadcrumb pageTitle="My Schedule" />
 
       <div className="space-y-8">

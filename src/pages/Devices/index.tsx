@@ -164,7 +164,7 @@ const Devices: React.FC = () => {
 
   return (
     <>
-      <PageMeta title="Device Management | Sistem Absen" description="Manage CCTV cameras and attendance biometric devices." />
+      <PageMeta title="Device Management | Visia" description="Manage CCTV cameras and attendance biometric devices." />
       <PageBreadcrumb pageTitle="Devices" />
 
       <div className="space-y-6">

@@ -45,6 +45,7 @@ import { toast } from "react-hot-toast";
 import { SmoothHeight } from "../../components/atoms/SmoothHeight";
 import QrScanner from "../../components/molecules/QrScanner";
 import QRCode from "react-qr-code";
+import { useAuthStore } from "../../store/authStore";
 
 const MethodIcon = ({ method }: { method?: string }) => {
     switch (method?.toUpperCase()) {
@@ -462,16 +463,32 @@ const AttendanceList: React.FC = () => {
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Attendance Records</h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">Monitor daily attendance logs.</p>
           </div>
-          <Button 
-              onClick={() => {
+          {/* Only show Add Record button for admin and staff */}
+          {(() => {
+            const user = useAuthStore.getState().user;
+            // Strict role check
+            if (!user?.roles || user.roles.length === 0) return null;
+            
+            const roleNames = user.roles.map(r => r.name.toLowerCase());
+            
+            // Check for Admin (any kind) or Staff
+            const isAdminOrStaff = roleNames.some(role => 
+              role === 'admin' || role.includes('admin') || role === 'staff' || role.includes('staff')
+            );
+            
+            return isAdminOrStaff ? (
+              <Button 
+                onClick={() => {
                   resetManualForm();
                   resetQrForm();
                   setIsCreateModalOpen(true);
-              }} 
-              startIcon={<PlusIcon className="size-4" />}
-          >
-            Add Record
-          </Button>
+                }} 
+                startIcon={<PlusIcon className="size-4" />}
+              >
+                Add Record
+              </Button>
+            ) : null;
+          })()}
         </div>
 
         {/* Filters */}

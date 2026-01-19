@@ -5,7 +5,6 @@ import { Link, useLocation } from "react-router";
 import {
   ChevronDownIcon,
   GridIcon,
-  GroupIcon,
   HorizontaLDots,
   PlugInIcon,
   TableIcon,
@@ -18,7 +17,7 @@ import {
   TaskIcon,
   UserIcon,
   PieChartIcon,
-  MailIcon,
+  MailIcon, 
 } from "../atoms/Icons";
 import { useSidebar } from "../../context/SidebarContext";
 import SidebarWidget from "../molecules/SidebarWidget";
@@ -36,156 +35,343 @@ import { useAuthStore } from "../../store/authStore";
 const useNavItems = () => {
   const { user } = useAuthStore();
   
-  // Robust check for student role
-  const isStudent = user?.userTypes?.some(t => t.toLowerCase() === 'student') 
-        || (user?.profile?.nis && user?.profile?.nis.length > 0)
-        || user?.userTypes?.includes('Student');
+  // Helper to check if user has any of the specified roles
+  const hasAnyRole = useCallback((rolesToCheck: string[]) => {
+    // If no roles, return false
+    if (!user) return false;
 
-  const navItems: NavItem[] = useMemo(() => [
-    {
-      icon: <GridIcon />,
-      name: "Dashboard",
-      subItems: [
-        { name: "Overview", path: "/" },
-        { name: "Calendar", path: "/calendar" },
-      ],
-    },
-    // Hide School Management for Students (Optional, but good practice)
-    ...(isStudent ? [] : [{
-      icon: <GroupIcon />,
-      name: "School Management",
-      subItems: [
-        { name: "Academic Years", path: "/academic/years" },
-        { name: "Employees", path: "/hr/employees" },
-        { name: "Students", path: "/academic/students" },
-        { name: "Classes", path: "/academic/classes" },
-      ],
-    }]),
-    {
-      icon: <TimeIcon />,
-      name: "Attendance",
-      subItems: [
-        // Show simplified menu for students
-        ...(isStudent ? [
-             { name: "My Schedule", path: "/student/my-schedule" },
-             { name: "Attendance Records", path: "/attendance/records" }, // Assuming they can see their own records here
-        ] : [
-             { name: "Live Records", path: "/attendance/records" },
-             { name: "Piket Monitor", path: "/attendance/piket", new: true },
-             { name: "Attendance History", path: "/attendance/history" },
-             { name: "Gate Scanner", path: "/attendance/gate-scan" },
-             { name: "Teaching Sessions", path: "/attendance/teaching-sessions" },
-             { name: "Subject Attendance", path: "/attendance/subject-attendances" },
-             { name: "My Schedule", path: "/attendance/my-schedule" },
-        ]),
-      ],
-    },
-    // ... Add other conditional logic as needed
-      {
-    icon: <DocsIcon />,
-    name: "Leave Requests",
-    path: "/leaves/requests",
-  },
-  {
-    icon: <ShootingStarIcon />,
-    name: "Events",
-    path: "/events",
-  },
-  {
-    icon: <MailIcon />,
-    name: "Notifications",
-    path: "/notifications",
-  },
-  {
-    icon: <UserIcon />,
-    name: "Guests",
-    subItems: [
-      { name: "Guest List", path: "/guests" },
-      { name: "Visitor Log", path: "/guests/visits" },
-    ],
-  },
-  {
-    icon: <CalenderIcon />,
-    name: "Scheduling",
-    subItems: [
-      { name: "Teaching Assignments", path: "/academic/teaching-assignments" },
-      { name: "Class Schedules", path: "/academic/schedules" },
-      { name: "Work Rosters", path: "/schedules" },
-    ],
-  },
-  ], [isStudent]);
+    const roleNames = [
+        ...(user.roles?.map(r => r.name.toLowerCase()) || []),
+        ...(user.userTypes?.map(t => t.toLowerCase()) || []),
+        ...(user.typeAssignments?.map(t => t.userType?.name.toLowerCase() || "") || [])
+    ].filter(Boolean);
+
+    // ADMIN BYPASS: Admin has all roles effectively for visibility
+    if (roleNames.some(r => r === 'admin' || r.includes('admin') || r === 'super admin')) {
+      return true;
+    }
+    
+    return rolesToCheck.some(role => 
+      roleNames.some(userRole => 
+        userRole === role.toLowerCase() || userRole.includes(role.toLowerCase())
+      )
+    );
+  }, [user]);
+
+  // Determine user role flags
+  const isStudent = hasAnyRole(['student']);
+  const isTeacher = hasAnyRole(['teacher']);
+  const isAdmin = hasAnyRole(['admin']);
+  const isStaff = hasAnyRole(['staff']);
+  const isParent = hasAnyRole(['parent']);
+
+  const navItems: NavItem[] = useMemo(() => {
+    const items: NavItem[] = [];
+
+    // Dashboard - Hidden for students
+    if (isAdmin || isTeacher || isStaff) {
+      items.push({
+        icon: <GridIcon />,
+        name: "Dashboard",
+        subItems: [
+          { name: "Overview", path: "/" },
+          // Calendar: Show for everyone except maybe parent?
+          ...(isStudent || isTeacher || isAdmin || isStaff ? [{ name: "Calendar", path: "/calendar" }] : []),
+        ],
+      });
+    }
+
+    // Attendance - Different menus for different roles
+    // Logic: Admin is true for all.
+    // We want Admin to see EVERYTHING.
+    // If isAdmin is true, it enters multiple blocks potentially?
+    // user.roles has 'admin', so isStudent=true, isTeacher=true via current hasAnyRole logic? 
+    // Yes, above I made hasAnyRole return true if admin.
+    // So if I am admin, isStudent=true, isTeacher=true.
+    // This will cause duplication if I have "if isStudent ... else if isTeacher".
+    // I need to structure this to show ALL options if Admin.
+
+    // Better approach for Sidebar:
+    // If Admin, show a consolidated view or just everything?
+    // "make sure if admin show all the menu"
+    
+    // Let's rely on the variables but organize items nicely.
+    
+    // ATTENDANCE MENU
+    const attendanceSubItems: { name: string; path: string; new?: boolean }[] = [];
+    
+    if (isStudent) { // Admin will be true here
+       attendanceSubItems.push(
+         { name: "My Schedule", path: "/student/my-schedule" },
+         { name: "Attendance History", path: "/attendance/history" },
+         { name: "QR Scan", path: "/attendance/gate-scan", new: true }
+       );
+    }
+    
+    if (isTeacher) { // Admin will be true here
+      attendanceSubItems.push(
+        { name: "My Schedule", path: "/attendance/my-schedule" },
+        // "My Classes" removed
+        { name: "Teaching Sessions", path: "/attendance/teaching-sessions" },
+        { name: "Subject Attendances", path: "/attendance/subject-attendances" }
+      );
+    }
+    
+    if (isStaff || isAdmin) {
+       attendanceSubItems.push(
+         { name: "Attendance Records", path: "/attendance/records" },
+         { name: "Gate Monitor", path: "/attendance/gate-scan" },
+         { name: "Piket Monitor", path: "/attendance/piket" },
+         { name: "Attendance History", path: "/attendance/history" }
+       );
+       
+       // Policies removed
+       // if (isAdmin) {
+       //    attendanceSubItems.push({ name: "Policies", path: "/attendance/policies" });
+       // }
+    }
+
+    // Remove duplicates based on path (since Admin might trigger allow on multiple blocks)
+    const uniqueAttendanceSubItems = Array.from(new Map(attendanceSubItems.map(item => [item.path, item])).values());
+
+    if (uniqueAttendanceSubItems.length > 0) {
+      items.push({
+         icon: <TimeIcon />,
+         name: "Attendance",
+         subItems: uniqueAttendanceSubItems
+      });
+    }
+
+    // ACADEMIC (Teacher/Admin/Staff)
+    if (isTeacher || isAdmin || isStaff) {
+       const academicSubItems: { name: string; path: string }[] = [];
+       // Admin/Staff/Teacher common
+       if (isAdmin || isStaff || isTeacher) {
+          // No specific items here? 
+       }
+       
+       // Admin/Staff Only items
+       if (isAdmin || isStaff) {
+         academicSubItems.push(
+           { name: "Academic Years", path: "/academic/years" },
+           { name: "Students", path: "/academic/students" },
+           { name: "Parents", path: "/academic/parents" }
+         );
+       }
+
+       // Teacher only or shared? 
+       // Classes is usually shared
+       academicSubItems.push({ name: "Classes", path: "/academic/classes" });
+       
+       const uniqueAcademic = Array.from(new Map(academicSubItems.map(item => [item.path, item])).values());
+       if (uniqueAcademic.length > 0) {
+         items.push({
+           icon: <UserIcon />, // Or Hat icon
+           name: "Academic",
+           subItems: uniqueAcademic
+         });
+       }
+    }
+
+    // HR (Admin/Staff)
+    if (isAdmin || isStaff) {
+       items.push({
+         icon: <UserIcon />,
+         name: "HR Management",
+         subItems: [
+           { name: "Employees", path: "/hr/employees" },
+           { name: "Workload Contracts", path: "/academic/workload-contracts" }
+         ]
+       });
+    }
+
+    // Leave Requests - Everyone except parents and students
+    if (!isParent && (isAdmin || isTeacher || isStaff)) {
+      items.push({
+        icon: <DocsIcon />,
+        name: "Leave Requests",
+        path: "/leaves/requests",
+      });
+    }
+
+    // Events - Admin and Staff only
+    if (isAdmin || isStaff) {
+      items.push({
+        icon: <ShootingStarIcon />,
+        name: "Events",
+        path: "/events",
+      });
+    }
+
+    // Notifications - Everyone
+    items.push({
+      icon: <MailIcon />,
+      name: "Notifications",
+      path: "/notifications",
+    });
+
+    // Guests - Admin and Staff only
+    if (isAdmin || isStaff) {
+      items.push({
+        icon: <UserIcon />,
+        name: "Guests",
+        subItems: [
+          { name: "Guest List", path: "/guests" },
+          { name: "Visitor Log", path: "/guests/visits" },
+        ],
+      });
+    }
+
+    // Scheduling - Admin, Teacher, Staff
+    if (isAdmin || isTeacher || isStaff) {
+      items.push({
+        icon: <CalenderIcon />,
+        name: "Scheduling",
+        subItems: [
+          ...(isAdmin || isStaff ? [{ name: "Teaching Assignments", path: "/academic/teaching-assignments" }] : []),
+          ...(isAdmin || isTeacher || isStaff ? [{ name: "Class Schedules", path: "/academic/schedules" }] : []),
+          ...(isAdmin || isTeacher || isStaff ? [{ name: "Work Rosters", path: "/schedules" }] : []),
+        ],
+      });
+    }
+
+    return items;
+  }, [isStudent, isTeacher, isAdmin, isStaff, isParent]);
 
   return navItems;
 };
 
-const othersItems: NavItem[] = [
-  {
-    icon: <TableIcon />,
-    name: "Curriculum Setup",
-    subItems: [
-      { name: "Curriculum Explorer", path: "/academic/curriculum" },
-      // { name: "Grades", path: "/academic/grades" },
-      { name: "Schedule Templates", path: "/academic/teaching-schedule-templates" },
-      { name: "Curriculum Wizard", path: "/academic/curriculum-wizard", new: true },
-      { name: "Workload Contracts", path: "/academic/workload-contracts" },
-      { name: "Schedule Overrides", path: "/academic/schedule-overrides" },
-    ],
-  },
-  {
-    icon: <PlugInIcon />,
-    name: "Facilities",
-    subItems: [
-      { name: "Device Registry", path: "/devices" },
-      { name: "Device Channels", path: "/identity/channels" },
-      { name: "CCTV Monitor", path: "/devices/live" },
-      { name: "Print ID Cards", path: "/users/print-ids" },
-    ],
-  },
-  {
-    icon: <LockIcon />,
-    name: "User Access",
-    subItems: [
-      { name: "User Directory", path: "/users/list" },
-      { name: "Access Roles", path: "/roles" },
-      { name: "User Types", path: "/users/user-types" },
-      { name: "Credentials", path: "/identity/credentials" },
-    ],
-  },
-  {
-    icon: <TaskIcon />,
-    name: "Rules & Policies",
-    subItems: [
-      { name: "Classroom Command", path: "/teacher/classroom" },
-      { name: "Attendance Policies", path: "/attendance/policies" },
-      { name: "Teaching Unit Policies", path: "/academic/teaching-unit-policies" },
-    ],
-  },
-  {
-    icon: <BoltIcon />,
-    name: "System Settings",
-    subItems: [
-      { name: "General Settings", path: "/settings" },
-      { name: "Notification Templates", path: "/admin/notification-templates" },
-      { name: "Notification Settings", path: "/settings/notifications" },
-      { name: "Identity Resolutions", path: "/identity/resolutions" },
-    ],
-  },
-  {
-    icon: <PieChartIcon />,
-    name: "Maintenance & Logs",
-    subItems: [
-      { name: "System Metrics", path: "/audit/metrics" },
-      { name: "Audit Logs", path: "/audit/logs" },
-      { name: "Identity Logs", path: "/identity/logs" },
-      { name: "Backups", path: "/settings/backups" },
-    ],
-  },
-];
+
+
+const useOthersItems = () => {
+  const { user } = useAuthStore();
+  
+  const hasAnyRole = useCallback((rolesToCheck: string[]) => {
+    // If no roles, return false
+    if (!user) return false;
+
+    const roleNames = [
+        ...(user.roles?.map(r => r.name.toLowerCase()) || []),
+        ...(user.userTypes?.map(t => t.toLowerCase()) || []),
+        ...(user.typeAssignments?.map(t => t.userType?.name.toLowerCase() || "") || [])
+    ].filter(Boolean);
+
+    // ADMIN BYPASS
+    if (roleNames.some(r => r === 'admin' || r.includes('admin') || r === 'super admin')) {
+      return true;
+    }
+    
+    return rolesToCheck.some(role => 
+      roleNames.some(userRole => 
+        userRole === role.toLowerCase() || userRole.includes(role.toLowerCase())
+      )
+    );
+  }, [user]);
+
+  const isAdmin = hasAnyRole(['admin']);
+  const isStaff = hasAnyRole(['staff']);
+  const isTeacher = hasAnyRole(['teacher']);
+
+  const othersItems: NavItem[] = useMemo(() => {
+    const items: NavItem[] = [];
+
+    // Curriculum Setup - Admin, Teacher, Staff
+    if (isAdmin || isTeacher || isStaff) {
+      items.push({
+        icon: <TableIcon />,
+        name: "Curriculum Setup",
+        subItems: [
+          ...(isAdmin || isTeacher || isStaff ? [{ name: "Curriculum Explorer", path: "/academic/curriculum" }] : []),
+          ...(isAdmin || isStaff ? [{ name: "Schedule Templates", path: "/academic/teaching-schedule-templates" }] : []),
+          ...(isAdmin || isStaff ? [{ name: "Curriculum Wizard", path: "/academic/curriculum-wizard", new: true }] : []),
+          ...(isAdmin || isStaff ? [{ name: "Workload Contracts", path: "/academic/workload-contracts" }] : []),
+          ...(isAdmin || isStaff ? [{ name: "Schedule Overrides", path: "/academic/schedule-overrides" }] : []),
+        ],
+      });
+    }
+
+    // Facilities - Admin and Staff only
+    if (isAdmin || isStaff) {
+      items.push({
+        icon: <PlugInIcon />,
+        name: "Facilities",
+        subItems: [
+          { name: "Device Registry", path: "/devices" },
+          ...(isAdmin ? [{ name: "Device Channels", path: "/identity/channels" }] : []),
+          { name: "CCTV Monitor", path: "/devices/live" },
+          { name: "Print ID Cards", path: "/users/print-ids" },
+        ],
+      });
+    }
+
+    // User Access - Admin only
+    if (isAdmin) {
+      items.push({
+        icon: <LockIcon />,
+        name: "User Access",
+        subItems: [
+          { name: "User Directory", path: "/users/list" },
+          { name: "Access Roles", path: "/roles" },
+          { name: "User Types", path: "/users/user-types" },
+          { name: "Credentials", path: "/identity/credentials" },
+        ],
+      });
+    }
+
+    // Rules & Policies - Admin and Teacher
+    if (isAdmin || isTeacher) {
+      items.push({
+        icon: <TaskIcon />,
+        name: "Rules & Policies",
+        subItems: [
+          ...(isAdmin || isTeacher ? [{ name: "Classroom Command", path: "/teacher/classroom" }] : []),
+          ...(isAdmin ? [{ name: "Attendance Policies", path: "/attendance/policies" }] : []),
+          ...(isAdmin ? [{ name: "Teaching Unit Policies", path: "/academic/teaching-unit-policies" }] : []),
+        ],
+      });
+    }
+
+    // System Settings - Admin only
+    if (isAdmin) {
+      items.push({
+        icon: <BoltIcon />,
+        name: "System Settings",
+        subItems: [
+          { name: "General Settings", path: "/settings" },
+          { name: "Notification Templates", path: "/admin/notification-templates" },
+          { name: "Notification Settings", path: "/settings/notifications" },
+          { name: "Identity Resolutions", path: "/identity/resolutions" },
+        ],
+      });
+    }
+
+    // Maintenance & Logs - Admin only
+    if (isAdmin) {
+      items.push({
+        icon: <PieChartIcon />,
+        name: "Maintenance & Logs",
+        subItems: [
+          { name: "System Metrics", path: "/audit/metrics" },
+          { name: "Audit Logs", path: "/audit/logs" },
+          { name: "Identity Logs", path: "/identity/logs" },
+          { name: "Backups", path: "/settings/backups" },
+        ],
+      });
+    }
+
+    return items;
+  }, [isAdmin, isStaff, isTeacher]);
+
+  return othersItems;
+};
+
 
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const location = useLocation();
   const navItems = useNavItems();
+  const othersItems = useOthersItems();
+
 
   const [openSubmenu, setOpenSubmenu] = useState<{
     type: "main" | "others";
@@ -227,7 +413,7 @@ const AppSidebar: React.FC = () => {
     if (!submenuMatched) {
       setOpenSubmenu(null);
     }
-  }, [location, isActive, navItems]);
+  }, [location, isActive, navItems, othersItems]); // Added othersItems to dependency
 
   useEffect(() => {
     if (openSubmenu !== null) {
@@ -407,13 +593,13 @@ const AppSidebar: React.FC = () => {
             <div className="flex items-center gap-3">
               <img
                 src="/logo-pwa.png"
-                alt="Sistem Absen"
+                alt="Visia"
                 width={42}
                 height={42}
-                className="rounded-xl shadow-lg shadow-brand-500/10"
+                className="rounded-xl"
               />
               <span className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
-                Sistem Absen
+                Visia
               </span>
             </div>
           ) : (

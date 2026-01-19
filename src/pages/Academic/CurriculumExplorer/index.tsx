@@ -235,7 +235,7 @@ const CurriculumExplorer: React.FC = () => {
 
   return (
     <>
-      <PageMeta title="Curriculum Explorer | Sistem Absen" description="Manage hierarchical academic structure." />
+      <PageMeta title="Curriculum Explorer | Visia" description="Manage hierarchical academic structure." />
       <PageBreadcrumb pageTitle="Curriculum Explorer" />
 
       <div className="relative flex flex-col min-h-[600px]">

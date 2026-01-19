@@ -325,7 +325,7 @@ const SubjectAttendances: React.FC = () => {
 
   return (
     <>
-      <PageMeta title="Subject Attendance | Sistem Absen" description="Record student presence for specific teaching sessions." />
+      <PageMeta title="Subject Attendance | Visia" description="Record student presence for specific teaching sessions." />
       <PageBreadcrumb pageTitle="Subject Attendance" />
 
       <div className="space-y-6">

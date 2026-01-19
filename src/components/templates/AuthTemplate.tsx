@@ -26,11 +26,11 @@ export default function AuthLayout({
                   className="mb-4 rounded-3xl shadow-2xl shadow-brand-500/20"
                 />
                 <h2 className="text-3xl font-bold tracking-tighter text-white">
-                  Sistem Absen
+                  Visia
                 </h2>
               </Link>
               <p className="text-center text-gray-400 dark:text-white/60 font-medium">
-                Sistem Management Absensi <br /> Modern & Efisien
+                Visia - Sistem Management Absensi <br /> Modern & Efisien
               </p>
             </div>
           </div>

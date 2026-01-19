@@ -164,7 +164,7 @@ const EmployeeManagement: React.FC = () => {
 
     return (
         <>
-            <PageMeta title="Employee Management | Sistem Absen" description="Manage system employees." />
+            <PageMeta title="Employee Management | Visia" description="Manage system employees." />
             <PageBreadcrumb pageTitle="Employee Management" />
 
             <div className="space-y-6">

@@ -290,7 +290,7 @@ const GuestVisits: React.FC = () => {
 
     return (
         <>
-            <PageMeta title="Guest Visits | Sistem Absen" description="Monitor and manage guest entrance history." />
+            <PageMeta title="Guest Visits | Visia" description="Monitor and manage guest entrance history." />
             <PageBreadcrumb pageTitle="Guest Visits" />
 
             <div className="space-y-6">

@@ -197,7 +197,7 @@ const ClassSubjects: React.FC = () => {
 
   return (
     <>
-      <PageMeta title="Class Subjects | Sistem Absen" description="Manage subjects taught in each class." />
+      <PageMeta title="Class Subjects | Visia" description="Manage subjects taught in each class." />
       <PageBreadcrumb pageTitle="Class Subjects" />
 
       <div className="space-y-6">

@@ -120,7 +120,7 @@ const UserList: React.FC = () => {
 
   return (
     <>
-      <PageMeta title="User List | Sistem Absen" description="Manage system users." />
+      <PageMeta title="User List | Visia" description="Manage system users." />
       <PageBreadcrumb pageTitle="User List" />
 
       <div className="space-y-6">

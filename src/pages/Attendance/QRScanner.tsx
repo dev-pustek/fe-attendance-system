@@ -786,7 +786,7 @@ const QRScanner = () => {
             {/* Footer / Back */}
             <div className="text-center mt-12">
               <Link
-                to="/attendance/piket"
+                to={isStudent ? "/" : "/attendance/piket"}
                 className="text-sm text-white/40 hover:text-white transition-colors"
               >
                 &larr; Back to Dashboard

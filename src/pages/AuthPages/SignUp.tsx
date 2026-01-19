@@ -6,7 +6,7 @@ export default function SignUp() {
   return (
     <>
       <PageMeta
-        title="SignUp | Sistem Absen"
+        title="SignUp | Visia"
         description="Create a new account"
       />
       <AuthTemplate>

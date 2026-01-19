@@ -146,7 +146,7 @@ const Grades: React.FC = () => {
 
   return (
     <>
-      <PageMeta title="Grade Management | Sistem Absen" description="Manage academic grades and education levels." />
+      <PageMeta title="Grade Management | Visia" description="Manage academic grades and education levels." />
       <PageBreadcrumb pageTitle="Grades" />
 
       <div className="space-y-6">

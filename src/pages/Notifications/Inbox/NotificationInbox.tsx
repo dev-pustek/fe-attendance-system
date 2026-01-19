@@ -188,7 +188,7 @@ export default function NotificationInbox() {
   return (
     <>
       <PageMeta
-        title="Inbox | Sistem Absen"
+        title="Inbox | Visia"
         description="View your system notifications."
       />
       <PageBreadcrumb pageTitle="Inbox" />

@@ -226,7 +226,7 @@ const TeacherSubjects: React.FC = () => {
 
   return (
     <>
-      <PageMeta title="Teacher Subjects | Sistem Absen" description="Manage teacher subject qualifications and assignments." />
+      <PageMeta title="Teacher Subjects | Visia" description="Manage teacher subject qualifications and assignments." />
       <PageBreadcrumb pageTitle="Teacher Subjects" />
 
       <div className="space-y-6">

@@ -149,7 +149,7 @@ const ShiftAssignments: React.FC = () => {
 
   return (
     <>
-      <PageMeta title="Shift Assignments | Sistem Absen" description="Assign shift templates to users." />
+      <PageMeta title="Shift Assignments | Visia" description="Assign shift templates to users." />
       <PageBreadcrumb pageTitle="Shift Assignments" />
 
       <div className="space-y-6">

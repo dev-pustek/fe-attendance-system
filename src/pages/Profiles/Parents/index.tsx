@@ -302,7 +302,7 @@ const ParentManagement: React.FC = () => {
 
     return (
         <>
-            <PageMeta title="Parent Management | Sistem Absen" description="Manage system parents." />
+            <PageMeta title="Parent Management | Visia" description="Manage system parents." />
             <PageBreadcrumb pageTitle="Parent Management" />
 
             <div className="space-y-6">

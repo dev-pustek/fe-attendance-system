@@ -489,6 +489,13 @@ const Events: React.FC = () => {
                     <TableCell className="px-5 py-4 text-right">
                       <div className="flex justify-end gap-1 transition-opacity">
                         <button
+                          onClick={() => navigate(`/attendance/history?tab=gate&eventId=${event.id}`)}
+                          className="rounded-lg p-2 text-emerald-500 transition-colors hover:bg-emerald-50 dark:hover:bg-emerald-500/10"
+                          title="View Attendance List"
+                        >
+                          <ListIcon className="size-4" />
+                        </button>
+                        <button
                           onClick={() => navigate(`/events/${event.id}/invitations`)}
                           className="rounded-lg p-2 text-brand-500 transition-colors hover:bg-brand-50 dark:hover:bg-brand-500/10"
                           title="See Invitations"

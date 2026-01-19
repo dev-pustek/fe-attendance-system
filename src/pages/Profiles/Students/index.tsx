@@ -196,7 +196,7 @@ const StudentManagement: React.FC = () => {
 
     return (
         <>
-            <PageMeta title="Student Management | Sistem Absen" description="Manage system students." />
+            <PageMeta title="Student Management | Visia" description="Manage system students." />
             <PageBreadcrumb pageTitle="Student Management" />
 
             <div className="space-y-6">

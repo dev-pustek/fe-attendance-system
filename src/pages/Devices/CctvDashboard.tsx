@@ -52,7 +52,7 @@ const CctvDashboard: React.FC = () => {
 
   return (
     <>
-      <PageMeta title="Live Monitoring | Sistem Absen" description="Real-time CCTV surveillance feed dashboard" />
+      <PageMeta title="Live Monitoring | Visia" description="Real-time CCTV surveillance feed dashboard" />
       <PageBreadcrumb pageTitle="Live Monitoring" />
 
       <div className="space-y-6">

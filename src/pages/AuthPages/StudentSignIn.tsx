@@ -43,7 +43,7 @@ export default function StudentSignIn() {
     try {
       await loginMutation.mutateAsync(data);
       showSuccess("Welcome, Student! Login successful.");
-      navigate("/"); 
+      navigate("/student/my-schedule"); 
     } catch (err: unknown) {
       showError(err, "Login failed. Please check your credentials.");
     }
@@ -84,7 +84,7 @@ export default function StudentSignIn() {
                 <div className="mb-6 inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-white dark:bg-gray-700 shadow-xl shadow-brand-500/10 border border-gray-100 dark:border-white/10 group">
                     <img 
                         src="/logo-pwa.png" 
-                        alt="Logo" 
+                        alt="Visia" 
                         className="w-12 h-12 object-contain group-hover:scale-110 transition-transform duration-500" 
                     />
                 </div>
@@ -158,18 +158,10 @@ export default function StudentSignIn() {
                 </form>
                 
                 {/* Footer Links */}
-                <div className="mt-10 pt-8 border-t border-gray-100 dark:border-white/5 text-center space-y-5">
+                <div className="mt-5  border-gray-100 dark:border-white/5 text-center space-y-5">
                      <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
                         Forgot credentials? <a href="#" className="text-brand-500 hover:text-brand-600 font-bold">Contact Admin</a>
                      </p>
-
-                     <Link 
-                        to="/signin" 
-                        className="inline-flex items-center gap-2 text-xs font-bold text-gray-400 hover:text-brand-500 transition-all group"
-                     >
-                        <ChevronLeftIcon className="size-4 group-hover:-translate-x-1 transition-transform" />
-                        Back to Staff Login
-                     </Link>
                 </div>
             </div>
         </motion.div>

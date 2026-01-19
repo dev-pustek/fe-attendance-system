@@ -23,7 +23,10 @@ import {
   BulkCreateSubjectAttendanceDto,
   GroupedTeachingSessionResponse,
   UserPolicyResponse,
-  TodayScheduleResponse
+  TodayScheduleResponse,
+  GateMetrics,
+  SubjectMetrics,
+  EventMetrics
 } from "../types/attendance";
 import apiClient from "../client";
 
@@ -294,6 +297,7 @@ export const attendanceService = {
     academicYearId?: number;
     majorId?: number;
     status?: string;
+    eventId?: string;
   }): Promise<PaginatedResponse<AttendanceRecord> & { metrics: GateMetrics }> => {
     const response = await apiClient.get<PaginatedResponse<AttendanceRecord> & { metrics: GateMetrics }>("/attendance/history", { 
       params 

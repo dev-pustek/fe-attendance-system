@@ -322,7 +322,7 @@ const TeachingSessions: React.FC = () => {
 
   return (
     <>
-      <PageMeta title="Teaching Sessions | Sistem Absen" description="Manage and track actual teaching sessions and substitutions." />
+      <PageMeta title="Teaching Sessions | Visia" description="Manage and track actual teaching sessions and substitutions." />
       <PageBreadcrumb pageTitle="Teaching Sessions" />
 
       <div className="space-y-6">

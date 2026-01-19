@@ -180,7 +180,7 @@ const TeachingUnitPolicies: React.FC = () => {
 
   return (
     <>
-      <PageMeta title="Teaching Unit Policies | Sistem Absen" description="Configure the duration of one teaching unit (JP)." />
+      <PageMeta title="Teaching Unit Policies | Visia" description="Configure the duration of one teaching unit (JP)." />
       <PageBreadcrumb pageTitle="Teaching Unit Policies" />
 
       <div className="space-y-6">
