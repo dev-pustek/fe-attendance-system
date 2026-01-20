@@ -414,6 +414,9 @@ export interface TodayScheduleItem {
   classSubjectId: number;
   templateId?: number;
   sessionId?: number | string | null;
+  teacherName?: string;
+  myAttendanceTime?: string | null;
+  myAttendanceStatus?: "present" | "late" | "absent" | "excused" | string;
   // Detailed session info based on actual API response
   session?: {
     id: number | string;

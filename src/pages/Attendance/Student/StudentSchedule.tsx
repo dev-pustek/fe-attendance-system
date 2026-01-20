@@ -106,134 +106,137 @@ const StudentSchedule = () => {
 
     // --- Card Component ---
     const SessionCard = ({ item }: { item: TodayScheduleItem }) => {
-        const isCompleted = item.status === 'COMPLETED' || item.isCompleted;
+        const isCompleted = item.status === 'COMPLETED' || item.isCompleted || item.sessionStatus === 'COMPLETED';
+        const isOngoing = item.sessionStatus === 'ONGOING';
         const startTime = parseTime(item.startTime);
         const endTime = parseTime(item.endTime);
-        const now = new Date();
-        const isActive = !isCompleted && now >= startTime && now <= endTime; 
         
+        // Attendance Status from API
+        const myStatus = item.myAttendanceStatus?.toLowerCase();
+        const isPresent = myStatus === 'present' || myStatus === 'late';
+        const attendanceTime = item.myAttendanceTime ? new Date(item.myAttendanceTime) : null;
+
         // Calculate Duration
         const diffMinutes = differenceInMinutes(endTime, startTime);
         const hours = Math.floor(diffMinutes / 60);
         const mins = diffMinutes % 60;
         const durationString = `${hours > 0 ? `${hours} hr ` : ''}${mins > 0 ? `${mins} min` : ''}`.trim();
 
-        // Data Accessors (using Safe Navigation / 'any' cast if types are incomplete)
+        // Data Accessors
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const rawItem = item as any;
-        const teacherName = rawItem.session?.actualTeacher?.name || rawItem.template?.defaultTeacher?.name || rawItem.template?.classSubject?.teacher?.name || 'No Teacher Assigned';
-        const classCode = rawItem.session?.classSubject?.class?.code || rawItem.template?.classSubject?.class?.code || item.className; // Fallback to name if code missing
+        const teacherName = item.teacherName || rawItem.session?.actualTeacher?.name || rawItem.template?.defaultTeacher?.name || 'No Teacher Assigned';
+        const classCode = rawItem.session?.classSubject?.class?.code || rawItem.template?.classSubject?.class?.code || item.className; 
         
-        // Premium Card Handling
-        const activeGradient = "bg-gradient-to-br from-white to-brand-50 dark:from-gray-800 dark:to-brand-900/20";
-        const completedGradient = "bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900/20";
-        const inactiveGradient = "bg-white dark:bg-gray-800";
+        // Card Styling Logic
+        let cardStyles = "bg-white dark:bg-white/5 border-gray-200 dark:border-white/10";
+        if (isPresent) {
+            cardStyles = "bg-green-50/30 border-green-200 dark:bg-green-900/10 dark:border-green-500/20";
+        } else if (isOngoing) {
+             cardStyles = "bg-gradient-to-br from-white to-brand-50 border-brand-200 dark:from-white/5 dark:to-brand-900/20 dark:border-brand-500/30 shadow-lg shadow-brand-500/5 ring-1 ring-brand-500/20";
+        } else if (isCompleted) {
+             cardStyles = "bg-gray-50 border-gray-200 dark:bg-white/5 dark:border-white/5 opacity-70 grayscale-[0.8]";
+        }
 
         return (
-            <div className={`relative h-full flex flex-col rounded-2xl border transition-all duration-300 group hover:shadow-xl ${
-                isCompleted ? `${completedGradient} border-gray-200 dark:border-white/10 opacity-75` :
-                isActive 
-                    ? `${activeGradient} border-brand-200/50 dark:border-brand-500/30 shadow-lg shadow-brand-500/5 ring-1 ring-brand-500/20`
-                    : `${inactiveGradient} border-gray-200 dark:border-white/10 hover:border-brand-200 dark:hover:border-white/20`
-            }`}>
+            <div className={`relative h-full flex flex-col rounded-2xl border transition-all duration-300 group hover:shadow-xl overflow-hidden ${cardStyles}`}>
                 
-                {/* Class Code (Top Left) */}
-                <div className="absolute top-4 left-6">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-500/10 px-2 py-1 rounded-md">
-                        {classCode}
-                    </span>
-                </div>
+                {/* Decorative Status Bar */}
+                <div className={`absolute top-0 left-0 right-0 h-1.5 ${
+                    isPresent ? "bg-green-500" :
+                    isOngoing ? "bg-brand-500 animate-pulse" :
+                    isCompleted ? "bg-gray-300 dark:bg-white/20" :
+                    "bg-transparent"
+                }`} />
 
-                {/* Status Badge (Top Right) */}
-                <div className="absolute top-4 right-4">
-                    {isCompleted ? (
-                        <div className="flex items-center gap-1.5 px-3 py-1 bg-green-100/50 dark:bg-green-500/10 text-green-700 dark:text-green-400 rounded-full text-xs font-bold ring-1 ring-green-500/20">
-                            <CheckCircleIcon className="size-3.5" />
-                            <span>Done</span>
-                        </div>
-                    ) : isActive ? (
-                        <div className="flex items-center gap-1.5 px-3 py-1 bg-brand-100/50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 rounded-full text-xs font-bold ring-1 ring-brand-500/20 animate-pulse">
-                            <span className="relative flex h-2 w-2">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
-                              <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-500"></span>
-                            </span>
-                            <span>Live</span>
-                        </div>
-                    ) : (
-                        <div className="px-3 py-1 bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 rounded-full text-xs font-bold ring-1 ring-black/5 dark:ring-white/10">
-                            Upcoming
-                        </div>
-                    )}
-                </div>
-
-                <div className="p-6 flex-1 flex flex-col">
-                    {/* Header Info */}
-                    <div className="mt-8 mb-4">
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white leading-tight line-clamp-2 min-h-[3.5rem]">
-                            {item.subjectName}
-                        </h3>
-                        
-                        {/* Teacher Info */}
-                         <div className="flex items-center gap-2 mt-2 text-sm text-gray-600 dark:text-gray-300 font-medium w-fit">
-                            <div className="size-6 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-[10px] font-bold text-gray-500 dark:text-gray-300">
-                                {teacherName.charAt(0)}
-                            </div>
-                            <span>{teacherName}</span> 
-                        </div>
-                    </div>
-
-                    {/* Time Grid (Compact) */}
-                    <div className="mt-auto bg-gray-50/50 dark:bg-black/20 rounded-xl p-3 border border-gray-100 dark:border-white/5 mb-5 flex items-center justify-between">
+                <div className="p-5 flex-1 flex flex-col relative">
+                    {/* Header: Class & Status */}
+                    <div className="flex justify-between items-start mb-4">
                          <div className="flex flex-col">
-                            <span className="text-[10px] text-gray-400 uppercase tracking-wide font-semibold">Start</span>
-                            <span className={`text-base font-mono font-bold ${isActive ? 'text-brand-600 dark:text-brand-400' : 'text-gray-900 dark:text-white'}`}>
-                                {format(startTime, 'HH:mm')}
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">
+                                {classCode}
                             </span>
-                        </div>
-                        <div className="h-8 w-px bg-gray-200 dark:bg-white/10" />
-                        <div className="flex flex-col text-center">
-                            <span className="text-[10px] text-gray-400 uppercase tracking-wide font-semibold">Duration</span>
-                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 mt-1">
-                                {durationString}
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded-md w-fit ${
+                                isPresent ? "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400" :
+                                isOngoing ? "bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-400" :
+                                isCompleted ? "bg-gray-100 text-gray-500 dark:bg-white/10 dark:text-gray-400" :
+                                "bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-400"
+                            }`}>
+                                {isPresent ? "Present" : 
+                                 isOngoing ? "Happening Now" : 
+                                 isCompleted ? "Finished" : "Scheduled"}
                             </span>
-                        </div>
-                        <div className="h-8 w-px bg-gray-200 dark:bg-white/10" />
-                        <div className="flex flex-col text-right">
-                             <span className="text-[10px] text-gray-400 uppercase tracking-wide font-semibold">End</span>
-                            <span className={`text-base font-mono font-bold ${isActive ? 'text-brand-600 dark:text-brand-400' : 'text-gray-900 dark:text-white'}`}>
-                                {format(endTime, 'HH:mm')}
-                            </span>
-                        </div>
+                         </div>
+                         
+                         {/* Attendance Badge (Icon) */}
+                         {isPresent && (
+                            <div className="size-8 rounded-full bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400 flex items-center justify-center shadow-sm">
+                                <CheckCircleIcon className="size-5" />
+                            </div>
+                         )}
                     </div>
 
-                    {/* Action Button */}
-                    {!isCompleted && (
+                    {/* Subject Title */}
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white leading-tight mb-3">
+                        {item.subjectName}
+                    </h3>
+                        
+                    {/* Teacher Info */}
+                     <div className="flex items-center gap-2 mb-6 text-sm text-gray-600 dark:text-gray-300 font-medium">
+                        <div className="size-6 rounded-full bg-gray-200 dark:bg-white/10 flex items-center justify-center text-[10px] font-bold text-gray-500 dark:text-gray-300 uppercase">
+                            {teacherName.charAt(0)}
+                        </div>
+                        <span className="truncate">{teacherName}</span> 
+                    </div>
+
+                    {/* Time Grid */}
+                    <div className="mt-auto grid grid-cols-2 gap-4 py-3 border-t border-gray-100 dark:border-white/5">
+                         <div>
+                            <span className="block text-[10px] text-gray-400 uppercase tracking-wide font-semibold mb-0.5">Time</span>
+                            <div className="flex items-baseline gap-1">
+                                <span className={`text-lg font-mono font-bold ${isOngoing ? 'text-brand-600 dark:text-brand-400' : 'text-gray-900 dark:text-white'}`}>
+                                    {format(startTime, 'HH:mm')}
+                                </span>
+                                <span className="text-xs text-gray-400 font-normal">
+                                    - {format(endTime, 'HH:mm')}
+                                </span>
+                            </div>
+                        </div>
+                        <div className="text-right">
+                             <span className="block text-[10px] text-gray-400 uppercase tracking-wide font-semibold mb-0.5">Duration</span>
+                             <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                                {durationString}
+                             </span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Footer Action Area */}
+                <div className={`p-4 ${
+                    isPresent ? "bg-green-50/50 dark:bg-green-900/20 border-t border-green-100 dark:border-green-500/10" :
+                    "bg-gray-50/50 dark:bg-white/5 border-t border-gray-100 dark:border-white/5"
+                }`}>
+                    {isPresent ? (
+                         <div className="flex items-center justify-center gap-2 text-sm font-bold text-green-700 dark:text-green-400">
+                             <CheckCircleIcon className="size-4" />
+                             <span>
+                                 Recorded at {attendanceTime ? format(attendanceTime, 'HH:mm') : '-'}
+                             </span>
+                         </div>
+                    ) : (
                         <Button 
                             onClick={() => handleCheckIn(item)}
                             className={`w-full justify-center py-2.5 rounded-xl font-bold transition-all shadow-sm ${
-                                isActive 
+                                isOngoing 
                                     ? "bg-brand-600 hover:bg-brand-700 text-white shadow-brand-500/20 active:scale-[0.98]" 
                                     : "bg-white hover:bg-gray-50 text-gray-400 border border-gray-200 dark:bg-white/5 dark:hover:bg-white/10 dark:text-gray-500 dark:border-white/10 cursor-not-allowed"
                             }`}
-                            disabled={!isActive}
+                            disabled={!isOngoing || isCompleted}
                         >
                             <QrCodeIcon className="size-5 mr-2" />
-                            {isActive ? "Check In Now" : "Not Open Yet"}
+                            {isOngoing ? "Scan QR to Check In" : isCompleted ? "Class Ended" : "Not Started Yet"}
                         </Button>
                     )}
-                     {isCompleted && (
-                        <div className="w-full py-2.5 text-center text-sm font-bold text-green-600 bg-green-50/50 rounded-xl border border-green-100/50 dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/10 flex flex-col items-center justify-center gap-1">
-                            <div className="flex items-center gap-2">
-                                <CheckCircleIcon className="size-4" />
-                                <span>You are Present</span>
-                            </div>
-                            {item.session?.subjectAttendances?.[0]?.recordedAt && (
-                                <span className="text-xs font-medium opacity-80">
-                                    at {format(new Date(item.session.subjectAttendances[0].recordedAt), 'HH:mm')}
-                                </span>
-                            )}
-                        </div>
-                     )}
                 </div>
             </div>
         );
