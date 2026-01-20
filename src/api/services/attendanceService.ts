@@ -315,7 +315,7 @@ export const attendanceService = {
     teachingSessionId?: number;
     status?: string;
   }): Promise<PaginatedResponse<SubjectAttendance> & { metrics: SubjectMetrics }> => {
-    const response = await apiClient.get<PaginatedResponse<SubjectAttendance> & { metrics: SubjectMetrics }>("/subject-attendances/my-history", { 
+    const response = await apiClient.get<PaginatedResponse<SubjectAttendance> & { metrics: SubjectMetrics }>("/attendance/subject-attendances/my-history", { 
       params 
     });
     return response.data;
