@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useAuthStore } from "../../../store/authStore";
 import { attendanceService } from "../../../api/services/attendanceService";
-import { profilesService } from "../../../api/services/profilesService";
+import { academicService } from "../../../api/services/academicService";
 import { TodayScheduleItem, CreateTeachingSessionDto, SubjectAttendance } from "../../../api/types/attendance";
-import { StudentProfile } from "../../../api/types/profiles";
+import { ClassEnrollment } from "../../../api/types/academic";
 import { useTodaySchedule } from "../../../api/hooks/useAttendance";
 import PageMeta from "../../../components/atoms/PageMeta";
 import PageBreadcrumb from "../../../components/molecules/PageBreadcrumb";
@@ -40,7 +40,7 @@ const TeacherSchedule: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'manual' | 'show-qr' | 'scan-qr'>('manual');
   
   const [selectedSessionItem, setSelectedSessionItem] = useState<TodayScheduleItem | null>(null);
-  const [students, setStudents] = useState<StudentProfile[]>([]);
+  const [students, setStudents] = useState<ClassEnrollment[]>([]);
   const [isLoadingStudents, setIsLoadingStudents] = useState(false);
   const [attendanceStatuses, setAttendanceStatuses] = useState<Record<string, string>>({});
   const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set());
@@ -181,16 +181,18 @@ const TeacherSchedule: React.FC = () => {
 
       try {
           const classId = item.session?.classSubject?.classId;
+          const academicYearId = item.session?.classSubject?.academicYearId;
           
-          if (classId) {
-              const res = await profilesService.getStudents({
+          if (classId && academicYearId) {
+              const res = await academicService.getClassEnrollments({
                   limit: 100,
-                  // @ts-expect-error - Custom param activeClassId
-                  activeClassId: classId
+                  classId: classId,
+                  academicYearId: academicYearId,
+                  status: 'active'
               });
               setStudents(res.data);
           } else {
-              showError("Could not determine Class ID for this session.");
+              showError("Could not determine Class ID or Academic Year for this session.");
           }
 
       } catch (e) {
@@ -347,7 +349,7 @@ const TeacherSchedule: React.FC = () => {
                                                        </div>
                                                        <div>
                                                            <p className="font-medium text-gray-900 dark:text-white">{student.user?.name}</p>
-                                                           <p className="text-xs text-gray-500">{student.nis || student.studentId}</p>
+                                                           <p className="text-xs text-gray-500">{student.user?.profile?.nis || "No NIS"}</p>
                                                        </div>
                                                    </div>
                                                </td>
@@ -407,7 +409,7 @@ const TeacherSchedule: React.FC = () => {
                                                         </div>
                                                         <div>
                                                             <p className="font-medium text-gray-900 dark:text-white">{student.user?.name}</p>
-                                                            <p className="text-xs text-gray-500">{student.nis || student.studentId}</p>
+                                                           <p className="text-xs text-gray-500">{student.user?.profile?.nis || "No NIS"}</p>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -530,8 +532,9 @@ const TeacherSchedule: React.FC = () => {
                               if (!isMounted.current) return;
 
                               // Find student name for feedback
-                              const student = studentsRef.current.find(s => s.user?.public_id === studentId || s.nis === studentId);
-                              setScannedName(student?.user?.name || studentId);
+                              // Check both user.public_id and potentially profile NIS if we had it, but here we iterate enrollments
+                              const enrollment = studentsRef.current.find(s => s.user?.public_id === studentId);
+                              setScannedName(enrollment?.user?.name || studentId);
                               
                               setStatus('success');
                               setScanMessage("Marked as Present");
