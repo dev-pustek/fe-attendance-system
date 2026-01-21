@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router";
 import { useEmployees, useUpdateEmployee, useDeleteEmployee, useCreateEmployee } from "../../../api/hooks/useProfiles";
+import { accessControlService } from "../../../api/services/accessControlService";
 import { EmployeeProfile, ProfileParams, CreateEmployeeDto, UpdateEmployeeDto } from "../../../api/types/profiles";
 import PageMeta from "../../../components/atoms/PageMeta";
 import PageBreadcrumb from "../../../components/molecules/PageBreadcrumb";
@@ -72,6 +73,7 @@ const EmployeeManagement: React.FC = () => {
         gender: "M", notes: ""
     } as any);
     const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
+    const [isTeacher, setIsTeacher] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Handlers
@@ -116,6 +118,7 @@ const EmployeeManagement: React.FC = () => {
             gender: "M"
         } as CreateEmployeeDto);
         setPreviewPhoto(null);
+        setIsTeacher(false);
         setIsFormModalOpen(true);
     };
 
@@ -153,8 +156,20 @@ const EmployeeManagement: React.FC = () => {
                 });
                 showSuccess("Employee updated successfully");
             } else {
-                await createMutation.mutateAsync(formData as CreateEmployeeDto);
-                showSuccess("Employee created successfully");
+                const newEmployee = await createMutation.mutateAsync(formData as CreateEmployeeDto);
+                
+                // Assign teacher role if requested
+                if (isTeacher && newEmployee?.userId) {
+                    try {
+                        await accessControlService.assignRole(newEmployee.userId, 'teacher');
+                        showSuccess("Teacher created successfully with role assigned");
+                    } catch (roleError) {
+                        showError("Employee created but failed to assign teacher role");
+                        console.error(roleError);
+                    }
+                } else {
+                    showSuccess("Employee created successfully");
+                }
             }
             setIsFormModalOpen(false);
         } catch {
@@ -465,6 +480,22 @@ const EmployeeManagement: React.FC = () => {
                                     />
                                 </div>
                             </div>
+
+                            {!selectedEmployee && (
+                                <div className="bg-brand-50 dark:bg-brand-500/10 p-4 rounded-xl border border-brand-100 dark:border-brand-500/20 flex flex-col gap-2">
+                                    <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-600 dark:text-brand-400 mb-0">Assign as Teacher</Label>
+                                    <div className="flex items-center justify-between">
+                                        <span className={`text-xs font-bold ${isTeacher ? 'text-brand-600 dark:text-brand-400' : 'text-gray-400'}`}>
+                                            {isTeacher ? 'YES' : 'NO'}
+                                        </span>
+                                        <Switch 
+                                            checked={isTeacher} 
+                                            onChange={setIsTeacher} 
+                                        />
+                                    </div>
+                                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">Grant teacher permissions to this employee</p>
+                                </div>
+                            )}
                         </div>
 
                         {/* RIGHT COLUMN: Inputs Grid */}

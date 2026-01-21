@@ -24,16 +24,23 @@ const StudentSchedule = () => {
     const [scanStatus, setScanStatus] = useState<'idle' | 'scanning' | 'verifying' | 'success' | 'error'>('idle');
     const [scanMessage, setScanMessage] = useState<string | null>(null);
 
+    // Semaphore to prevent double scanning
+    const isProcessingScanRef = useRef(false);
+
     // --- Actions ---
     const handleCheckIn = (item: TodayScheduleItem) => {
         setSelectedSession(item);
         setScanStatus('idle');
         setScanMessage(null);
+        isProcessingScanRef.current = false;
         setIsScanModalOpen(true);
     };
 
     const handleScanSuccess = useCallback(async (decodedText: string) => {
-        if (scanStatus === 'verifying' || scanStatus === 'success') return;
+        // Double check both state and ref
+        if (isProcessingScanRef.current || scanStatus === 'verifying' || scanStatus === 'success') return;
+        
+        isProcessingScanRef.current = true;
         
         try {
             setScanStatus('verifying');
@@ -73,6 +80,7 @@ const StudentSchedule = () => {
                 setIsScanModalOpen(false);
                 refetch();
                 setScanStatus('idle');
+                isProcessingScanRef.current = false;
             }, 2000);
 
         } catch (error: unknown) {
@@ -80,6 +88,7 @@ const StudentSchedule = () => {
             setScanStatus('error');
             const errorMessage = error instanceof Error ? error.message : "Failed to verify check-in.";
             setScanMessage(errorMessage);
+            isProcessingScanRef.current = false; // Allow retry
         }
     }, [scanStatus, selectedSession, user?.public_id, refetch]);
 
@@ -289,6 +298,10 @@ const FullPageScanner = ({ onScan, onClose, status, message, session }: { onScan
     const renderRef = useRef<HTMLDivElement>(null);
     const scannerRef = useRef<Html5Qrcode | null>(null);
     const onScanRef = useRef(onScan);
+
+    useEffect(() => {
+        onScanRef.current = onScan;
+    }, [onScan]);
 
     const isMountedRef = useRef(false);
 
