@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router";
+import { useNavigate } from "react-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useStudentLogin } from "../../api/hooks/useAuth";
 import { showSuccess, showError } from "../../utils/toast";
-import { EyeCloseIcon, EyeIcon, ChevronLeftIcon, GridIcon, DownloadIcon } from "../../components/atoms/Icons";
+import { EyeCloseIcon, EyeIcon, GridIcon, DownloadIcon } from "../../components/atoms/Icons";
 import PageMeta from "../../components/atoms/PageMeta";
 import FormInput from "../../components/molecules/FormInput";
 import NumberInput from "../../components/atoms/NumberInput";
@@ -43,7 +43,7 @@ export default function StudentSignIn() {
     try {
       await loginMutation.mutateAsync(data);
       showSuccess("Welcome, Student! Login successful.");
-      navigate("/student/my-schedule"); 
+      navigate("/"); 
     } catch (err: unknown) {
       showError(err, "Login failed. Please check your credentials.");
     }

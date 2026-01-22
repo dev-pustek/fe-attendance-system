@@ -64,4 +64,13 @@ export const eventService = {
   deleteInvitation: async (eventId: string, invitationId: string): Promise<void> => {
     await apiClient.delete(`/events/${eventId}/invitations/${invitationId}`);
   },
+
+  getUserInvitations: async (userId: string, params?: EventInvitationParams): Promise<PaginatedResponse<EventInvitation>> => {
+    const response = await apiClient.get<PaginatedResponse<EventInvitation>>(`/events/users/${userId}/invitations`, { params });
+    return response.data;
+  },
+
+  respondToInvitation: async (invitationId: string | number, data: { status: string; responseNotes?: string }): Promise<void> => {
+    await apiClient.patch(`/events/invitations/${invitationId}/respond`, data);
+  },
 };

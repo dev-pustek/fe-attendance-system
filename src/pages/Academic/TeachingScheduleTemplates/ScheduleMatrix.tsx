@@ -369,8 +369,8 @@ const DayColumn: React.FC<DayColumnProps> = ({
             </div>
         )}
 
-      {/* Header for Day Column (Mobile Only) */}
-      <div className="lg:hidden mb-2">
+      {/* Header for Day Column (Hidden) */}
+      <div className="hidden mb-2">
         <span className={`text-xs font-bold uppercase tracking-wider ${isToday ? "text-brand-600" : "text-gray-500"}`}>
           {day.label}
         </span>
@@ -530,9 +530,9 @@ const ScheduleMatrix: React.FC<ScheduleMatrixProps> = ({
         <div className="min-w-full flex flex-col bg-gray-50/50 dark:bg-[#0B0B0F]">
             {/* Scrollable Content Area */}
             <div className="flex-1">
-                {/* Desktop Sticky Header Row - Dynamic Columns */}
-                <div className="hidden lg:grid divide-x divide-gray-200 border-b border-gray-200 dark:divide-white/5 dark:border-white/5 bg-white dark:bg-[#0B0B0F] z-30 sticky top-0 relative pointer-events-none lg:min-w-max"
-                     style={{ gridTemplateColumns: `repeat(${visibleDays.length}, minmax(180px, 240px))` }}
+                {/* Sticky Header Row - Dynamic Columns */}
+                <div className="grid divide-x divide-gray-200 border-b border-gray-200 dark:divide-white/5 dark:border-white/5 bg-white dark:bg-[#0B0B0F] z-30 sticky top-0 relative pointer-events-none min-w-max"
+                     style={{ gridTemplateColumns: `repeat(${visibleDays.length}, minmax(280px, 1fr))` }}
                 >
                      {/* Note: pointer-events-none allows drag through header, but might block clicks. If header has interaction, remove it. */}
                      {/* Wait, header is just text?  */}
@@ -548,8 +548,8 @@ const ScheduleMatrix: React.FC<ScheduleMatrixProps> = ({
                     )})}
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid min-h-[500px] divide-x divide-gray-200 dark:divide-white/5 lg:min-w-max"
-                     style={{ gridTemplateColumns: window.innerWidth >= 1024 ? `repeat(${visibleDays.length}, minmax(180px, 240px))` : '1fr' }}
+                <div className="grid min-h-[500px] divide-x divide-gray-200 dark:divide-white/5 min-w-max"
+                     style={{ gridTemplateColumns: `repeat(${visibleDays.length}, minmax(280px, 1fr))` }}
                 >
                     {/* Note: Identify if using inline style for grid-template-columns causes hydration mismatch if screen size changes? 
                         Ideally use dynamic class or just style. For desktop we want equal columns.

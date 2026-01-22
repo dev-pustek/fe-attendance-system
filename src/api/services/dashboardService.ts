@@ -1,17 +1,15 @@
 import apiClient from "../client";
-
-export interface DashboardSummary {
-  total_users: number;
-  present_today: number;
-  late_today: number;
-  absent_today: number;
-  attendance_rate: number;
-  // Add other expected metrics from Swagger observation
-}
+import { DashboardSummary, StudentDashboardSummary } from "../types/dashboard";
 
 export const dashboardService = {
   getSummary: async (): Promise<DashboardSummary> => {
     const response = await apiClient.get<DashboardSummary>("/dashboard/summary");
     return response.data;
   },
+
+  getStudentSummary: async (): Promise<StudentDashboardSummary> => {
+    const response = await apiClient.get<StudentDashboardSummary>("/dashboard/student-summary");
+    return response.data;
+  },
 };
+

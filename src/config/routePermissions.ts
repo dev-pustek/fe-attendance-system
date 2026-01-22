@@ -77,7 +77,7 @@ export const routePermissions: RoutePermission[] = [
   // Events - Most users
   { path: '/events', allowedRoles: ['admin', 'teacher', 'student', 'staff'] },
   { path: '/events/:id/invitations', allowedRoles: ['admin', 'staff'] },
-  { path: '/events/:id/invitation-paper', allowedRoles: ['admin', 'staff'] },
+  { path: '/events/:id/invitation-paper', allowedRoles: ['admin', 'teacher', 'student', 'staff'] },
 
   // Guests - Admin and Staff
   { path: '/guests', allowedRoles: ['admin', 'staff'] },
@@ -109,7 +109,7 @@ export const routePermissions: RoutePermission[] = [
  * Admin gets access to all routes
  */
 export const hasRoutePermission = (
-  userTypes: string[] | undefined, // Kept for signature compatibility but ignored
+  _userTypes: string[] | undefined, // Kept for signature compatibility but ignored
   routePath: string,
   roles?: Array<{ name: string }> | undefined
 ): boolean => {
@@ -159,7 +159,7 @@ export const hasRoutePermission = (
  * Get user's primary role for display purposes
  * Prioritizes roles array
  */
-export const getPrimaryRole = (userTypes: string[] | undefined, roles?: Array<{ name: string }>): UserRole | null => {
+export const getPrimaryRole = (_userTypes: string[] | undefined, roles?: Array<{ name: string }>): UserRole | null => {
   // Use roles if available
   if (roles && roles.length > 0) {
     const roleNames = roles.map(r => r.name.toLowerCase());

@@ -40,7 +40,7 @@ const GeneralInvitation: React.FC<{ event: Event; qrData: string; primaryColor: 
   const darkerColor = darkenColor(primaryColor, -15);
   
   return (
-  <div className="relative w-full max-w-[794px] aspect-[1/1.414] bg-white text-[#111827] flex flex-col border-[1px] border-[#f2f4f7] print:w-[210mm] print:h-[297mm] print:border-none group">
+  <div className="relative w-full max-w-[794px] aspect-auto md:aspect-[1/1.414] print:aspect-[1/1.414] bg-white text-[#111827] flex flex-col border-[1px] border-[#f2f4f7] print:w-[210mm] print:h-[297mm] print:border-none group shadow-2xl md:shadow-none min-h-[600px] md:min-h-0">
     {/* Sophisticated Decorators */}
     <div className="absolute inset-0 pointer-events-none opacity-[0.03] overflow-hidden">
         <div className="absolute top-[-10%] left-[-10%] size-full rotate-45 border-[40px] rounded-[100px]" style={{ borderColor: primaryColor }}></div>
@@ -146,7 +146,7 @@ const PersonalizedTicket: React.FC<{ event: Event; user: User | undefined; recip
   const subtleAccent = hexToRgba(primaryColor, 0.2);
   
   return (
-  <div className="relative w-full max-w-[1123px] aspect-[1.414/1] bg-white text-[#111827] flex items-stretch border-[1px] border-[#f2f4f7] print:w-[297mm] print:h-[210mm] print:border-none group overflow-hidden">
+  <div className="relative w-full max-w-[1123px] aspect-auto md:aspect-[1.414/1] print:aspect-[1.414/1] bg-white text-[#111827] flex flex-col md:flex-row print:flex-row items-stretch border-[1px] border-[#f2f4f7] print:w-[297mm] print:h-[210mm] print:border-none group overflow-hidden shadow-2xl md:shadow-none">
     {/* Sophisticated Background Pattern */}
     <div className="absolute inset-0 opacity-[0.03] pointer-events-none print:opacity-[0.05]">
       <div className="grid grid-cols-8 gap-x-20 gap-y-16 -rotate-12 scale-125">
@@ -211,10 +211,10 @@ const PersonalizedTicket: React.FC<{ event: Event; user: User | undefined; recip
     </div>
 
     {/* Right Section (Control Stub) */}
-    <div className="w-[30%] bg-[#fcfcfd] border-l-2 border-dashed border-[#e4e7ec] p-8 sm:p-10 flex flex-col items-center relative print:w-[35%] print:p-12">
+    <div className="w-full md:w-[35%] lg:w-[30%] bg-[#fcfcfd] border-t-2 md:border-t-0 print:border-t-0 md:border-l-2 print:border-l-2 border-dashed border-[#e4e7ec] p-8 sm:p-10 flex flex-col items-center relative print:w-[35%] print:p-12">
       {/* Perforation visual effect */}
-      <div className="absolute top-0 bottom-0 left-[-11px] flex flex-col justify-around pointer-events-none no-print">
-         {Array.from({length: 12}).map((_, i) => (
+      <div className="absolute top-[-11px] left-0 right-0 md:top-0 md:bottom-0 print:top-0 print:bottom-0 md:left-[-11px] print:left-[-11px] flex flex-row md:flex-col print:flex-col justify-around pointer-events-none no-print">
+         {Array.from({length: 8}).map((_, i) => (
             <div key={i} className="size-5 rounded-full bg-white border border-[#f2f4f7] shadow-inner"></div>
          ))}
       </div>
@@ -292,7 +292,20 @@ const InvitationPaper: React.FC = () => {
   const { data: meDataResponse } = useMe();
   
   // result.data.data is the User object based on provided JSON structure
-  const user = (userDataResponse || meDataResponse) as User | undefined;
+  const user = (userDataResponse || meDataResponse) as unknown as User | undefined;
+  
+  // Robust Role Check for "isStudent"
+  const isStudent = React.useMemo(() => {
+    if (!meDataResponse) return false;
+    // Interceptor unwraps BaseResponse to User, but we cast to satisfy TS
+    const me = (meDataResponse as unknown) as User;
+    const roles = me.roles?.map((r: { name: string }) => r.name.toLowerCase()) || [];
+    const userTypes = me.userTypes?.map((t: string) => t.toLowerCase()) || [];
+    const typeAssignments = me.typeAssignments?.map((t: { userType?: { name: string } }) => t.userType?.name.toLowerCase()) || [];
+    const allRoles = [...roles, ...userTypes, ...typeAssignments].filter((r): r is string => !!r);
+    return allRoles.some(r => r === 'student' || r.includes('student'));
+  }, [meDataResponse]);
+
   const recipientName = user?.name || "Valued Guest";
   const recipientEmail = user?.email;
   const isPersonalized = !!userIdParam;
@@ -334,52 +347,47 @@ const InvitationPaper: React.FC = () => {
         
         <div className="mb-6 flex items-center justify-between flex-wrap gap-4">
           <div className="flex flex-col gap-4">
-            <button
-              onClick={() => navigate("/events")}
-              className="flex items-center gap-2 text-sm font-medium text-[#475467] transition-colors hover:text-[#101828] dark:text-[#98a2b3] dark:hover:text-[#fcfcfd]"
-            >
-              <ChevronLeftIcon className="size-4" />
-              Back to Events
-            </button>
 
-            {/* Theme Customizer Panel */}
-            <div className="flex flex-col gap-3 p-4 bg-white dark:bg-gray-800 rounded-2xl border border-[#e4e7ec] shadow-sm">
-               <div className="flex items-center gap-2">
-                  <div className="size-2 rounded-full" style={{ backgroundColor: primaryColor }}></div>
-                  <span className="text-xs font-bold uppercase tracking-widest text-[#475467]">Theme Customizer</span>
-               </div>
-               <div className="flex items-center gap-3 flex-wrap">
-                  {palettes.map((p) => (
-                    <button
-                      key={p.color}
-                      onClick={() => setPrimaryColor(p.color)}
-                      className={`size-6 rounded-full transition-all hover:scale-125 hover:shadow-md ${primaryColor === p.color ? 'ring-2 ring-offset-2 ring-gray-400 scale-110' : ''}`}
-                      style={{ backgroundColor: p.color }}
-                      title={p.name}
-                    />
-                  ))}
-                  <div className="h-4 w-px bg-gray-200 mx-1"></div>
-                  <div className="relative group">
-                    <input 
-                      type="color" 
-                      value={primaryColor}
-                      onChange={(e) => setPrimaryColor(e.target.value)}
-                      className="size-6 rounded-full overflow-hidden border-none cursor-pointer bg-transparent"
-                    />
-                    <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-opacity">Custom HEX</span>
-                  </div>
-               </div>
-            </div>
+            {/* Theme Customizer Panel - Hidden for Students */}
+            {!isStudent && (
+              <div className="flex flex-col gap-3 p-4 bg-white dark:bg-gray-800 rounded-2xl border border-[#e4e7ec] shadow-sm animate-in fade-in slide-in-from-top-4 duration-500">
+                <div className="flex items-center gap-2">
+                    <div className="size-2 rounded-full" style={{ backgroundColor: primaryColor }}></div>
+                    <span className="text-xs font-bold uppercase tracking-widest text-[#475467]">Theme Customizer</span>
+                </div>
+                <div className="flex items-center gap-3 flex-wrap">
+                    {palettes.map((p) => (
+                      <button
+                        key={p.color}
+                        onClick={() => setPrimaryColor(p.color)}
+                        className={`size-6 rounded-full transition-all hover:scale-125 hover:shadow-md ${primaryColor === p.color ? 'ring-2 ring-offset-2 ring-gray-400 scale-110' : ''}`}
+                        style={{ backgroundColor: p.color }}
+                        title={p.name}
+                      />
+                    ))}
+                    <div className="h-4 w-px bg-gray-200 mx-1"></div>
+                    <div className="relative group">
+                      <input 
+                        type="color" 
+                        value={primaryColor}
+                        onChange={(e) => setPrimaryColor(e.target.value)}
+                        className="size-6 rounded-full overflow-hidden border-none cursor-pointer bg-transparent"
+                      />
+                      <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-opacity">Custom HEX</span>
+                    </div>
+                </div>
+              </div>
+            )}
           </div>
           
           <div className="flex items-center gap-3">
             <button
               onClick={handlePrint}
-              className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-all hover:brightness-90 active:scale-95 shadow-lg shadow-brand-500/20"
+              className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-2xl transition-all hover:scale-110 active:scale-95 md:static md:h-auto md:w-auto md:rounded-xl md:px-5 md:py-2.5 md:text-sm md:font-semibold md:shadow-lg md:shadow-brand-500/20"
               style={{ backgroundColor: primaryColor }}
             >
-              <PrinterIcon className="size-4 text-white" />
-              Print {isPersonalized ? "Ticket" : "Invitation"}
+              <PrinterIcon className="size-6 md:size-4 text-white" />
+              <span className="hidden md:inline ml-2">Print {isPersonalized ? "Ticket" : "Invitation"}</span>
             </button>
           </div>
         </div>
@@ -388,7 +396,7 @@ const InvitationPaper: React.FC = () => {
       <div 
         ref={printRef}
         id="print-area"
-        className="flex justify-center pb-12 px-4 shadow-sm min-h-screen overflow-y-auto"
+        className="flex justify-center min-h-screen overflow-y-auto"
       >
         {isPersonalized ? (
           <PersonalizedTicket 

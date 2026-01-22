@@ -9,8 +9,6 @@ export interface Event {
   eventType: string;
   startTime: string;
   endTime: string;
-  startDateTime: string;
-  endDateTime: string;
   location: string;
   organizerId: string;
   isActive: boolean;
@@ -64,10 +62,12 @@ export interface EventInvitation {
   eventId: number;
   userId: string;
   status: "invited" | "accepted" | "declined" | "tentative";
-  invitedAt: string;
+  invitedAt: string | null;
   respondedAt: string | null;
   responseNotes: string | null;
-  user: User;
+  user?: User;
+  event?: Event;
+  attendanceStatus?: string | null;
 }
 
 export interface EventInvitationParams extends PaginationParams {

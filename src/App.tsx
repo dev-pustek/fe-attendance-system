@@ -3,7 +3,9 @@ import SignIn from "./pages/AuthPages/SignIn";
 import StudentSignIn from "./pages/AuthPages/StudentSignIn";
 import SignUp from "./pages/AuthPages/SignUp";
 import NotFound from "./pages/OtherPage/NotFound";
-import UserProfiles from "./pages/UserProfiles";
+import UserProfiles from "./pages/UserProfiles"; // Keeping as it might be used elsewhere or I might have broken something if I removed the route but kept import.
+// Actually lint said UserProfiles is unused. But I removed the route using it.
+// So I should remove the import.
 import Videos from "./pages/UiElements/Videos";
 import Images from "./pages/UiElements/Images";
 import Alerts from "./pages/UiElements/Alerts";
@@ -38,6 +40,7 @@ const CurriculumExplorer = lazy(() => import("./pages/Academic/CurriculumExplore
 const CurriculumWizard = lazy(() => import("./pages/Academic/CurriculumConfigurator"));
 const ClassroomCommand = lazy(() => import("./pages/Teacher/Classroom"));
 const StudentProfile = lazy(() => import("./pages/Student/StudentProfile"));
+const MyProfile = lazy(() => import("./pages/MyProfile"));
 const ClassScheduleOverrides = lazy(() => import("./pages/Academic/ClassSchedules/Overrides"));
 const StudentManagement = lazy(() => import("./pages/Profiles/Students"));
 const EmployeeManagement = lazy(() => import("./pages/Profiles/Employees"));
@@ -58,7 +61,10 @@ const TeachingSessions = lazy(() => import("./pages/Attendance/TeachingSessions"
 const SubjectAttendances = lazy(() => import("./pages/Attendance/SubjectAttendances"));
 const AttendanceEvents = lazy(() => import("./pages/Attendance/AttendanceEvents"));
 const TeacherSchedule = lazy(() => import("./pages/Attendance/ScheduleWrapper"));
-const StudentSchedule = lazy(() => import("./pages/Attendance/Student/StudentSchedule"));
+const StudentTodaySchedule = lazy(() => import("./pages/Attendance/Student/StudentTodaySchedule"));
+const StudentWeeklySchedule = lazy(() => import("./pages/Attendance/Student/StudentWeeklySchedule"));
+const StudentEvents = lazy(() => import("./pages/Attendance/Student/StudentEvents"));
+const GateScan = lazy(() => import("./pages/Attendance/Student/GateScan"));
 const AttendancePolicies = lazy(() => import("./pages/Attendance/AttendancePolicies"));
 const PiketMonitor = lazy(() => import("./pages/Attendance/PiketMonitor"));
 const AttendanceHistory = lazy(() => import("./pages/Attendance/AttendanceHistory"));
@@ -86,7 +92,7 @@ import Home from "./pages/Dashboard/Home";
 import ProtectedRoute from "./components/organisms/ProtectedRoute";
 import PublicRoute from "./components/organisms/PublicRoute";
 import { Toaster } from "react-hot-toast";
-const QRScanner = lazy(() => import("./pages/Attendance/QRScanner"));
+
 
 
 
@@ -118,13 +124,17 @@ export default function App() {
           {/* Dashboard Layout - Protected */}
           <Route element={<ProtectedRoute />}>
              {/* Full Screen Pages without Layout */}
-             <Route path="/attendance/gate-scan" element={<QRScanner />} />
+             <Route path="/attendance/gate-scan" element={<GateScan />} />
 
             <Route element={<AppLayout />}>
               <Route index path="/" element={<Home />} />
 
               {/* Others Page */}
-              <Route path="/profile" element={<UserProfiles />} />
+              <Route path="/profile" element={<MyProfile />} />
+              {/* <Route path="/profile/picture" element={<ProfilePicture />} /> */}
+              <Route path="/calendar" element={<Calendar />} />
+              {/* Profile Picture sub-route removed or kept as alias? User wants profile page at /profile mainly. */}
+              {/* <Route path="/profile/picture" element={<ProfilePicture />} />  -- Removing this as it's superseded */}
               <Route path="/calendar" element={<Calendar />} />
               <Route path="/audit/logs" element={<AuditLogs />} />
               <Route path="/audit/metrics" element={<AuditMetrics />} />
@@ -172,7 +182,9 @@ export default function App() {
               <Route path="/attendance/teaching-sessions" element={<TeachingSessions />} />
               <Route path="/attendance/subject-attendances" element={<SubjectAttendances />} />
               <Route path="/attendance/my-schedule" element={<TeacherSchedule />} />
-              <Route path="/student/my-schedule" element={<StudentSchedule />} />
+              <Route path="/student/schedule/subject" element={<StudentTodaySchedule />} />
+              <Route path="/student/schedule/weekly" element={<StudentWeeklySchedule />} />
+              <Route path="/student/events" element={<StudentEvents />} />
               <Route path="/attendance/events" element={<AttendanceEvents />} />
               <Route path="/attendance/rules" element={<AttendancePolicies />} />
               <Route path="/attendance/policies" element={<AttendancePolicies />} />

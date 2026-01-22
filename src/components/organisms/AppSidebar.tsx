@@ -17,7 +17,8 @@ import {
   TaskIcon,
   UserIcon,
   PieChartIcon,
-  MailIcon, 
+  MailIcon,
+  VideoIcon,
 } from "../atoms/Icons";
 import { useSidebar } from "../../context/SidebarContext";
 import SidebarWidget from "../molecules/SidebarWidget";
@@ -68,18 +69,12 @@ const useNavItems = () => {
   const navItems: NavItem[] = useMemo(() => {
     const items: NavItem[] = [];
 
-    // Dashboard - Hidden for students
-    if (isAdmin || isTeacher || isStaff) {
-      items.push({
-        icon: <GridIcon />,
-        name: "Dashboard",
-        subItems: [
-          { name: "Overview", path: "/" },
-          // Calendar: Show for everyone except maybe parent?
-          ...(isStudent || isTeacher || isAdmin || isStaff ? [{ name: "Calendar", path: "/calendar" }] : []),
-        ],
-      });
-    }
+    // Dashboard - Visible for everyone
+    items.push({
+      icon: <GridIcon />,
+      name: "Dashboard",
+      path: "/",
+    });
 
     // Attendance - Different menus for different roles
     // Logic: Admin is true for all.
@@ -102,10 +97,22 @@ const useNavItems = () => {
     
     if (isStudent) { // Admin will be true here
        attendanceSubItems.push(
-         { name: "My Schedule", path: "/student/my-schedule" },
-         { name: "Attendance History", path: "/attendance/history" },
-         { name: "QR Scan", path: "/attendance/gate-scan", new: true }
+         { name: "Subject Schedule", path: "/student/schedule/subject" },
+         { name: "Weekly Schedule", path: "/student/schedule/weekly" },
+         { name: "Attendance History", path: "/attendance/history" }
        );
+
+       items.push({
+         icon: <VideoIcon />,
+         name: "Gate Scan",
+         path: "/attendance/gate-scan",
+       });
+
+       items.push({
+         icon: <ShootingStarIcon />,
+         name: "My Events",
+         path: "/student/events",
+       });
     }
     
     if (isTeacher) { // Admin will be true here
@@ -120,10 +127,15 @@ const useNavItems = () => {
     if (isStaff || isAdmin) {
        attendanceSubItems.push(
          { name: "Attendance Records", path: "/attendance/records" },
-         { name: "Gate Monitor", path: "/attendance/gate-scan" },
          { name: "Piket Monitor", path: "/attendance/piket" },
          { name: "Attendance History", path: "/attendance/history" }
        );
+
+       items.push({
+         icon: <VideoIcon />,
+         name: "Gate Monitor",
+         path: "/attendance/gate-scan",
+       });
        
        // Policies removed
        // if (isAdmin) {
@@ -202,6 +214,13 @@ const useNavItems = () => {
         path: "/events",
       });
     }
+
+    // My Profile
+    items.push({
+      icon: <UserIcon />,
+      name: "My Profile",
+      path: "/profile",
+    });
 
     // Notifications - Everyone
     items.push({
