@@ -7,7 +7,7 @@ import { User } from "../../api/types/user";
 import { Event } from "../../api/types/events";
 import PageMeta from "../../components/atoms/PageMeta";
 import PageBreadcrumb from "../../components/molecules/PageBreadcrumb";
-import { ChevronLeftIcon, CalenderIcon, TimeIcon, AngleRightIcon, UserCircleIcon } from "../../components/atoms/Icons";
+import { CalenderIcon, TimeIcon, AngleRightIcon, UserCircleIcon } from "../../components/atoms/Icons";
 
 const PrinterIcon: React.FC<{ className?: string }> = ({ className }) => (
   <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>

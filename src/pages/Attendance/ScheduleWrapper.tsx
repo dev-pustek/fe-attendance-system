@@ -1,6 +1,6 @@
 import { useAuthStore } from '../../store/authStore';
 import TeacherSchedule from './Teacher/TeacherSchedule';
-import StudentSchedule from './Student/StudentSchedule';
+import StudentSchedule from './Student/StudentTodaySchedule';
 
 const ScheduleWrapper = () => {
     const { user } = useAuthStore();

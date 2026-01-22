@@ -3,7 +3,6 @@ import SignIn from "./pages/AuthPages/SignIn";
 import StudentSignIn from "./pages/AuthPages/StudentSignIn";
 import SignUp from "./pages/AuthPages/SignUp";
 import NotFound from "./pages/OtherPage/NotFound";
-import UserProfiles from "./pages/UserProfiles"; // Keeping as it might be used elsewhere or I might have broken something if I removed the route but kept import.
 // Actually lint said UserProfiles is unused. But I removed the route using it.
 // So I should remove the import.
 import Videos from "./pages/UiElements/Videos";
