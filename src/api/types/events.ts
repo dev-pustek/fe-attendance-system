@@ -68,6 +68,7 @@ export interface EventInvitation {
   user?: User;
   event?: Event;
   attendanceStatus?: string | null;
+  availabilityStatus?: "open" | "closed" | "upcoming" | "ended";
 }
 
 export interface EventInvitationParams extends PaginationParams {

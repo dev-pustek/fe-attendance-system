@@ -558,7 +558,7 @@ const ScheduleMatrix: React.FC<ScheduleMatrixProps> = ({
                      */}
                     {visibleDays.map((day) => {
                         const rule = effectiveRules ? (effectiveRules[day.value] || effectiveRules[day.label] || effectiveRules[day.value.toUpperCase()]) : undefined;
-                        const isDayActive = effectiveRules ? (rule?.isActive ?? false) : true;
+                        const isDayActive = rule ? rule.isActive : true;
                         
                         return (
                         <DayColumn 

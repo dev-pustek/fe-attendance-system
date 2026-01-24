@@ -19,8 +19,10 @@ import Modal from "../../../components/molecules/Modal";
 import Button from "../../../components/atoms/Button";
 import Input from "../../../components/atoms/InputField";
 import Label from "../../../components/atoms/Label";
+import { useAuthStore } from "../../../store/authStore";
 
 export default function NotificationInbox() {
+  const { user } = useAuthStore();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [meta, setMeta] = useState<NotificationMeta | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -40,6 +42,9 @@ export default function NotificationInbox() {
     userId: "", // Optional target user
     channel: "system",
   });
+  
+  // Check if user is a student to restrict "Send Notification"
+  const isStudent = user?.userTypes?.includes('student');
 
   const fetchNotifications = async () => {
       try {
@@ -201,20 +206,15 @@ export default function NotificationInbox() {
               <p className="text-sm text-gray-500 dark:text-gray-400">Manage and view your system alerts.</p>
             </div>
             <div className="flex gap-2">
-                <button
-                    onClick={handleMarkAllRead}
-                    className="flex items-center justify-center gap-2 rounded-xl bg-white border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition-all hover:bg-gray-50 hover:text-brand-600 dark:bg-white/5 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/10 shadow-sm"
-                >
-                    <CheckCircleIcon className="size-4" />
-                    Mark all read
-                </button>
-                <button
-                    onClick={handleCreateOpen}
-                    className="flex items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-brand-600 shadow-lg shadow-brand-500/20"
-                >
-                    <PlusIcon className="fill-white text-xl text-white" />
-                    Send Notification
-                </button>
+                {!isStudent && (
+                    <button
+                        onClick={handleCreateOpen}
+                        className="flex items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-brand-600 shadow-lg shadow-brand-500/20"
+                    >
+                        <PlusIcon className="fill-white text-xl text-white" />
+                        Send Notification
+                    </button>
+                )}
             </div>
         </div>
 
@@ -231,6 +231,14 @@ export default function NotificationInbox() {
                  ]}
                />
              </div>
+             
+             <button
+                onClick={handleMarkAllRead}
+                className="flex items-center justify-center gap-2 rounded-xl bg-white border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition-all hover:bg-gray-50 hover:text-brand-600 dark:bg-white/5 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/10 shadow-sm"
+            >
+                <CheckCircleIcon className="size-4" />
+                Mark all read
+            </button>
          </div>
 
          {/* Table */}

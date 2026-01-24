@@ -125,9 +125,23 @@ export default function MyProfile() {
     if (!studentProfile) return;
 
     try {
+      // Create a payload copy
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const payload: any = { ...formData };
+      
+      // Fix: entryYear validation error when sending FormData (which converts everything to string)
+      // If entryYear exists and matches the original profile (or we just want to avoid sending it if not needed), remove it
+      // The backend validation likely fails because it receives "2024" key in FormData and expects integer
+      // We only send it if we really need to update it.
+      // Since it's usually initialized from profile, let's remove it if it hasn't changed or simply to be safe during photo update if that's the main goal
+      // For now, removing it if it is strictly equal to the loaded profile's entry year
+      if (studentProfile.entryYear && payload.entryYear === studentProfile.entryYear) {
+          delete payload.entryYear;
+      }
+
       await updateMutation.mutateAsync({
         userId: studentProfile.userId,
-        data: formData as UpdateStudentDto,
+        data: payload as UpdateStudentDto,
       });
 
       // If name or photo changed, update auth store to reflect immediately in sidebar/header

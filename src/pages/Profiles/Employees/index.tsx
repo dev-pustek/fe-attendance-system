@@ -499,7 +499,7 @@ const EmployeeManagement: React.FC = () => {
                         </div>
 
                         {/* RIGHT COLUMN: Inputs Grid */}
-                        <div className="flex-1 space-y-6 overflow-y-auto max-h-[70vh] pr-2 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-white/10">
+                        <div className="flex-1 space-y-6">
                             
                             {/* User Identity */}
                             <div className="space-y-4">

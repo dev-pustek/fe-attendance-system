@@ -14,6 +14,8 @@ import { showSuccess, showError } from "../../../utils/toast";
 import { Link } from "react-router";
 import FullPageScanner from "../../../components/organisms/FullPageScanner";
 import toast from "react-hot-toast";
+import Modal from "../../../components/molecules/Modal";
+import Label from "../../../components/atoms/Label";
 
 export default function StudentEvents() {
   const { user } = useAuthStore();
@@ -21,6 +23,18 @@ export default function StudentEvents() {
   const [metrics, setMetrics] = useState<EventMetrics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [respondingId, setRespondingId] = useState<number | null>(null);
+
+  // Response Modal State
+  const [responseModal, setResponseModal] = useState<{
+    isOpen: boolean;
+    invitationId: number | null;
+    action: "ACCEPTED" | "DECLINED" | null;
+  }>({
+    isOpen: false,
+    invitationId: null,
+    action: null
+  });
+  const [responseNote, setResponseNote] = useState("");
 
   // Scanning State
   const [isScanModalOpen, setIsScanModalOpen] = useState(false);
@@ -58,25 +72,41 @@ export default function StudentEvents() {
     fetchInvitations();
   }, [fetchInvitations]);
 
-  const handleResponse = useCallback(async (invitationId: number, status: "ACCEPTED" | "DECLINED") => {
+  const handleResponseClick = (invitationId: number, status: "ACCEPTED" | "DECLINED") => {
+    setResponseModal({
+      isOpen: true,
+      invitationId,
+      action: status
+    });
+    setResponseNote("");
+  };
+
+  const confirmResponse = async () => {
+    const { invitationId, action } = responseModal;
+    if (!invitationId || !action) return;
+
     setRespondingId(invitationId);
     try {
-      await eventService.respondToInvitation(invitationId, { status: status.toLowerCase() });
+      await eventService.respondToInvitation(invitationId, { 
+        status: action.toLowerCase(),
+        responseNotes: responseNote 
+      });
       
       setInvitations(prev => prev.map(inv => 
         inv.id === invitationId 
-          ? { ...inv, status: status.toLowerCase() as EventInvitation['status'] } 
+          ? { ...inv, status: action.toLowerCase() as EventInvitation['status'] } 
           : inv
       ));
       
-      showSuccess(`Successfully ${status.toLowerCase()}ed the invitation.`);
+      showSuccess(`Successfully ${action.toLowerCase()}ed the invitation.`);
       fetchInvitations(); // Refresh metrics
+      setResponseModal(prev => ({ ...prev, isOpen: false }));
     } catch (error) {
       showError(error, "Failed to respond to invitation.");
     } finally {
       setRespondingId(null);
     }
-  }, [fetchInvitations]);
+  };
 
   const handleScanClick = (event: Event) => {
     setSelectedEvent(event);
@@ -203,8 +233,30 @@ export default function StudentEvents() {
                     const isResponding = respondingId === invitation.id;
                     const isAccepted = invitation.status === "accepted";
                     
+                    const isCheckInOpen = invitation.availabilityStatus === 'open' && isAccepted;
+                    const isUpcoming = invitation.availabilityStatus === 'upcoming';
+                    const isClosed = invitation.availabilityStatus === 'closed' || invitation.availabilityStatus === 'ended';
+                    
+                    let cardStyles = "bg-white dark:bg-gray-800 border-gray-200 dark:border-white/5 hover:shadow-lg"; // Default/Upcoming
+                    
+                    if (isCheckInOpen) {
+                        cardStyles = "bg-brand-50/10 dark:bg-brand-500/5 border-brand-500 shadow-xl shadow-brand-500/10 ring-1 ring-brand-500/20";
+                    } else if (isClosed) {
+                        cardStyles = "bg-gray-50 dark:bg-gray-900/50 border-gray-100 dark:border-white/5 opacity-75 grayscale-[0.5]";
+                    } else if (isUpcoming) {
+                         // Optional: Distinct style for upcoming if needed, or keep default active-looking but waiting
+                         cardStyles = "bg-blue-50/30 dark:bg-blue-900/10 border-blue-100 dark:border-blue-500/20";
+                    }
+
                     return (
-                    <div key={invitation.id} className="group bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/5 rounded-2xl p-4 sm:p-6 hover:shadow-lg transition-all duration-300 flex flex-col sm:flex-row gap-6">
+                    <div 
+                        key={invitation.id} 
+                        className={`group relative overflow-hidden rounded-2xl border transition-all duration-300 flex flex-col sm:flex-row gap-6 p-4 sm:p-6 ${cardStyles}`}
+                    >
+                        {/* Active Indicator Strip */}
+                        {isCheckInOpen && (
+                            <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-brand-400 to-brand-600" />
+                        )}
                         {/* Date Component */}
                         <div className="flex-shrink-0 flex flex-col items-center justify-center bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 rounded-2xl w-full sm:w-24 h-24 sm:h-auto border border-brand-100 dark:border-brand-500/20">
                             <span className="text-sm font-bold uppercase tracking-wider">{month}</span>
@@ -258,7 +310,7 @@ export default function StudentEvents() {
                                                 variant="outline" 
                                                 size="sm" 
                                                 className="text-red-600 border-red-200 hover:bg-red-50 dark:border-red-500/20 dark:hover:bg-red-500/10"
-                                                onClick={() => handleResponse(invitation.id, "DECLINED")}
+                                                onClick={() => handleResponseClick(invitation.id, "DECLINED")}
                                                 isLoading={isResponding}
                                                 disabled={isResponding}
                                             >
@@ -267,7 +319,7 @@ export default function StudentEvents() {
                                             <Button 
                                                 variant="primary" 
                                                 size="sm"
-                                                onClick={() => handleResponse(invitation.id, "ACCEPTED")}
+                                                onClick={() => handleResponseClick(invitation.id, "ACCEPTED")}
                                                 isLoading={isResponding}
                                                 disabled={isResponding}
                                             >
@@ -282,15 +334,26 @@ export default function StudentEvents() {
                                             <span>Invitation Card</span>
                                           </Button>
                                         </Link>
-                                        <Button 
-                                          variant="primary" 
-                                          size="sm" 
-                                          className="flex items-center gap-2"
-                                          onClick={() => handleScanClick(event)}
-                                        >
-                                          <QrCodeIcon className="size-4" />
-                                          <span>Check In</span>
-                                        </Button>
+                                        {/* Check In Button - Controlled by availabilityStatus */}
+                                        {invitation.availabilityStatus === 'open' ? (
+                                            <Button 
+                                              variant="primary" 
+                                              size="sm" 
+                                              className="flex items-center gap-2 animate-pulse-slow shadow-lg shadow-brand-500/20"
+                                              onClick={() => handleScanClick(event)}
+                                            >
+                                              <QrCodeIcon className="size-4" />
+                                              <span>Check In Now</span>
+                                            </Button>
+                                        ) : (
+                                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-400 dark:text-gray-500 cursor-not-allowed select-none">
+                                                <TimeIcon className="size-4" />
+                                                <span className="text-xs font-bold uppercase tracking-wide">
+                                                    {invitation.availabilityStatus === 'upcoming' ? 'UPCOMING' : 
+                                                     invitation.availabilityStatus === 'ended' ? 'ENDED' : 'UNAVAILABLE'}
+                                                </span>
+                                            </div>
+                                        )}
                                       </>
                                     ) : null}
                                 </div>
@@ -345,6 +408,43 @@ export default function StudentEvents() {
           }
         />
       )}
+
+      {/* Response Confirmation Modal */}
+      <Modal
+        isOpen={responseModal.isOpen}
+        onClose={() => setResponseModal(prev => ({ ...prev, isOpen: false }))}
+        title={`Confirm ${responseModal.action === "ACCEPTED" ? "Attendance" : "Declaration"}`}
+        description={`Are you sure you want to ${responseModal.action?.toLowerCase()} this invitation? You can add a note below.`}
+        className="max-w-md"
+        footer={
+           <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setResponseModal(prev => ({ ...prev, isOpen: false }))}>
+                 Cancel
+              </Button>
+              <Button 
+                variant={responseModal.action === "ACCEPTED" ? "primary" : "outline"}
+                className={responseModal.action === "DECLINED" ? "text-red-500 border-red-200 hover:bg-red-50" : ""} 
+                onClick={confirmResponse}
+                isLoading={respondingId === responseModal.invitationId}
+                disabled={respondingId === responseModal.invitationId}
+              >
+                  Confirm {responseModal.action === "ACCEPTED" ? "Accept" : "Decline"}
+              </Button>
+           </div>
+        }
+      >
+        <div className="space-y-4">
+             <div className="space-y-1">
+                 <Label>Note (Optional)</Label>
+                 <textarea 
+                    className="w-full px-4 py-2.5 text-sm rounded-lg border border-gray-200 bg-white placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-900 dark:text-white dark:focus:border-brand-800 min-h-[100px] resize-none transition-all"
+                    value={responseNote}
+                    onChange={e => setResponseNote(e.target.value)}
+                    placeholder={responseModal.action === "ACCEPTED" ? "e.g. I will be late, Vegetarian meal needed..." : "e.g. I have a conflicting schedule..."}
+                 />
+             </div>
+        </div>
+      </Modal>
     </>
   );
 }

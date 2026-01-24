@@ -57,11 +57,11 @@ export default function IdCardPrint() {
   
   // Dynamic Content State
   const [config, setConfig] = useState({
-      organizationName: "SMK TI BASIL",
+      organizationName: "SMK AL AMANAH",
       cardTitle: "E - STUDENT - CARD",
       address: "Jl. Pendidikan No. 1, Tangerang Selatan",
       contact: "call 021.7412566",
-      website: "www.smktis.sch.id",
+      website: "www.smkalamanahs.sch.id",
       helpdesk: "PT MENCARI CINTA SEJATI"
   });
   
@@ -819,7 +819,7 @@ export default function IdCardPrint() {
                                                 value={config.organizationName}
                                                 onChange={e => setConfig({ ...config, organizationName: e.target.value })}
                                                 className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
-                                                placeholder="e.g. SMK TI BASIL"
+                                                placeholder="e.g. SMK AL AMANAH"
                                             />
                                         </div>
                                         <div>
@@ -857,7 +857,7 @@ export default function IdCardPrint() {
                                                 value={config.helpdesk}
                                                 onChange={e => setConfig({ ...config, helpdesk: e.target.value })}
                                                 className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-gray-600"
-                                                placeholder="e.g. sasmita jaya group"
+                                                placeholder="e.g. AL AMANAH AL BANTANI"
                                             />
                                         </div>
                                         <div>

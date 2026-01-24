@@ -76,9 +76,14 @@ const StudentTodaySchedule = () => {
 
         } catch (error: unknown) {
             console.error(error);
-            setScanStatus('error');
+            // Revert to scanning state so user can try again immediately
+            setScanStatus('scanning');
+            
             const errorMessage = error instanceof Error ? error.message : "Failed to verify check-in.";
-            setScanMessage(errorMessage);
+            
+            // Show toast instead of full page error overlay
+            toast.error(errorMessage);
+            
             isProcessingScanRef.current = false; 
         }
     }, [scanStatus, selectedSession, user?.public_id, refetch]);

@@ -113,6 +113,12 @@ const useNavItems = () => {
          name: "My Events",
          path: "/student/events",
        });
+
+       items.push({
+         icon: <UserIcon />, // Using UserIcon as IdentificationIcon is not imported here and UserIcon fits "My ID"
+         name: "My ID Card",
+         path: "/student/id-card",
+       });
     }
     
     if (isTeacher) { // Admin will be true here

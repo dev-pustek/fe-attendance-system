@@ -27,8 +27,10 @@ const StudentWeeklySchedule = () => {
     
     // User's active class ID should be in their profile. 
     // Types might be tricky, checking flexible access
+    // User's active class ID should be in their profile. 
+    // Types might be tricky, checking flexible access
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const userClassId = user?.activeClass?.id || (user?.profile as any)?.activeClass?.id || (user as any)?.activeClass?.id;
+    const userClassId = user?.activeClass?.id || (user?.profile as any)?.activeClass?.id || (user as any)?.activeClass?.id || (user?.profile as any)?.class?.id || (user as any)?.class_id;
     
     // 1. Fetch Templates
     const { data: weeklyScheduleResponse, isLoading: isLoadingWeekly } = useTeachingScheduleTemplates({
@@ -43,7 +45,32 @@ const StudentWeeklySchedule = () => {
         queryFn: () => userClassId ? ruleService.getEffectiveScheduleRules({ classId: userClassId }) : null,
         enabled: !!userClassId,
     });
-    const effectiveRules = rulesResponse?.data as Record<string, ScheduleMatrixRule> | undefined;
+    
+    // Transform array to record if needed, based on user feedback that it comes as array
+    const effectiveRules = useMemo(() => {
+        if (!rulesResponse?.data) return undefined;
+        
+        // If it's already an object (not array) and has keys, return it
+        if (!Array.isArray(rulesResponse.data)) {
+            return rulesResponse.data as Record<string, ScheduleMatrixRule>;
+        }
+
+        // Use 'any' to bypass TS check since generic might assume Record but runtime is Array
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const rulesArray = rulesResponse.data as any[];
+        
+        const rulesMap: Record<string, ScheduleMatrixRule> = {};
+        rulesArray.forEach(rule => {
+            if (rule.dayOfWeek) {
+                rulesMap[rule.dayOfWeek] = rule;
+                // Also map lowercase or title case if needed, but matrix checks uppercase usually.
+                // Matrix checks: day.value (UPPERCASE), day.label (Title Case)
+                // Let's ensure map covers uppercase as primary key
+                rulesMap[rule.dayOfWeek.toUpperCase()] = rule;
+            }
+        });
+        return rulesMap;
+    }, [rulesResponse]);
 
     // 3. Fetch Policy (Minutes per Unit)
     const { data: policyData } = useQuery({
@@ -163,7 +190,7 @@ const StudentWeeklySchedule = () => {
                                       <div className="border border-gray-100 dark:border-white/5 rounded-xl overflow-hidden w-full max-w-full flex flex-col min-w-0 flex-1">
                                           
                                           {/* Summary Header */}
-                                          <div className="px-6 py-4 bg-gray-50/50 dark:bg-white/[0.02] border-b border-gray-100 dark:border-white/5 flex items-center justify-between">
+                                          <div className="px-6 py-4 bg-gray-50/50 dark:bg-white/[0.02] border-b border-gray-100 dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-0">
                                                <div className="flex items-center gap-4">
                                                    <div className="size-10 rounded-xl bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400">
                                                        {/* Using TableCellsIcon as generic icon for now */}
@@ -175,7 +202,7 @@ const StudentWeeklySchedule = () => {
                                                    </div>
                                                </div>
                                                
-                                               <div className="flex items-center gap-4 min-w-[200px]">
+                                               <div className="flex items-center gap-4 w-full sm:w-auto min-w-0 sm:min-w-[200px]">
                                                    <div className="flex-1 flex flex-col gap-1.5">
                                                         <div className="flex justify-between text-xs font-medium">
                                                             <span className="text-gray-500">Total Scheduled</span>

@@ -264,6 +264,11 @@ const UserList: React.FC = () => {
                                 {ta.userType?.name}
                               </span>
                             )))}
+                            {user.roles?.map((role, i) => (
+                              <span key={`role-${i}`} className="px-2 py-0.5 rounded-md bg-brand-50 text-[10px] font-bold text-brand-600 border border-brand-100 uppercase tracking-tighter dark:bg-brand-500/10 dark:text-brand-400 dark:border-brand-500/20">
+                                {role.displayName || role.name}
+                              </span>
+                            ))}
                           </div>
                         </div>
                       </div>

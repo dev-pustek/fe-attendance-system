@@ -180,7 +180,7 @@ const UserTypes: React.FC = () => {
     setBulkSelectedUsers(bulkSelectedUsers.filter(u => u.id !== userId));
   };
 
-  const searchUsersForSelect = async (term: string) => {
+  const searchUsersForSelect = React.useCallback(async (term: string) => {
     if (!term) return;
     try {
         const result = await userService.getUsers({ search: term, limit: 20 });
@@ -199,7 +199,7 @@ const UserTypes: React.FC = () => {
         console.error(e);
         setUserOptions([]);
     }
-  };
+  }, [selectedType]);
  
 
   return (
