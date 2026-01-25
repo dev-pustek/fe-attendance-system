@@ -17,6 +17,7 @@ export const routePermissions: RoutePermission[] = [
 
   // Student-specific routes
   { path: '/student/my-schedule', allowedRoles: ['student'] },
+  { path: '/student/leaves', allowedRoles: ['student'] },
   { path: '/students/:userId', allowedRoles: ['admin', 'teacher', 'student', 'staff'] },
 
   // Teacher-specific routes

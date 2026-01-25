@@ -22,7 +22,7 @@ import {
 } from "../atoms/Icons";
 import { useSidebar } from "../../context/SidebarContext";
 import SidebarWidget from "../molecules/SidebarWidget";
-import { useLeaveSubmissions } from "../../api/hooks/useLeaves";
+import { useLeaveSubmissions, useMyLeaveSubmissions } from "../../api/hooks/useLeaves";
 
 type NavItem = {
   name: string;
@@ -47,10 +47,7 @@ const useNavItems = () => {
         ...(user.typeAssignments?.map(t => t.userType?.name.toLowerCase() || "") || [])
     ].filter(Boolean);
 
-    // ADMIN BYPASS: Admin has all roles effectively for visibility
-    if (roleNames.some(r => r === 'admin' || r.includes('admin') || r === 'super admin')) {
-      return true;
-    }
+    // ADMIN BYPASS REMOVED: Role checks should be literal to avoid side-effects (e.g., admin being seen as parent)
     
     return rolesToCheck.some(role => 
       roleNames.some(userRole => 
@@ -95,7 +92,8 @@ const useNavItems = () => {
     // ATTENDANCE MENU
     const attendanceSubItems: { name: string; path: string; new?: boolean }[] = [];
     
-    if (isStudent) { // Admin will be true here
+    // 1. Personal Student Items - ONLY for Students (not Admins/Staff)
+    if (isStudent && !isAdmin && !isStaff) { 
        attendanceSubItems.push(
          { name: "Subject Schedule", path: "/student/schedule/subject" },
          { name: "Weekly Schedule", path: "/student/schedule/weekly" },
@@ -115,38 +113,47 @@ const useNavItems = () => {
        });
 
        items.push({
-         icon: <UserIcon />, // Using UserIcon as IdentificationIcon is not imported here and UserIcon fits "My ID"
+         icon: <UserIcon />,
          name: "My ID Card",
          path: "/student/id-card",
        });
-    }
-    
-    if (isTeacher) { // Admin will be true here
-      attendanceSubItems.push(
-        { name: "My Schedule", path: "/attendance/my-schedule" },
-        // "My Classes" removed
-        { name: "Teaching Sessions", path: "/attendance/teaching-sessions" },
-        { name: "Subject Attendances", path: "/attendance/subject-attendances" }
-      );
-    }
-    
-    if (isStaff || isAdmin) {
-       attendanceSubItems.push(
-         { name: "Attendance Records", path: "/attendance/records" },
-         { name: "Piket Monitor", path: "/attendance/piket" },
-         { name: "Attendance History", path: "/attendance/history" }
-       );
 
        items.push({
-         icon: <VideoIcon />,
-         name: "Gate Monitor",
-         path: "/attendance/gate-scan",
+         icon: <DocsIcon />,
+         name: "Leave Requests",
+         path: "/student/leaves",
        });
+    }
+    
+    // 2. Personal Teacher Items - ONLY for Teachers (not Admins/Staff)
+    if (isTeacher && !isAdmin && !isStaff) {
+      attendanceSubItems.push(
+        { name: "My Schedule", path: "/attendance/my-schedule" }
+      );
+    }
+
+    // 3. Operational & Management Attendance - Admin, Staff, and Teachers
+    if (isAdmin || isStaff || isTeacher) {
+       // Shared operational management
+       attendanceSubItems.push(
+         { name: "Teaching Sessions", path: "/attendance/teaching-sessions" },
+         { name: "Subject Attendances", path: "/attendance/subject-attendances" }
+       );
        
-       // Policies removed
-       // if (isAdmin) {
-       //    attendanceSubItems.push({ name: "Policies", path: "/attendance/policies" });
-       // }
+       // Admin & Staff specific management
+       if (isAdmin || isStaff) {
+         attendanceSubItems.push(
+           { name: "Attendance Records", path: "/attendance/records" },
+           { name: "Piket Monitor", path: "/attendance/piket" },
+           { name: "Attendance History", path: "/attendance/history" }
+         );
+
+         items.push({
+           icon: <VideoIcon />,
+           name: "Gate Monitor",
+           path: "/attendance/gate-scan",
+         });
+       }
     }
 
     // Remove duplicates based on path (since Admin might trigger allow on multiple blocks)
@@ -203,12 +210,20 @@ const useNavItems = () => {
        });
     }
 
-    // Leave Requests - Everyone except parents and students
+    // Leave Requests & Types - Everyone except parents
     if (!isParent && (isAdmin || isTeacher || isStaff)) {
+      const leaveSubItems: { name: string; path: string }[] = [
+        { name: "Requests", path: "/leaves/requests" }
+      ];
+
+      if (isAdmin || isStaff) {
+        leaveSubItems.push({ name: "Leave Types", path: "/leaves/types" });
+      }
+
       items.push({
         icon: <DocsIcon />,
-        name: "Leave Requests",
-        path: "/leaves/requests",
+        name: "Leave Management",
+        subItems: leaveSubItems
       });
     }
 
@@ -403,8 +418,22 @@ const AppSidebar: React.FC = () => {
     index: number;
   } | null>(null);
   
-  const { data: pendingRequests } = useLeaveSubmissions({ status: "pending", limit: 1 });
-  const pendingCount = pendingRequests?.meta?.total || 0;
+  const { user } = useAuthStore();
+  const isStudent = user?.userTypes?.some(t => t.toLowerCase().includes('student')) || 
+                    user?.roles?.some(r => r.name.toLowerCase().includes('student'));
+
+  const { data: pendingRequests } = useLeaveSubmissions({ 
+    status: "pending", 
+    limit: 1 
+  }, { enabled: !isStudent });
+  
+  const { data: myPendingRequests } = useMyLeaveSubmissions({ 
+    status: "pending", 
+    limit: 1 
+  }, { enabled: isStudent });
+
+  const pendingCount = (pendingRequests as any)?.meta?.total || 0;
+  const myPendingCount = (myPendingRequests as any)?.meta?.total || 0;
 
   const [subMenuHeight, setSubMenuHeight] = useState<Record<string, number>>(
     {}
@@ -579,6 +608,11 @@ const AppSidebar: React.FC = () => {
                         {subItem.path === "/leaves/requests" && pendingCount > 0 && (
                           <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-gray-900">
                              {pendingCount > 99 ? "99+" : pendingCount}
+                          </span>
+                        )}
+                        {subItem.path === "/student/leaves" && myPendingCount > 0 && (
+                          <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-brand-500 px-1 text-[10px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-gray-900">
+                             {myPendingCount > 99 ? "99+" : myPendingCount}
                           </span>
                         )}
                       </span>

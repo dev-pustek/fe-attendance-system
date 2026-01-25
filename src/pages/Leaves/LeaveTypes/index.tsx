@@ -8,6 +8,7 @@ import { showSuccess, showError } from "../../../utils/toast";
 import { useConfirm } from "../../../hooks/useConfirm";
 import ConfirmDialog from "../../../components/molecules/ConfirmDialog";
 import Modal from "../../../components/molecules/Modal";
+import Button from "../../../components/atoms/Button";
 import Switch from "../../../components/atoms/Switch";
 import NumberInput from "../../../components/atoms/NumberInput";
 import { PlusIcon, GridIcon, DocsIcon, PencilIcon, TrashBinIcon } from "../../../components/atoms/Icons";
@@ -115,13 +116,13 @@ const LeaveTypes: React.FC = () => {
                         <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Leave Types</h1>
                         <p className="text-gray-500 dark:text-gray-400 mt-1">Configure the types of leave available to your employees.</p>
                     </div>
-                    <button
+                    <Button
                         onClick={() => handleOpenFormModal()}
-                        className="flex items-center justify-center gap-2 rounded-2xl bg-brand-500 px-6 py-3 text-sm font-bold text-white transition-all hover:bg-brand-600 hover:scale-[1.02] active:scale-[0.98] shadow-xl shadow-brand-500/25"
+                        className="flex items-center gap-2 rounded-2xl shadow-xl shadow-brand-500/20"
                     >
                         <PlusIcon className="size-5" />
                         Create New Type
-                    </button>
+                    </Button>
                 </div>
 
                 {/* Search Bar */}
@@ -210,21 +211,25 @@ const LeaveTypes: React.FC = () => {
                                         </span>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-2 pt-2">
-                                        <button
+                                    <div className="grid grid-cols-2 gap-3 pt-2">
+                                        <Button
+                                            variant="outline"
                                             onClick={() => handleOpenFormModal(type)}
-                                            className="flex items-center justify-center gap-2 rounded-xl border border-gray-100 bg-gray-50 px-4 py-2.5 text-xs font-bold text-gray-600 transition-colors hover:bg-gray-900 hover:text-white dark:border-white/5 dark:bg-white/5 dark:text-white"
+                                            size="sm"
+                                            className="flex items-center justify-center gap-2 rounded-xl !py-2.5 text-xs font-bold"
                                         >
                                             <PencilIcon className="size-3.5" />
                                             Edit Details
-                                        </button>
-                                        <button
+                                        </Button>
+                                        <Button
+                                            variant="outline"
                                             onClick={() => handleDelete(type)}
-                                            className="flex items-center justify-center gap-2 rounded-xl border border-red-500/10 bg-red-50 px-4 py-2.5 text-xs font-bold text-red-600 transition-colors hover:bg-red-500 hover:text-white dark:bg-red-500/5"
+                                            size="sm"
+                                            className="flex items-center justify-center gap-2 rounded-xl !py-2.5 text-xs font-bold !text-red-500 !border-red-500/10 hover:!bg-red-50 dark:hover:!bg-red-500/10"
                                         >
                                             <TrashBinIcon className="size-3.5" />
                                             Delete
-                                        </button>
+                                        </Button>
                                     </div>
                                 </div>
                             </div>
@@ -240,22 +245,22 @@ const LeaveTypes: React.FC = () => {
                 description="Configure settings for this leave category."
                 className="max-w-md"
                 footer={
-                    <div className="flex justify-end gap-3">
-                        <button
-                            type="button"
+                    <div className="flex justify-end gap-3 w-full sm:w-auto">
+                        <Button
+                            variant="outline"
                             onClick={() => setIsFormModalOpen(false)}
-                            className="rounded-2xl px-6 py-3 text-sm font-bold text-gray-500 hover:bg-gray-50 transition-colors dark:hover:bg-white/5"
+                            className="flex-1 sm:flex-none rounded-xl"
                         >
                             Cancel
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             type="submit"
                             form="leave-type-form"
                             disabled={createMutation.isPending || updateMutation.isPending}
-                            className="rounded-2xl bg-brand-500 px-8 py-3 text-sm font-bold text-white shadow-xl shadow-brand-500/25 hover:bg-brand-600 transition-all hover:scale-[1.02] disabled:opacity-70 disabled:hover:scale-100"
+                            className="flex-1 sm:flex-none rounded-xl shadow-lg shadow-brand-500/20"
                         >
                             {createMutation.isPending || updateMutation.isPending ? 'Saving...' : 'Save Changes'}
-                        </button>
+                        </Button>
                     </div>
                 }
             >

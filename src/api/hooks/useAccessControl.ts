@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { accessControlService } from "../services/accessControlService";
-import { RoleParams } from "../types/user";
+import { Role, RoleParams } from "../types/user";
+import { PaginatedResponse } from "../types/common";
 
 export const useAccessControl = (params?: RoleParams) => {
   const queryClient = useQueryClient();
@@ -10,9 +11,9 @@ export const useAccessControl = (params?: RoleParams) => {
     queryFn: () => accessControlService.getRoles(params),
   });
 
-  const data = query.data as any;
-  const roles = data?.data && Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : []);
-  const meta = data?.meta || {};
+  const data = query.data as PaginatedResponse<Role> | Role[];
+  const roles = data && 'data' in data && Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : []);
+  const meta = data && 'meta' in data ? data.meta : {};
 
   const createRoleMutation = useMutation({
     mutationFn: (data: { name: string; displayName: string }) =>
@@ -75,4 +76,15 @@ export const useUserRoles = (userId: string | number) => {
     assignRoleMutation,
     removeRoleMutation,
   };
+};
+
+export const useBulkAssignRole = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: accessControlService.bulkAssign,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["access-control", "roles"] });
+    },
+  });
 };

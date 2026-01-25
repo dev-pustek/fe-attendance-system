@@ -44,4 +44,8 @@ export const accessControlService = {
   removeRole: async (userId: string | number, roleName: string): Promise<void> => {
     await apiClient.delete(`/access-control/users/${userId}/roles/${roleName}`);
   },
+
+  bulkAssign: async (data: { userIds: string[]; roleName: string }): Promise<void> => {
+    await apiClient.post("/access-control/roles/assign/bulk", data);
+  },
 };

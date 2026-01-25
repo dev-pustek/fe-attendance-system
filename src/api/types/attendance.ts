@@ -309,7 +309,7 @@ export interface SubjectAttendance {
   id: string | number;
   teachingSessionId: string | number;
   studentId: string;
-  status: "present" | "absent" | "late" | "excused";
+  status: "present" | "absent" | "late" | "excused" | "sick";
   method?: "manual" | "qr" | "face" | string;
   recordedAt: string;
   remarks: string | null;
@@ -328,7 +328,7 @@ export interface SubjectAttendanceParams extends PaginationParams {
 export interface CreateSubjectAttendanceDto {
   teachingSessionId: string | number;
   studentId: string;
-  status: "present" | "absent" | "late" | "excused";
+  status: "present" | "absent" | "late" | "excused" | "sick";
   remarks?: string;
   method?: "qr" | "manual" | "biometric";
 }
@@ -339,7 +339,7 @@ export interface BulkCreateSubjectAttendanceDto {
   teachingSessionId: string | number;
   records: {
     studentId: string;
-    status: "present" | "absent" | "late" | "excused";
+    status: "present" | "absent" | "late" | "excused" | "sick";
     remarks?: string;
   }[];
 }

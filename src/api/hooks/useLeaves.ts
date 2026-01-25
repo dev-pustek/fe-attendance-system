@@ -43,20 +43,22 @@ export const useDeleteLeaveType = () => {
 
 // Submissions Hooks
 
-export const useLeaveSubmissions = (params?: LeaveSubmissionParams) => {
+export const useLeaveSubmissions = (params?: LeaveSubmissionParams, options?: Record<string, unknown>) => {
   return useQuery({
     queryKey: ["leave-submissions", params],
     queryFn: () => leaveService.getSubmissions(params),
-    placeholderData: keepPreviousData,
-  });
+    placeholderData: keepPreviousData as any,
+    ...options
+  } as any);
 };
 
-export const useMyLeaveSubmissions = (params?: LeaveSubmissionParams) => {
+export const useMyLeaveSubmissions = (params?: LeaveSubmissionParams, options?: Record<string, unknown>) => {
   return useQuery({
     queryKey: ["my-leaves", params],
     queryFn: () => leaveService.getMySubmissions(params),
-    placeholderData: keepPreviousData,
-  });
+    placeholderData: keepPreviousData as any,
+    ...options
+  } as any);
 };
 
 export const useLeaveSubmission = (public_id : string) => {
@@ -114,10 +116,11 @@ export const useDeleteSubmission = () => {
   });
 };
 
-export const useLeaveApprovals = (params?: LeaveApprovalParams) => {
+export const useLeaveApprovals = (params?: LeaveApprovalParams, options?: Record<string, unknown>) => {
   return useQuery({
     queryKey: ["leave-approvals", params],
     queryFn: () => leaveService.getLeaveApprovals(params),
-    placeholderData: keepPreviousData,
-  });
+    placeholderData: keepPreviousData as any,
+    ...options
+  } as any);
 };

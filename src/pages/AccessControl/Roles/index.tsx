@@ -1,16 +1,25 @@
 import React, { useState } from "react";
-import { useAccessControl } from "../../../api/hooks/useAccessControl";
-import { Role } from "../../../api/types/user";
+import { useAccessControl, useBulkAssignRole } from "../../../api/hooks/useAccessControl";
+import { Role, User } from "../../../api/types/user";
 import PageMeta from "../../../components/atoms/PageMeta";
 import PageBreadcrumb from "../../../components/molecules/PageBreadcrumb";
 import Modal from "../../../components/molecules/Modal";
-import { PencilIcon, TrashBinIcon, PlusIcon, GridIcon, ChevronLeftIcon, AngleRightIcon, LockIcon } from "../../../components/atoms/Icons";
+import { PencilIcon, TrashBinIcon, PlusIcon, GridIcon, ChevronLeftIcon, AngleRightIcon, LockIcon, UserIcon, GroupIcon } from "../../../components/atoms/Icons";
 import CustomSelect from "../../../components/molecules/CustomSelect";
 import { useDebounce } from "../../../hooks/useDebounce";
 import { showSuccess, showError } from "../../../utils/toast";
 import ConfirmDialog from "../../../components/molecules/ConfirmDialog";
 import { useConfirm } from "../../../hooks/useConfirm";
 import { CreateRoleDto, UpdateRoleDto } from "../../../api/services/accessControlService";
+import SearchableAsyncSelect, { SelectOption } from "../../../components/molecules/SearchableAsyncSelect";
+import { SmoothHeight } from "../../../components/atoms/SmoothHeight";
+import { userService } from "../../../api/services/userService";
+interface Meta {
+  itemCount?: number;
+  total?: number;
+  pageCount?: number;
+  totalPages?: number;
+}
 
 const Roles: React.FC = () => {
   const [page, setPage] = useState(1);
@@ -24,10 +33,20 @@ const Roles: React.FC = () => {
     page,
     limit,
   });
+  
+  const bulkAssignMutation = useBulkAssignRole();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [sortConfig, setSortConfig] = useState<{ key: keyof Role; direction: "asc" | "desc" } | null>(null);
+  
+  // Assignment state
+  const [assignMode, setAssignMode] = useState<"individual" | "multiple">("individual");
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [bulkSelectedUsers, setBulkSelectedUsers] = useState<{id: string, name: string}[]>([]);
+  const [userOptions, setUserOptions] = useState<SelectOption[]>([]);
+
   const [formData, setFormData] = useState<Partial<Role>>({
     name: "",
     displayName: "",
@@ -70,8 +89,8 @@ const Roles: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const total = Number(meta?.itemCount ?? meta?.total ?? 0);
-  const totalPages = Number(meta?.pageCount ?? meta?.totalPages ?? 1);
+  const total = Number((meta as Meta)?.itemCount ?? (meta as Meta)?.total ?? 0);
+  const totalPages = Number((meta as Meta)?.pageCount ?? (meta as Meta)?.totalPages ?? 1);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,6 +134,68 @@ const Roles: React.FC = () => {
       }
     }
   };
+
+  const handleOpenAssignModal = (role: Role) => {
+    setSelectedRole(role);
+    setAssignMode("individual");
+    setSelectedUserIds([]);
+    setBulkSelectedUsers([]);
+    setUserOptions([]);
+    setIsAssignModalOpen(true);
+  };
+
+  const handleAssignSubmit = async () => {
+    if (!selectedRole) return;
+    if (selectedUserIds.length === 0) {
+      showError("Please select at least one user.");
+      return;
+    }
+
+    try {
+      await bulkAssignMutation.mutateAsync({
+        userIds: selectedUserIds,
+        roleName: selectedRole.name,
+      });
+      showSuccess(`Users assigned to ${selectedRole.displayName} successfully!`);
+      setIsAssignModalOpen(false);
+    } catch (error) {
+      showError(error, "Failed to assign users");
+    }
+  };
+
+  const handleToggleBulkUser = (userId: string, label: string) => {
+    if (selectedUserIds.includes(userId)) {
+        setSelectedUserIds(selectedUserIds.filter(id => id !== userId));
+        setBulkSelectedUsers(bulkSelectedUsers.filter(u => u.id !== userId));
+    } else {
+        setSelectedUserIds([...selectedUserIds, userId]);
+        setBulkSelectedUsers([...bulkSelectedUsers, { id: userId, name: label }]);
+    }
+  };
+
+  const handleRemoveBulkUser = (userId: string) => {
+    setSelectedUserIds(selectedUserIds.filter(id => id !== userId));
+    setBulkSelectedUsers(bulkSelectedUsers.filter(u => u.id !== userId));
+  };
+
+  const searchUsersForSelect = React.useCallback(async (term: string) => {
+    if (!term) return;
+    try {
+        const result = await userService.getUsers({ search: term, limit: 20 });
+        const users = Array.isArray(result) ? result : (result.data || []);
+        const options = users.map((u: User) => ({
+                label: u.name,
+                value: u.public_id,
+                subLabel: u.email,
+                // Check if user already has this role if possible, but roles in User are objects
+                isDisabled: u.roles?.some(r => r.name === selectedRole?.name)
+        }));
+        setUserOptions(options);
+    } catch (e) {
+        console.error(e);
+        setUserOptions([]);
+    }
+  }, [selectedRole]);
 
   return (
     <>
@@ -242,7 +323,14 @@ const Roles: React.FC = () => {
                 </div>
 
                 {/* Footer Actions */}
-                <div className="flex items-center justify-end px-5 py-3 bg-gray-50/50 dark:bg-white/[0.02] border-t border-gray-100 dark:border-white/5">
+                <div className="flex items-center justify-between px-5 py-3 bg-gray-50/50 dark:bg-white/[0.02] border-t border-gray-100 dark:border-white/5">
+                    <button
+                        onClick={() => handleOpenAssignModal(role)}
+                        className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-brand-600 bg-brand-50/50 hover:bg-brand-50 rounded-lg border border-brand-100 transition-all dark:bg-brand-500/10 dark:text-brand-400 dark:border-brand-500/20 dark:hover:bg-brand-500/20"
+                        title="Assign Users"
+                    >
+                        <PlusIcon className="size-3.5" /> Assign Users
+                    </button>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleOpenModal(role)}
@@ -301,6 +389,125 @@ const Roles: React.FC = () => {
           </div>
         )}
       </div>
+
+      <Modal 
+          isOpen={isAssignModalOpen} 
+          onClose={() => setIsAssignModalOpen(false)} 
+          className="max-w-xl"
+          title={`Assign ${selectedRole?.displayName}`}
+          description="Link users to this role classification."
+          subHeader={
+              <div className="relative flex border-b border-gray-100 dark:border-white/[0.05]">
+                  <button
+                      type="button"
+                      onClick={() => { setAssignMode("individual"); setSelectedUserIds([]); setBulkSelectedUsers([]); }}
+                      className={`flex flex-1 items-center justify-center gap-2 py-3 text-sm font-bold transition-colors ${
+                          assignMode === "individual" 
+                          ? "text-brand-600 dark:text-brand-400" 
+                          : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                      }`}
+                  >
+                      <UserIcon className="size-4" />
+                      Individual
+                  </button>
+                  <button
+                      type="button"
+                      onClick={() => { setAssignMode("multiple"); setSelectedUserIds([]); setBulkSelectedUsers([]); }}
+                      className={`flex flex-1 items-center justify-center gap-2 py-3 text-sm font-bold transition-colors ${
+                          assignMode === "multiple" 
+                          ? "text-brand-600 dark:text-brand-400" 
+                          : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                      }`}
+                  >
+                      <GroupIcon className="size-4" />
+                      Bulk Users
+                  </button>
+                  
+                  <div 
+                      className="absolute -bottom-px h-0.5 bg-brand-500 transition-all duration-300 ease-in-out"
+                      style={{
+                          width: '50%',
+                          left: assignMode === "individual" ? '0%' : '50%'
+                      }}
+                  />
+              </div>
+          }
+          footer={
+              <div className="flex justify-end gap-3">
+                  <button
+                      type="button"
+                      onClick={() => setIsAssignModalOpen(false)}
+                      className="rounded-xl px-4 py-2 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.05]"
+                  >
+                      Cancel
+                  </button>
+                  <button
+                      onClick={handleAssignSubmit}
+                      disabled={bulkAssignMutation.isPending || (selectedUserIds.length === 0)}
+                      className="rounded-xl bg-brand-500 px-6 py-2 text-sm font-medium text-white transition-all hover:bg-brand-600"
+                  >
+                      {bulkAssignMutation.isPending ? "Assigning..." : "Apply Changes"}
+                  </button>
+              </div>
+          }
+      >
+          <div className="space-y-6">
+              <SmoothHeight>
+                  <div className="space-y-4">
+                      {assignMode === "individual" && (
+                          <div className="space-y-1.5">
+                              <SearchableAsyncSelect
+                                  label="Select User"
+                                  value={selectedUserIds[0] || ""}
+                                  options={userOptions}
+                                  onChange={(val: string | number) => setSelectedUserIds([String(val)])}
+                                  onSearch={searchUsersForSelect}
+                                  placeholder="Search for a user..."
+                                  labelClassName="text-[11px] font-medium uppercase text-gray-500 tracking-wider"
+                              />
+                          </div>
+                      )}
+
+                      {assignMode === "multiple" && (
+                          <div className="space-y-3">
+                              <SearchableAsyncSelect
+                                  label="Add Users to List"
+                                  value={""}
+                                  options={userOptions}
+                                  onChange={(val: string | number, label: string) => handleToggleBulkUser(String(val), label)}
+                                  onSearch={searchUsersForSelect}
+                                  placeholder="Search and adding users..."
+                                  closeOnSelect={false}
+                                  selectedValues={selectedUserIds}
+                                  labelClassName="text-[11px] font-medium uppercase text-gray-500 tracking-wider"
+                              />
+                              <div className="min-h-[100px] p-3 rounded-xl border border-gray-200 bg-gray-50/50 dark:border-white/[0.08] dark:bg-white/[0.03]">
+                                  {bulkSelectedUsers.length === 0 ? (
+                                      <p className="text-xs text-gray-400 text-center py-6">No users selected. Search above to add.</p>
+                                  ) : (
+                                      <div className="flex flex-wrap gap-2">
+                                          {bulkSelectedUsers.map(user => (
+                                              <div key={user.id} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-gray-200 text-xs font-semibold text-gray-700 dark:bg-white/10 dark:border-transparent dark:text-white">
+                                                  <span>{user.name}</span>
+                                                  <button 
+                                                      type="button" 
+                                                      onClick={() => handleRemoveBulkUser(user.id)}
+                                                      className="text-gray-400 hover:text-red-500 transition-colors"
+                                                  >
+                                                      &times;
+                                                  </button>
+                                              </div>
+                                          ))}
+                                      </div>
+                                  )}
+                              </div>
+                              <p className="text-right text-[10px] font-bold text-gray-400 uppercase tracking-tight">{selectedUserIds.length} users in queue</p>
+                          </div>
+                      )}
+                  </div>
+              </SmoothHeight>
+          </div>
+      </Modal>
 
       <Modal 
           isOpen={isModalOpen} 

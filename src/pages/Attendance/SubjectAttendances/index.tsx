@@ -377,6 +377,7 @@ const SubjectAttendances: React.FC = () => {
                 { label: "Absent", value: "absent" },
                 { label: "Late", value: "late" },
                 { label: "Excused", value: "excused" },
+                { label: "Sick", value: "sick" },
               ]}
             />
             
@@ -483,7 +484,8 @@ const SubjectAttendances: React.FC = () => {
                       <Badge color={
                         record.status === "present" ? "success" : 
                         record.status === "absent" ? "error" : 
-                        record.status === "late" ? "warning" : "primary"
+                        record.status === "late" ? "warning" : 
+                        record.status === "sick" ? "primary" : "info"
                       }>
                         {record.status.toUpperCase()}
                       </Badge>
@@ -607,6 +609,7 @@ const SubjectAttendances: React.FC = () => {
                     { label: "Absent", value: "absent" },
                     { label: "Late", value: "late" },
                     { label: "Excused", value: "excused" },
+                    { label: "Sick", value: "sick" },
                 ]}
             />
 
@@ -661,6 +664,7 @@ const SubjectAttendances: React.FC = () => {
                                 <option value="absent">Absent</option>
                                 <option value="late">Late</option>
                                 <option value="excused">Excused</option>
+                                <option value="sick">Sick</option>
                             </select>
                             <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400">
                                 <ChevronDownIcon className="size-3.5" />
@@ -737,6 +741,7 @@ const SubjectAttendances: React.FC = () => {
                                                        <option value="absent">Absent</option>
                                                        <option value="late">Late</option>
                                                        <option value="excused">Excused</option>
+                                                       <option value="sick">Sick</option>
                                                     </select>
                                                     <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400">
                                                         <ChevronDownIcon className="size-3.5" />
