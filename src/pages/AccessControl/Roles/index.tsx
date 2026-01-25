@@ -4,8 +4,7 @@ import { Role } from "../../../api/types/user";
 import PageMeta from "../../../components/atoms/PageMeta";
 import PageBreadcrumb from "../../../components/molecules/PageBreadcrumb";
 import Modal from "../../../components/molecules/Modal";
-import { PencilIcon, TrashBinIcon, PlusIcon, GridIcon, ChevronLeftIcon, AngleRightIcon, LockIcon, UserIcon } from "../../../components/atoms/Icons";
-import RoleUserAssignmentModal from "../../../components/organisms/AccessControl/RoleUserAssignmentModal";
+import { PencilIcon, TrashBinIcon, PlusIcon, GridIcon, ChevronLeftIcon, AngleRightIcon, LockIcon } from "../../../components/atoms/Icons";
 import CustomSelect from "../../../components/molecules/CustomSelect";
 import { useDebounce } from "../../../hooks/useDebounce";
 import { showSuccess, showError } from "../../../utils/toast";
@@ -27,9 +26,7 @@ const Roles: React.FC = () => {
   });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
-  const [selectedRoleForAssign, setSelectedRoleForAssign] = useState<Role | null>(null);
   const [sortConfig, setSortConfig] = useState<{ key: keyof Role; direction: "asc" | "desc" } | null>(null);
   const [formData, setFormData] = useState<Partial<Role>>({
     name: "",
@@ -71,11 +68,6 @@ const Roles: React.FC = () => {
       });
     }
     setIsModalOpen(true);
-  };
-  
-  const handleOpenAssignModal = (role: Role) => {
-    setSelectedRoleForAssign(role);
-    setIsAssignModalOpen(true);
   };
 
   const total = Number(meta?.itemCount ?? meta?.total ?? 0);
@@ -250,13 +242,7 @@ const Roles: React.FC = () => {
                 </div>
 
                 {/* Footer Actions */}
-                <div className="flex items-center justify-between px-5 py-3 bg-gray-50/50 dark:bg-white/[0.02] border-t border-gray-100 dark:border-white/5">
-                    <button
-                        onClick={() => handleOpenAssignModal(role)}
-                        className="flex items-center gap-1.5 text-[11px] font-bold text-brand-600 hover:text-brand-700 transition-colors uppercase tracking-tight"
-                    >
-                        <UserIcon className="size-3.5" /> Manage Users
-                    </button>
+                <div className="flex items-center justify-end px-5 py-3 bg-gray-50/50 dark:bg-white/[0.02] border-t border-gray-100 dark:border-white/5">
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleOpenModal(role)}
@@ -367,12 +353,6 @@ const Roles: React.FC = () => {
             </div>
           </form>
       </Modal>
-
-      <RoleUserAssignmentModal 
-          isOpen={isAssignModalOpen}
-          onClose={() => setIsAssignModalOpen(false)}
-          role={selectedRoleForAssign}
-      />
 
       <ConfirmDialog {...confirmState} />
     </>
