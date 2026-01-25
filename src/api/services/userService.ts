@@ -8,6 +8,7 @@ export interface CreateUserDto {
   phone?: string;
   isActive?: boolean;
   photo?: File;
+  userTypes?: string[];
 }
 
 export type UpdateUserDto = Partial<CreateUserDto>
@@ -36,6 +37,7 @@ export const userService = {
         email: data.email,
         phone: data.phone,
         isActive: data.isActive, // Send as boolean
+        userTypes: data.userTypes,
       });
       return response.data;
     }
@@ -47,6 +49,9 @@ export const userService = {
     if (data.phone) formData.append("phone", data.phone);
     // Send boolean as string "true" or "false"
     if (data.isActive !== undefined) formData.append("isActive", String(data.isActive));
+    if (data.userTypes && data.userTypes.length > 0) {
+      data.userTypes.forEach(type => formData.append("userTypes[]", type));
+    }
     formData.append("photo", data.photo);
 
     const response = await apiClient.post<BaseResponse<User>>("/users", formData, {
@@ -63,6 +68,7 @@ export const userService = {
         email: data.email,
         phone: data.phone,
         isActive: data.isActive, // Send as boolean
+        userTypes: data.userTypes,
       });
       return response.data;
     }
@@ -74,6 +80,11 @@ export const userService = {
     if (data.phone) formData.append("phone", data.phone);
     // Send boolean as string "true" or "false"
     if (data.isActive !== undefined) formData.append("isActive", String(data.isActive));
+    if (data.userTypes) {
+      // Clear and re-append or just append depending on backend expectation
+      // Usually [] notation is used for arrays in FormData
+      data.userTypes.forEach(type => formData.append("userTypes[]", type));
+    }
     formData.append("photo", data.photo);
 
     const response = await apiClient.patch<BaseResponse<User>>(`/users/${id}`, formData, {

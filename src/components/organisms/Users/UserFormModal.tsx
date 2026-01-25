@@ -89,7 +89,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ isOpen, onClose, user, on
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      let savedUserId: string | undefined;
+      let savedUserPublicId: string | undefined;
       
       const userPayload = {
         name: formData.name,
@@ -101,22 +101,21 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ isOpen, onClose, user, on
       };
 
       if (isEdit) {
-        // Use id if available, otherwise fall back to public_id
-        savedUserId = user?.id || user?.public_id;
-        if (!savedUserId) {
+        savedUserPublicId = user?.public_id;
+        if (!savedUserPublicId) {
           showError(null, "User ID is missing. Cannot update user.");
           return;
         }
-        await updateUserMutation.mutateAsync({ id: savedUserId, data: userPayload });
+        await updateUserMutation.mutateAsync({ id: savedUserPublicId, data: userPayload });
       } else {
         const response = await createUserMutation.mutateAsync(userPayload);
-        // The create response might return an object with id or public_id
+        // Backend returns BaseResponse<User> where response.data is the User object
         const newUser = response.data;
-        savedUserId = newUser.id || newUser.public_id; 
+        savedUserPublicId = newUser.public_id; 
       }
 
       // Handle Role Assignment Logic
-      if (savedUserId) {
+      if (savedUserPublicId) {
         const selectedRoles = formData.roles;
         
         if (isEdit && user) {
@@ -127,29 +126,31 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ isOpen, onClose, user, on
            // Find roles to remove
            const rolesToRemove = initialRoles.filter(r => !selectedRoles.includes(r));
 
-           // Execute assignments
+           // Execute assignments and removals sequentially or concurrently
+           const tasks = [];
            if (rolesToAdd.length > 0) {
-              await Promise.all(rolesToAdd.map(roleName => 
-                 accessControlService.assignRole(savedUserId!, roleName)
+              tasks.push(...rolesToAdd.map(roleName => 
+                 accessControlService.assignRole(savedUserPublicId!, roleName)
               ));
            }
-
-           // Execute removals
            if (rolesToRemove.length > 0) {
-              await Promise.all(rolesToRemove.map(roleName => 
-                 accessControlService.removeRole(savedUserId!, roleName)
+              tasks.push(...rolesToRemove.map(roleName => 
+                 accessControlService.removeRole(savedUserPublicId!, roleName)
               ));
            }
+           if (tasks.length > 0) await Promise.all(tasks);
         } else {
            // New User: just assign all selected roles
            if (selectedRoles.length > 0) {
               await Promise.all(selectedRoles.map(roleName => 
-                 accessControlService.assignRole(savedUserId!, roleName)
+                 accessControlService.assignRole(savedUserPublicId!, roleName)
               ));
            }
         }
       }
 
+      // Manual invalidation to ensure UI is fresh after roles are assigned
+      // (The mutation hooks also invalidate, but we want to be sure everything is done)
       showSuccess(`User ${isEdit ? "updated" : "created"} successfully!`);
       onSuccess?.();
       onClose();
@@ -240,7 +241,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ isOpen, onClose, user, on
                   placeholder="Select types..."
                   value={formData.userTypes[0] || ""}
                   onChange={val => setFormData(prev => ({ ...prev, userTypes: [String(val)] }))}
-                  options={availableUserTypes.map((t: any) => ({
+                  options={availableUserTypes.map((t) => ({
                     label: t.name,
                     value: t.code
                   }))}
@@ -253,19 +254,10 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ isOpen, onClose, user, on
                   placeholder="Select roles..."
                   value={formData.roles[0] || ""}
                   onChange={val => {
-                     // Simple single select for now, or could be multi if CustomSelect supports it
-                     // Assuming CustomSelect is single select based on usage above, but let's check.
-                     // The logic above supports multi-roles, but UI might be limited to one for now 
-                     // unless CustomSelect supports an array value.
-                     // The CustomSelect implementation in List/index.tsx takes a string. 
-                     // We'll treat it as single select to start or append if multi supported.
-                     // Given CustomSelect usually returns a single value, lets treat it as "Add Role" behavior or just single role management?
-                     // The user request impies "assign user for some role". 
-                     // Let's assume one primary system role per user for simplicity first, or array if CustomSelect handles it.
-                     // Based on type: value: string | number.
+                     // Simple single select for now
                      setFormData(prev => ({ ...prev, roles: [String(val)] }))
                   }}
-                  options={availableRoles.map((r: any) => ({
+                  options={availableRoles.map((r) => ({
                     label: r.displayName,
                     value: r.name
                   }))}

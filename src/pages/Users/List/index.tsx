@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useSearchParams, useNavigate } from "react-router";
-import { useUsers } from "../../../api/hooks/useUsers";
+import { useUsers, useDeleteUser } from "../../../api/hooks/useUsers";
 import { useUserTypes, useUnassignUserType } from "../../../api/hooks/useUserTypes";
 import { User, UserType } from "../../../api/types/user";
 import PageMeta from "../../../components/atoms/PageMeta";
@@ -46,6 +46,7 @@ const UserList: React.FC = () => {
 
   const { userTypes } = useUserTypes();
   const unassignMutation = useUnassignUserType();
+  const deleteMutation = useDeleteUser();
 
   const total = Number(meta?.total || 0);
   const totalPages = Number(meta?.totalPages || meta?.last_page || Math.ceil(total / limit));
@@ -91,7 +92,12 @@ const UserList: React.FC = () => {
     });
 
     if (confirmed) {
-       showSuccess("User removed from system.");
+      try {
+        await deleteMutation.mutateAsync(user.public_id);
+        showSuccess("User removed from system.");
+      } catch (error) {
+        showError(error, "Failed to remove user");
+      }
     }
   };
 
