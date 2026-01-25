@@ -32,6 +32,8 @@ const GateScan = () => {
   const [policyError, setPolicyError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"landing" | "scanner">("landing");
   const lastFetchedIdRef = useRef<string | null>(null);
+  const lastScannedDataRef = useRef<string | null>(null);
+  const lastScanTimeRef = useRef<number>(0);
 
   // Camera Refs
   const scannerRef = useRef<Html5Qrcode | null>(null);
@@ -46,6 +48,16 @@ const GateScan = () => {
 
       try {
         const deviceId = isStudent ? `mobile_${user?.id}` : "gate_kiosk_1";
+
+        // Cooldown Check: Prevent scanning the same code within 5 seconds
+        const now = Date.now();
+        if (code === lastScannedDataRef.current && now - lastScanTimeRef.current < 5000) {
+            setIsProcessing(false);
+            return;
+        }
+
+        lastScannedDataRef.current = code;
+        lastScanTimeRef.current = now;
 
         const response = await attendanceService.scanQRCode({
           qrData: code,
