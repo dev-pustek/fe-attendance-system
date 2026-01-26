@@ -349,7 +349,7 @@ const TeacherSchedule: React.FC = () => {
                                                        </div>
                                                        <div>
                                                            <p className="font-medium text-gray-900 dark:text-white">{student.user?.name}</p>
-                                                           <p className="text-xs text-gray-500">{student.user?.profile?.nis || "No NIS"}</p>
+                                                           <p className="text-xs text-gray-500">{student.user?.profile?.nis || student.user?.profile?.studentIdentificationNumber || student.user?.profile?.studentId || "No NIS"}</p>
                                                        </div>
                                                    </div>
                                                </td>
@@ -409,7 +409,7 @@ const TeacherSchedule: React.FC = () => {
                                                         </div>
                                                         <div>
                                                             <p className="font-medium text-gray-900 dark:text-white">{student.user?.name}</p>
-                                                           <p className="text-xs text-gray-500">{student.user?.profile?.nis || "No NIS"}</p>
+                                                           <p className="text-xs text-gray-500">{student.user?.profile?.nis || student.user?.profile?.studentIdentificationNumber || student.user?.profile?.studentId || "No NIS"}</p>
                                                         </div>
                                                     </div>
                                                 </div>

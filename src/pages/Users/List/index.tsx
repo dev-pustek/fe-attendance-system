@@ -68,10 +68,32 @@ const UserList: React.FC = () => {
     }
   };
 
-  // Bulk Print Handler
+  // Bulk Action Handlers
   const handleBulkPrint = () => {
     if (selectedIds.length === 0) return;
     navigate(`/users/print-ids?ids=${selectedIds.join(",")}`);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+
+    const confirmed = await confirm({
+      variant: "delete",
+      title: "Bulk Remove Users",
+      message: `Are you sure you want to permanently delete ${selectedIds.length} selected users? This action cannot be undone.`,
+      confirmText: `Delete ${selectedIds.length} Users`
+    });
+
+    if (confirmed) {
+      try {
+        const promises = selectedIds.map(id => deleteMutation.mutateAsync(id));
+        await Promise.all(promises);
+        showSuccess(`Successfully removed ${selectedIds.length} users.`);
+        setSelectedIds([]);
+      } catch (error) {
+        showError(error, "Failed to remove some users");
+      }
+    }
   };
 
   const handleGenerateId = (user: User) => {
@@ -136,15 +158,6 @@ const UserList: React.FC = () => {
             <p className="text-sm text-gray-500 dark:text-gray-400">View and manage all registered users.</p>
           </div>
           <div className="flex gap-2">
-            {selectedIds.length > 0 && (
-                <button
-                    onClick={handleBulkPrint}
-                    className="flex items-center justify-center gap-2 rounded-xl bg-white border border-gray-200 px-5 py-2.5 text-sm font-bold text-gray-700 transition-all hover:bg-gray-50 shadow-sm"
-                >
-                    <DocsIcon className="size-5 text-gray-400" />
-                    Print {selectedIds.length} IDs
-                </button>
-            )}
             <button
                 onClick={() => { setSelectedUser(null); setIsFormModalOpen(true); }}
                 className="flex items-center justify-center gap-2 rounded-xl bg-brand-500 px-5 py-2.5 text-sm font-bold text-white transition-all hover:bg-brand-600 shadow-lg shadow-brand-500/20"
@@ -154,6 +167,40 @@ const UserList: React.FC = () => {
             </button>
           </div>
         </div>
+
+        {/* Bulk Selection Actions Bar */}
+        {selectedIds.length > 0 && (
+          <div className="flex items-center justify-between p-4 bg-brand-50 border border-brand-100 rounded-2xl dark:bg-brand-500/10 dark:border-brand-500/20 animate-in slide-in-from-top-2 duration-300">
+            <div className="flex items-center gap-3">
+              <div className="size-8 rounded-full bg-brand-500 text-white flex items-center justify-center text-sm font-bold shadow-sm font-mono">
+                {selectedIds.length}
+              </div>
+              <p className="text-sm font-semibold text-brand-700 dark:text-brand-400">Users Selected</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleBulkPrint}
+                className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-sm font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-50 transition-all shadow-sm"
+              >
+                <DocsIcon className="size-4 text-gray-400" />
+                Print IDs
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                className="flex items-center gap-2 px-4 py-2 bg-error-50 dark:bg-error-500/10 border border-error-100 dark:border-error-500/20 rounded-xl text-sm font-bold text-error-600 dark:text-error-400 hover:bg-error-100 transition-all shadow-sm"
+              >
+                <TrashBinIcon className="size-4" />
+                Delete Selected
+              </button>
+              <button
+                onClick={() => setSelectedIds([])}
+                className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
            <div className="flex flex-1 flex-col gap-4 sm:flex-row sm:items-end">

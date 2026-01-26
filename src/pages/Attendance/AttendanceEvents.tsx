@@ -7,14 +7,16 @@ import PageBreadcrumb from "../../components/molecules/PageBreadcrumb";
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "../../components/atoms/Table";
 import Badge from "../../components/atoms/Badge";
 
-import { GridIcon, ChevronLeftIcon, AngleRightIcon, SortIcon, EyeIcon, EditIcon, TrashIcon, PlusIcon, UserCircleIcon } from "../../components/atoms/Icons";
+import { GridIcon, ChevronLeftIcon, AngleRightIcon, SortIcon, EyeIcon, EditIcon, TrashIcon, PlusIcon, UserCircleIcon, TrashBinIcon } from "../../components/atoms/Icons";
 import { format } from "date-fns";
 import DatePicker from "../../components/molecules/DatePicker";
 import CustomSelect from "../../components/molecules/CustomSelect";
 import Button from "../../components/atoms/Button";
 import Modal from "../../components/molecules/Modal";
 import { useConfirm } from "../../hooks/useConfirm";
+
 import ConfirmDialog from "../../components/molecules/ConfirmDialog";
+import { showSuccess, showError } from "../../utils/toast";
 import { Device } from "../../api/types/devices";
 import { AttendanceEvent } from "../../api/types/attendance";
 import { User } from "../../api/types/user";
@@ -72,7 +74,9 @@ const AttendanceEvents: React.FC = () => {
 
   const [selectedEvent, setSelectedEvent] = useState<AttendanceEvent | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
   const [formData, setFormData] = useState<EventFormData>(INITIAL_FORM_DATA);
+  const [selectedIds, setSelectedIds] = useState<Set<number | string>>(new Set());
 
   // Load data into edit form when modal opens
   React.useEffect(() => {
@@ -145,7 +149,50 @@ const AttendanceEvents: React.FC = () => {
     });
 
     if (shouldDelete) {
-        deleteMutation.mutate(id);
+        try {
+            await deleteMutation.mutateAsync(id);
+            showSuccess("Event deleted successfully");
+        } catch (error) {
+            showError(error, "Failed to delete event");
+        }
+    }
+  };
+
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.checked) {
+          setSelectedIds(new Set(events.map(e => e.id)));
+      } else {
+          setSelectedIds(new Set());
+      }
+  };
+
+  const handleSelectRow = (id: number | string) => {
+      const next = new Set(selectedIds);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      setSelectedIds(next);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+
+    const count = selectedIds.size;
+    const confirmed = await confirm({
+        variant: 'delete',
+        title: 'Bulk Delete Events',
+        message: `Are you sure you want to permanently delete ${count} selected events? This action cannot be undone.`,
+        confirmText: `Delete ${count} Events`
+    });
+
+    if (confirmed) {
+        try {
+            const promises = Array.from(selectedIds).map(id => deleteMutation.mutateAsync(id));
+            await Promise.all(promises);
+            showSuccess(`Successfully removed ${count} events.`);
+            setSelectedIds(new Set());
+        } catch (error) {
+            showError(error, "Failed to remove some events");
+        }
     }
   };
 
@@ -210,16 +257,51 @@ const AttendanceEvents: React.FC = () => {
              placeholder="All Devices"
              options={[
                  { label: "All Devices", value: "" },
-                 ...devices.map((d: Device) => ({ label: d.location || d.deviceName, value: d.id }))
+                 ...devices.map((d: Device) => ({ label: d.location || d.deviceName, value: d.id || "" }))
              ]}
           />
         </div>
+
+        {/* Bulk Selection Actions Bar */}
+        {selectedIds.size > 0 && (
+          <div className="flex items-center justify-between p-4 bg-brand-50 border border-brand-100 rounded-2xl dark:bg-brand-500/10 dark:border-brand-500/20 animate-in slide-in-from-top-2 duration-300">
+            <div className="flex items-center gap-3">
+              <div className="size-8 rounded-full bg-brand-500 text-white flex items-center justify-center text-sm font-bold shadow-sm font-mono">
+                {selectedIds.size}
+              </div>
+              <p className="text-sm font-semibold text-brand-700 dark:text-brand-400">Events Selected</p>
+            </div>
+            <div className="flex items-center gap-2">
+                <button
+                    onClick={handleBulkDelete}
+                    className="flex items-center gap-2 px-4 py-2 bg-error-50 dark:bg-error-500/10 border border-error-100 dark:border-error-500/20 rounded-xl text-sm font-bold text-error-600 dark:text-error-400 hover:bg-error-100 transition-all shadow-sm"
+                >
+                    <TrashBinIcon className="size-4" />
+                    Delete Selected
+                </button>
+                <button
+                    onClick={() => setSelectedIds(new Set())}
+                    className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                    Cancel
+                </button>
+            </div>
+          </div>
+        )}
 
         {/* Table */}
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-white/[0.05] dark:bg-white/[0.03]">
           <Table>
             <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
               <TableRow>
+                <TableCell isHeader className="px-5 py-4 w-12">
+                    <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                        checked={events.length > 0 && selectedIds.size === events.length}
+                        onChange={handleSelectAll}
+                    />
+                </TableCell>
                 <TableCell isHeader className="px-5 py-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.01]" onClick={() => handleSort("user")}>
                     <div className="flex items-center gap-1.5 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         User <SortIcon className="size-3" />
@@ -248,6 +330,14 @@ const AttendanceEvents: React.FC = () => {
               ) : (
                 events.map((event) => (
                   <TableRow key={event.id} className="group hover:bg-gray-50/50 dark:hover:bg-white/[0.01] transition-colors">
+                    <TableCell className="px-5 py-4">
+                        <input 
+                            type="checkbox" 
+                            className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                            checked={selectedIds.has(event.id)}
+                            onChange={() => handleSelectRow(event.id)}
+                        />
+                    </TableCell>
                     <TableCell className="px-5 py-4">
                         <div className="flex flex-col">
                             <span className="font-medium text-gray-900 dark:text-white text-sm">
@@ -429,7 +519,7 @@ const AttendanceEvents: React.FC = () => {
                      onChange={(val) => setFormData({ ...formData, deviceId: String(val) })}
                      options={[
                          { label: "Select Device", value: "" },
-                         ...devices.map((d: Device) => ({ label: d.location || d.deviceName, value: d.id }))
+                         ...devices.map((d: Device) => ({ label: d.location || d.deviceName, value: d.id || "" }))
                      ]}
                 />
                 <div className="flex justify-end gap-2 mt-6">
@@ -477,7 +567,7 @@ const AttendanceEvents: React.FC = () => {
                      onChange={(val) => setFormData({ ...formData, deviceId: String(val) })}
                      options={[
                          { label: "Select Device", value: "" },
-                         ...devices.map((d: Device) => ({ label: d.location || d.deviceName, value: d.id }))
+                         ...devices.map((d: Device) => ({ label: d.location || d.deviceName, value: d.id || "" }))
                      ]}
                 />
                 <div className="flex justify-end gap-2 mt-6">

@@ -12,8 +12,12 @@ import PageMeta from "../../components/atoms/PageMeta";
 import Modal from "../../components/molecules/Modal";
 import CustomSelect from "../../components/molecules/CustomSelect";
 import { AuditLog } from "../../api/types/system";
-import { CopyIcon, ChevronLeftIcon, AngleRightIcon, PageIcon, ChevronUpIcon, ChevronDownIcon } from "../../components/atoms/Icons";
+import { CopyIcon, ChevronLeftIcon, AngleRightIcon, PageIcon, ChevronUpIcon, ChevronDownIcon, TrashBinIcon } from "../../components/atoms/Icons";
 import { useDebounce } from "../../hooks/useDebounce";
+import { useDeleteAuditLog } from "../../api/hooks/useAudit";
+import { showSuccess, showError } from "../../utils/toast";
+import ConfirmDialog from "../../components/molecules/ConfirmDialog";
+import { useConfirm } from "../../hooks/useConfirm";
 
 const AuditLogs: React.FC = () => {
   const [page, setPage] = useState(1);
@@ -24,6 +28,10 @@ const AuditLogs: React.FC = () => {
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
   const [sortConfig, setSortConfig] = useState<{ key: keyof AuditLog; direction: "asc" | "desc" } | null>(null);
   const [copied, setCopied] = useState(false);
+
+  const [selectedIds, setSelectedIds] = useState<(number | string)[]>([]);
+  const { confirm, confirmState } = useConfirm();
+  const { mutateAsync: deleteAuditLog } = useDeleteAuditLog();
 
   const debouncedSearch = useDebounce(searchQuery, 500);
 
@@ -79,6 +87,44 @@ const AuditLogs: React.FC = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.checked) {
+          setSelectedIds(sortedLogs.map(l => l.id));
+      } else {
+          setSelectedIds([]);
+      }
+  };
+
+  const handleSelectRow = (id: number | string) => {
+      if (selectedIds.includes(id)) {
+          setSelectedIds(selectedIds.filter(selectedId => selectedId !== id));
+      } else {
+          setSelectedIds([...selectedIds, id]);
+      }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+
+    const confirmed = await confirm({
+        variant: 'delete',
+        title: 'Bulk Delete Audit Logs',
+        message: `Are you sure you want to permanently delete ${selectedIds.length} selected audit logs? This action cannot be undone.`,
+        confirmText: `Delete ${selectedIds.length} Logs`
+    });
+
+    if (confirmed) {
+        try {
+            const promises = selectedIds.map(id => deleteAuditLog(id));
+            await Promise.all(promises);
+            showSuccess(`Successfully removed ${selectedIds.length} audit logs.`);
+            setSelectedIds([]);
+        } catch (error) {
+            showError(error, "Failed to remove some audit logs");
+        }
+    }
+  };
+
   return (
     <>
       <PageMeta
@@ -95,6 +141,33 @@ const AuditLogs: React.FC = () => {
             </p>
           </div>
         </div>
+
+        {/* Bulk Selection Actions Bar */}
+        {selectedIds.length > 0 && (
+          <div className="flex items-center justify-between p-4 bg-brand-50 border border-brand-100 rounded-2xl dark:bg-brand-500/10 dark:border-brand-500/20 animate-in slide-in-from-top-2 duration-300">
+            <div className="flex items-center gap-3">
+              <div className="size-8 rounded-full bg-brand-500 text-white flex items-center justify-center text-sm font-bold shadow-sm font-mono">
+                {selectedIds.length}
+              </div>
+              <p className="text-sm font-semibold text-brand-700 dark:text-brand-400">Logs Selected</p>
+            </div>
+            <div className="flex items-center gap-2">
+                <button
+                    onClick={handleBulkDelete}
+                    className="flex items-center gap-2 px-4 py-2 bg-error-50 dark:bg-error-500/10 border border-error-100 dark:border-error-500/20 rounded-xl text-sm font-bold text-error-600 dark:text-error-400 hover:bg-error-100 transition-all shadow-sm"
+                >
+                    <TrashBinIcon className="size-4" />
+                    Delete Selected
+                </button>
+                <button
+                    onClick={() => setSelectedIds([])}
+                    className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                    Cancel
+                </button>
+            </div>
+          </div>
+        )}
 
         {/* Filters & Search */}
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -160,6 +233,14 @@ const AuditLogs: React.FC = () => {
             <Table>
               <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
                 <TableRow>
+                  <TableCell isHeader className="px-5 py-4 w-12">
+                      <input 
+                          type="checkbox" 
+                          className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                          checked={sortedLogs.length > 0 && selectedIds.length === sortedLogs.length}
+                          onChange={handleSelectAll}
+                      />
+                  </TableCell>
                   <TableCell isHeader className="px-5 py-4">
                     <button onClick={() => handleSort("id")} className="flex items-center gap-2 text-theme-xs font-medium text-gray-500 dark:text-gray-400 hover:text-brand-500 transition-colors uppercase tracking-wider">
                       ID <SortIcon column="id" />
@@ -216,6 +297,15 @@ const AuditLogs: React.FC = () => {
                 ) : (
                   sortedLogs.map((log) => (
                     <TableRow key={log.id} className="group cursor-pointer transition-colors hover:bg-gray-50/50 dark:hover:bg-white/[0.01]" onClick={() => setSelectedLog(log)}>
+                      <TableCell className="px-5 py-4">
+                          <input 
+                              type="checkbox" 
+                              className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                              checked={selectedIds.includes(log.id)}
+                              onChange={(e) => { e.stopPropagation(); handleSelectRow(log.id); }}
+                              onClick={(e) => e.stopPropagation()}
+                          />
+                      </TableCell>
                       <TableCell className="px-5 py-4 text-theme-sm font-medium text-gray-800 dark:text-white/90">
                         #{String(log.id).slice(-6).toUpperCase()}
                       </TableCell>
@@ -359,6 +449,8 @@ const AuditLogs: React.FC = () => {
           </div>
         </div>
       </Modal>
+      
+      <ConfirmDialog {...confirmState} />
     </>
   );
 };

@@ -378,6 +378,7 @@ const useOthersItems = () => {
         name: "System Settings",
         subItems: [
           { name: "General Settings", path: "/settings" },
+          { name: "Storage Settings", path: "/settings/storage" },
           { name: "Notification Templates", path: "/admin/notification-templates" },
           { name: "Notification Settings", path: "/settings/notifications" },
           { name: "Identity Resolutions", path: "/identity/resolutions" },

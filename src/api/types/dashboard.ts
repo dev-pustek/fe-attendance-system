@@ -48,11 +48,22 @@ export interface StudentDashboardSummary {
     date: string;
     day: string;
     status: string;
-    clockIn: string; // "07:15" or "-"
+    clockIn: string;
   }[];
   recentLogs: {
     date: string;
     time: string;
     status: string;
   }[];
+  subjectAttendance?: {
+    metrics: {
+        totalClasses: number;
+        present: number;
+        late: number;
+        absent: number;
+        excused: number;
+        attendanceRate: number;
+    };
+    recentLogs: any[];
+  };
 }

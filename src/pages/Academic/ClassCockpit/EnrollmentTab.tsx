@@ -448,7 +448,7 @@ const EnrollmentTab = () => {
                                         </div>
                                     </TableCell>
                                     <TableCell className="px-6 py-4 text-gray-600 dark:text-gray-300 font-mono text-sm">
-                                        {en.user?.profile?.studentIdentificationNumber || "-"} 
+                                        {en.user?.profile?.studentIdentificationNumber || en.user?.profile?.nis || "-"} 
                                         {en.user?.profile?.nisn ? ` / ${en.user.profile.nisn}` : ""}
                                     </TableCell>
                                     <TableCell className="px-6 py-4 text-center">

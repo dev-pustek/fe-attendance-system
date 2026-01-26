@@ -31,6 +31,7 @@ import ResolveLogModal from "./components/ResolveLogModal";
 import CustomSelect from "../../components/molecules/CustomSelect";
 import { showSuccess, showError } from "../../utils/toast";
 import ConfirmDialog from "../../components/molecules/ConfirmDialog";
+import { useConfirm } from "../../hooks/useConfirm";
 import DatePicker from "../../components/molecules/DatePicker";
 import NumberInput from "../../components/atoms/NumberInput";
 
@@ -66,6 +67,10 @@ const IdentityCaptureLogs: React.FC = () => {
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [idToDelete, setIdToDelete] = useState<string | null>(null);
 
+    // Bulk Options
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const { confirm, confirmState } = useConfirm();
+
     const { data: response, isLoading } = useIdentityCaptureLogs({
         page,
         limit,
@@ -83,7 +88,7 @@ const IdentityCaptureLogs: React.FC = () => {
 
     const { mutate: createLog, isPending: isCreating } = useCreateIdentityCaptureLog();
     const { mutate: updateLog, isPending: isUpdating } = useUpdateIdentityCaptureLog();
-    const { mutate: deleteLog, isPending: isDeleting } = useDeleteIdentityCaptureLog();
+    const { mutateAsync: deleteLogAsync, mutate: deleteLog, isPending: isDeleting } = useDeleteIdentityCaptureLog();
 
     const logs = response?.data || [];
     const total = Number(response?.meta?.total ?? 0);
@@ -208,6 +213,44 @@ const IdentityCaptureLogs: React.FC = () => {
         }
     };
 
+    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.checked) {
+            setSelectedIds(logs.map(l => l.id));
+        } else {
+            setSelectedIds([]);
+        }
+    };
+
+    const handleSelectRow = (id: string) => {
+        if (selectedIds.includes(id)) {
+            setSelectedIds(selectedIds.filter(selectedId => selectedId !== id));
+        } else {
+            setSelectedIds([...selectedIds, id]);
+        }
+    };
+
+    const handleBulkDelete = async () => {
+        if (selectedIds.length === 0) return;
+
+        const confirmed = await confirm({
+            variant: 'delete',
+            title: 'Bulk Delete Logs',
+            message: `Are you sure you want to permanently delete ${selectedIds.length} selected logs?`,
+            confirmText: `Delete ${selectedIds.length} Logs`
+        });
+
+        if (confirmed) {
+            try {
+                const promises = selectedIds.map(id => deleteLogAsync(id));
+                await Promise.all(promises);
+                showSuccess(`Successfully removed ${selectedIds.length} logs.`);
+                setSelectedIds([]);
+            } catch (error) {
+                showError(error, "Failed to remove some logs");
+            }
+        }
+    };
+
     return (
         <>
             <PageMeta title="Capture Logs | ID Link" description="View raw identity capture logs." />
@@ -227,6 +270,33 @@ const IdentityCaptureLogs: React.FC = () => {
                         Create Log
                     </button>
                 </div>
+
+                {/* Bulk Selection Actions Bar */}
+                {selectedIds.length > 0 && (
+                  <div className="flex items-center justify-between p-4 bg-brand-50 border border-brand-100 rounded-2xl dark:bg-brand-500/10 dark:border-brand-500/20 animate-in slide-in-from-top-2 duration-300">
+                    <div className="flex items-center gap-3">
+                      <div className="size-8 rounded-full bg-brand-500 text-white flex items-center justify-center text-sm font-bold shadow-sm font-mono">
+                        {selectedIds.length}
+                      </div>
+                      <p className="text-sm font-semibold text-brand-700 dark:text-brand-400">Logs Selected</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={handleBulkDelete}
+                            className="flex items-center gap-2 px-4 py-2 bg-error-50 dark:bg-error-500/10 border border-error-100 dark:border-error-500/20 rounded-xl text-sm font-bold text-error-600 dark:text-error-400 hover:bg-error-100 transition-all shadow-sm"
+                        >
+                            <TrashBinIcon className="size-4" />
+                            Delete Selected
+                        </button>
+                        <button
+                            onClick={() => setSelectedIds([])}
+                            className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-700 transition-colors"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                     <div className="flex flex-1 flex-col gap-4 sm:flex-row sm:items-end">
@@ -266,6 +336,14 @@ const IdentityCaptureLogs: React.FC = () => {
                     <Table>
                         <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
                             <TableRow>
+                                <TableCell isHeader className="px-5 py-4 w-12">
+                                    <input 
+                                        type="checkbox" 
+                                        className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                                        checked={logs.length > 0 && selectedIds.length === logs.length}
+                                        onChange={handleSelectAll}
+                                    />
+                                </TableCell>
                                 <TableCell isHeader className="px-5 py-4">
                                     <button onClick={() => handleSort("capturedAt")} className="flex items-center gap-2 text-theme-xs font-medium text-gray-500 dark:text-gray-400 hover:text-brand-500 transition-colors uppercase tracking-wider">
                                         Captured At <SortIcon column="capturedAt" />
@@ -302,6 +380,14 @@ const IdentityCaptureLogs: React.FC = () => {
                             ) : (
                                 logs.map((log) => (
                                     <TableRow key={log.id} className="hover:bg-gray-50/50 dark:hover:bg-white/[0.01]">
+                                        <TableCell className="px-5 py-4">
+                                            <input 
+                                                type="checkbox" 
+                                                className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                                                checked={selectedIds.includes(log.id)}
+                                                onChange={() => handleSelectRow(log.id)}
+                                            />
+                                        </TableCell>
                                         <TableCell className="px-5 py-4 text-xs dark:text-gray-400">{new Date(log.capturedAt).toLocaleString()}</TableCell>
                                         <TableCell className="px-5 py-4 text-gray-900 font-medium dark:text-gray-200">{log.device?.deviceName || "Unknown"}</TableCell>
                                         <TableCell className="px-5 py-4 text-gray-600 dark:text-gray-400">{log.channel?.name}</TableCell>
@@ -562,6 +648,8 @@ const IdentityCaptureLogs: React.FC = () => {
                 variant="delete"
                 isLoading={isDeleting}
             />
+
+            <ConfirmDialog {...confirmState} />
         </>
     );
 };

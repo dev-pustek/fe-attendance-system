@@ -87,6 +87,7 @@ const AttendanceList: React.FC = () => {
   const [isQrActivated, setIsQrActivated] = useState(false);
   const [isLatUnlocked, setIsLatUnlocked] = useState(false);
   const [isLngUnlocked, setIsLngUnlocked] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const attendanceMode = "check-in";
 
   // Form states
@@ -408,9 +409,6 @@ const AttendanceList: React.FC = () => {
   };
 
 
-
-
-
   const handleDelete = async (id: number | string) => {
     const shouldDelete = await confirm({
       title: "Delete Attendance Record",
@@ -420,8 +418,80 @@ const AttendanceList: React.FC = () => {
     });
 
     if (shouldDelete) {
-      deleteMutation.mutate(id);
+      try {
+        await deleteMutation.mutateAsync(id);
+        toast.success("Record deleted successfully");
+      } catch (error) {
+        console.error("Delete failed", error);
+        toast.error("Failed to delete record");
+      }
     }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+
+    const shouldDelete = await confirm({
+      title: "Delete Selected Records",
+      message: `Are you sure you want to delete ${selectedIds.size} attendance records? This action cannot be undone.`,
+      variant: "delete",
+      confirmText: `Delete ${selectedIds.size} Records`
+    });
+
+    if (shouldDelete) {
+      try {
+        const promises = Array.from(selectedIds).map(id => deleteMutation.mutateAsync(id));
+        await Promise.all(promises);
+        toast.success(`Successfully deleted ${selectedIds.size} records`);
+        setSelectedIds(new Set());
+      } catch (error) {
+        console.error("Bulk delete failed", error);
+        toast.error("Failed to delete some records");
+      }
+    }
+  };
+
+  const handleBulkStatusUpdate = async (statusLabel: string) => {
+    if (selectedIds.size === 0) return;
+
+    const shouldUpdate = await confirm({
+      title: "Update Status for Selected Records",
+      message: `Are you sure you want to set the status to "${statusLabel}" for ${selectedIds.size} records?`,
+      variant: "warning",
+      confirmText: "Update Status"
+    });
+
+    if (shouldUpdate) {
+      try {
+        const promises = Array.from(selectedIds).map(id => 
+          updateMutation.mutateAsync({ 
+            id, 
+            data: { statusLabel } as Partial<AttendanceRecord>
+          })
+        );
+        await Promise.all(promises);
+        toast.success(`Successfully updated ${selectedIds.size} records`);
+        setSelectedIds(new Set());
+      } catch (error) {
+        console.error("Bulk update status failed", error);
+        toast.error("Failed to update status for some records");
+      }
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === records.length && records.length > 0) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(records.map(r => r.public_id).filter(Boolean) as string[]));
+    }
+  };
+
+  const toggleSelectRow = (id: string) => {
+    const next = new Set(selectedIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelectedIds(next);
   };
 
   const getStatusColor = (statusName?: string) => {
@@ -683,11 +753,64 @@ const AttendanceList: React.FC = () => {
             </SmoothHeight>
         </div>
 
+        {/* Selection Actions Bar */}
+        {selectedIds.size > 0 && (
+          <div className="flex items-center justify-between p-4 bg-brand-50 border border-brand-100 rounded-2xl dark:bg-brand-500/10 dark:border-brand-500/20 animate-in slide-in-from-top-2 duration-300">
+            <div className="flex items-center gap-3">
+              <div className="size-8 rounded-full bg-brand-500 text-white flex items-center justify-center text-sm font-bold shadow-sm">
+                {selectedIds.size}
+              </div>
+              <p className="text-sm font-semibold text-brand-700 dark:text-brand-400">Records Selected</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="relative group/actions">
+                  <Button variant="secondary" size="sm" className="h-[38px]">
+                      Change Status <ChevronDownIcon className="ml-2 size-3 px-0.5" />
+                  </Button>
+                  <div className="absolute right-0 top-full mt-2 w-48 py-2 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-white/5 opacity-0 invisible group-hover/actions:opacity-100 group-hover/actions:visible transition-all z-20">
+                      {[
+                        { label: "Present (Hadir)", value: "present" },
+                        { label: "Sick (Sakit)", value: "sick" },
+                        { label: "Excused (Izin)", value: "excused" },
+                        { label: "Absent (Alpha)", value: "absent" },
+                        { label: "Late (Terlambat)", value: "late" },
+                      ].map(status => (
+                        <button 
+                          key={status.value}
+                          onClick={() => handleBulkStatusUpdate(status.value)}
+                          className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-white/5 text-gray-700 dark:text-gray-300"
+                        >
+                          {status.label}
+                        </button>
+                      ))}
+                  </div>
+              </div>
+              <Button variant="outline" size="sm" className="h-[38px] text-error-600 border-error-200 hover:bg-error-50 dark:border-error-500/30 dark:hover:bg-error-500/10" onClick={handleBulkDelete}>
+                <TrashIcon className="mr-2 size-3.5 px-0.5" />
+                Delete Selected
+              </Button>
+              <Button variant="secondary" size="sm" className="h-[38px]" onClick={() => setSelectedIds(new Set())}>
+                Clear
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Table - Mobile Scrollable, Desktop Fixed */}
         <div className="w-full overflow-x-auto lg:overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-white/[0.05] dark:bg-white/[0.03]">
           <Table>
             <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
               <TableRow>
+                <TableCell isHeader className="w-12 px-5 py-4">
+                  <div className="flex items-center justify-center">
+                    <input 
+                      type="checkbox" 
+                      className="size-4 rounded-md border-gray-300 dark:border-gray-700 text-brand-500 focus:ring-brand-500"
+                      checked={records.length > 0 && selectedIds.size === records.length}
+                      onChange={toggleSelectAll}
+                    />
+                  </div>
+                </TableCell>
                 <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">User & Identity</TableCell>
                 <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Attendance Details</TableCell>
                 <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status & Source</TableCell>
@@ -697,7 +820,7 @@ const AttendanceList: React.FC = () => {
             <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="py-12 text-center text-gray-400">
+                  <TableCell colSpan={5} className="py-12 text-center text-gray-400">
                     <div className="flex flex-col items-center gap-3">
                       <div className="size-6 animate-spin rounded-full border-2 border-brand-500 border-t-transparent"></div>
                       <span className="text-sm">Loading records...</span>
@@ -706,13 +829,23 @@ const AttendanceList: React.FC = () => {
                 </TableRow>
               ) : records.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="py-12 text-center text-gray-400">
+                  <TableCell colSpan={5} className="py-12 text-center text-gray-400">
                     No records found
                   </TableCell>
                 </TableRow>
               ) : (
                 records.map((record) => (
-                  <TableRow key={record.public_id} className="group hover:bg-gray-50/50 dark:hover:bg-white/[0.01] transition-colors">
+                  <TableRow key={record.public_id} className={`group hover:bg-gray-50/50 dark:hover:bg-white/[0.01] transition-colors ${selectedIds.has(record.public_id!) ? 'bg-brand-50/30 dark:bg-brand-500/5' : ''}`}>
+                    <TableCell className="px-5 py-4">
+                      <div className="flex items-center justify-center">
+                        <input 
+                          type="checkbox" 
+                          className="size-4 rounded-md border-gray-300 dark:border-gray-700 text-brand-500 focus:ring-brand-500"
+                          checked={selectedIds.has(record.public_id!)}
+                          onChange={() => toggleSelectRow(record.public_id!)}
+                        />
+                      </div>
+                    </TableCell>
                     <TableCell className="px-5 py-4">
                       <div className="flex items-center gap-3">
                         <div className="flex items-center justify-center rounded-full bg-brand-50 text-brand-500 dark:bg-brand-500/10 overflow-hidden ring-1 ring-gray-100 dark:ring-white/10 size-10 shrink-0">
@@ -1600,7 +1733,26 @@ const AttendanceList: React.FC = () => {
         title="Attendance Details"
         description="Comprehensive overview of student attendance record."
         footer={
-            <div className="flex justify-end gap-3">
+            <div className="flex justify-end gap-3 w-full">
+                <Button 
+                    variant="outline" 
+                    className="mr-auto text-error-600 border-error-100 hover:bg-error-50"
+                    onClick={async () => {
+                        const confirmed = await confirm({
+                            title: "Delete Attendance Record",
+                            message: "Are you sure you want to delete this specific record?",
+                            variant: "delete"
+                        });
+                        if (confirmed && selectedRecord?.public_id) {
+                            await deleteMutation.mutateAsync(selectedRecord.public_id);
+                            setIsDetailModalOpen(false);
+                            toast.success("Record deleted successfully");
+                        }
+                    }}
+                >
+                    <TrashIcon className="size-4 mr-2" />
+                    Delete
+                </Button>
                 <Button variant="outline" onClick={() => setIsDetailModalOpen(false)}>Close</Button>
                 <Button 
                     variant="primary" 

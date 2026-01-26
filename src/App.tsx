@@ -80,6 +80,9 @@ import AccessControlRoles from "./pages/AccessControl/Roles";
 import UserTypes from "./pages/AccessControl/UserTypes";
 import UserList from "./pages/Users/List";
 import IdCardPrint from "./pages/Users/IdCardPrint";
+import StorageSettings from "./pages/Settings/StorageSettings";
+import StorageCallback from "./pages/Settings/StorageCallback";
+
 import ShiftTemplates from "./pages/Scheduling/ShiftTemplates";
 import ShiftAssignments from "./pages/Scheduling/ShiftAssignments";
 import WorkSchedules from "./pages/Scheduling/WorkSchedules";
@@ -167,6 +170,8 @@ export default function App() {
               <Route path="/devices" element={<Devices />} />
               <Route path="/devices/live" element={<CctvDashboard />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/settings/storage" element={<StorageSettings />} />
+              <Route path="/settings/storage/callback" element={<StorageCallback />} />
               <Route path="/settings/backups" element={<Backups />} />
               <Route path="/roles" element={<AccessControlRoles />} />
               <Route path="/users/list" element={<UserList />} />

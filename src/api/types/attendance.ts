@@ -66,6 +66,7 @@ export interface AttendanceRecord {
   studentProfile?: {
     nis: string;
     nisn: string;
+    studentIdentificationNumber?: string;
     gender: string;
     placeOfBirth: string;
     dateOfBirth: string;
@@ -355,6 +356,7 @@ export interface UserPolicyResponse {
   studentProfile?: {
     nis: string;
     nisn: string;
+    studentIdentificationNumber?: string;
     gender: string;
     placeOfBirth: string;
     dateOfBirth: string;

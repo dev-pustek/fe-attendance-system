@@ -45,6 +45,7 @@ export default function NotificationInbox() {
   
   // Check if user is a student to restrict "Send Notification"
   const isStudent = user?.userTypes?.includes('student');
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const fetchNotifications = async () => {
       try {
@@ -153,6 +154,60 @@ export default function NotificationInbox() {
     }
   };
 
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedIds(notifications.map(n => n.id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleSelectRow = (id: string) => {
+    if (selectedIds.includes(id)) {
+      setSelectedIds(selectedIds.filter(selectedId => selectedId !== id));
+    } else {
+      setSelectedIds([...selectedIds, id]);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+
+    const count = selectedIds.length;
+    const confirmed = await confirm({
+      variant: 'delete',
+      title: 'Bulk Delete Notifications',
+      message: `Are you sure you want to permanently delete ${count} selected notifications? This action cannot be undone.`,
+      confirmText: `Delete ${count} Notifications`
+    });
+
+    if (confirmed) {
+      try {
+        const promises = selectedIds.map(id => notificationService.deleteNotification(id));
+        await Promise.all(promises);
+        showSuccess(`Successfully deleted ${count} notifications.`);
+        setSelectedIds([]);
+        fetchNotifications();
+      } catch (error) {
+        showError(error, "Failed to delete some notifications");
+      }
+    }
+  };
+
+  const handleBulkMarkRead = async () => {
+    if (selectedIds.length === 0) return;
+
+    try {
+      const promises = selectedIds.map(id => notificationService.markAsRead(id));
+      await Promise.all(promises);
+      showSuccess(`Marked ${selectedIds.length} notifications as read.`);
+      setSelectedIds([]);
+      fetchNotifications();
+    } catch (error) {
+      showError(error, "Failed to mark some notifications as read");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -238,14 +293,56 @@ export default function NotificationInbox() {
             >
                 <CheckCircleIcon className="size-4" />
                 Mark all read
-            </button>
-         </div>
+             </button>
+          </div>
 
-         {/* Table */}
+          {/* Bulk Selection Actions Bar */}
+          {selectedIds.length > 0 && (
+            <div className="flex items-center justify-between p-4 bg-brand-50 border border-brand-100 rounded-2xl dark:bg-brand-500/10 dark:border-brand-500/20 animate-in slide-in-from-top-2 duration-300">
+              <div className="flex items-center gap-3">
+                <div className="size-8 rounded-full bg-brand-500 text-white flex items-center justify-center text-sm font-bold shadow-sm font-mono">
+                  {selectedIds.length}
+                </div>
+                <p className="text-sm font-semibold text-brand-700 dark:text-brand-400">Notifications Selected</p>
+              </div>
+              <div className="flex items-center gap-2">
+                  <button
+                      onClick={handleBulkMarkRead}
+                      className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-sm font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-50 transition-all shadow-sm"
+                  >
+                      <CheckCircleIcon className="size-4" />
+                      Mark Read
+                  </button>
+                  <button
+                      onClick={handleBulkDelete}
+                      className="flex items-center gap-2 px-4 py-2 bg-error-50 dark:bg-error-500/10 border border-error-100 dark:border-error-500/20 rounded-xl text-sm font-bold text-error-600 dark:text-error-400 hover:bg-error-100 transition-all shadow-sm"
+                  >
+                      <TrashBinIcon className="size-4" />
+                      Delete Selected
+                  </button>
+                  <button
+                      onClick={() => setSelectedIds([])}
+                      className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-700 transition-colors"
+                  >
+                      Cancel
+                  </button>
+              </div>
+            </div>
+          )}
+
+          {/* Table */}
          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-white/[0.05] dark:bg-white/[0.03]">
             <Table>
                 <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
                     <TableRow>
+                        <TableCell isHeader className="px-5 py-4 w-12">
+                            <input 
+                                type="checkbox" 
+                                className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                                checked={notifications.length > 0 && selectedIds.length === notifications.length}
+                                onChange={handleSelectAll}
+                            />
+                        </TableCell>
                         <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</TableCell>
                         <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Title</TableCell>
                         <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Message</TableCell>
@@ -277,6 +374,14 @@ export default function NotificationInbox() {
                     ) : (
                         notifications.map((notif) => (
                             <TableRow key={notif.id} className={`group transition-colors ${!notif.readAt ? 'bg-brand-50/20 hover:bg-brand-50/40 dark:bg-brand-500/5 dark:hover:bg-brand-500/10' : 'hover:bg-gray-50/50 dark:hover:bg-white/[0.01]'}`}>
+                                <TableCell className="px-5 py-4">
+                                    <input 
+                                        type="checkbox" 
+                                        className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                                        checked={selectedIds.includes(notif.id)}
+                                        onChange={() => handleSelectRow(notif.id)}
+                                    />
+                                </TableCell>
                                 <TableCell className="px-5 py-4 whitespace-nowrap">
                                     <div className="flex flex-col">
                                         <span className="text-sm font-medium text-gray-900 dark:text-white">

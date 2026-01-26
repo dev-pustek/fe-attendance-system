@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { useSearchParams } from "react-router";
 import { useSubjectAttendances } from "../../../api/hooks/useAttendance";
+import { useClasses } from "../../../api/hooks/useAcademic";
 import { profilesService } from "../../../api/services/profilesService";
 import { attendanceService } from "../../../api/services/attendanceService";
 import { 
@@ -30,7 +31,8 @@ import {
   TimeIcon,
   CloseIcon,
   CheckCircleIcon,
-  GroupIcon
+  GroupIcon,
+  DownloadIcon
 } from "../../../components/atoms/Icons";
 import Badge from "../../../components/atoms/Badge";
 import { showSuccess, showError } from "../../../utils/toast";
@@ -81,6 +83,21 @@ const SubjectAttendances: React.FC = () => {
     status: "present",
     remarks: "",
   });
+
+  // Report Modal State
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [reportParams, setReportParams] = useState({
+    classId: "",
+    startDate: new Date().toISOString().split("T")[0],
+    endDate: new Date().toISOString().split("T")[0],
+  });
+
+  const { data: classesRes } = useClasses({ limit: 100 });
+  
+  const classOptions = (classesRes?.data || []).map(c => ({
+      label: c.name,
+      value: String(c.id)
+  }));
 
   // --- Student Search ---
   const [isSearchingStudents, setIsSearchingStudents] = useState(false);
@@ -323,6 +340,38 @@ const SubjectAttendances: React.FC = () => {
     }
   };
 
+  const handleDownloadReport = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!reportParams.classId || !reportParams.startDate || !reportParams.endDate) {
+          showError("Please fill in all required fields");
+          return;
+      }
+
+      try {
+          const blob = await attendanceService.downloadSubjectAttendanceReport({
+              classId: Number(reportParams.classId),
+              startDate: reportParams.startDate,
+              endDate: reportParams.endDate
+          });
+          
+          // Create download link
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `attendance-report-${reportParams.startDate}-to-${reportParams.endDate}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+          
+          setIsReportModalOpen(false);
+          showSuccess("Report downloaded successfully");
+      } catch (error) {
+          console.error(error);
+          showError("Failed to download report");
+      }
+  };
+
   return (
     <>
       <PageMeta title="Subject Attendance | Visia" description="Record student presence for specific teaching sessions." />
@@ -344,6 +393,19 @@ const SubjectAttendances: React.FC = () => {
                     Bulk Record
                   </button>
              )}
+              <button
+                onClick={() => {
+                    // Pre-fill classId if available from URL
+                    if (urlClassId) {
+                        setReportParams(prev => ({ ...prev, classId: urlClassId }));
+                    }
+                    setIsReportModalOpen(true);
+                }}
+                className="flex items-center justify-center gap-2 rounded-xl bg-white border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition-all hover:bg-gray-50 dark:bg-white/[0.03] dark:border-white/[0.08] dark:text-gray-200 dark:hover:bg-white/[0.05]"
+              >
+                <DownloadIcon className="size-4 fill-current" />
+                Download Report
+              </button>
               <button
                 onClick={() => handleOpenModal()}
                 className="flex items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-brand-600 shadow-lg shadow-brand-500/20"
@@ -622,6 +684,45 @@ const SubjectAttendances: React.FC = () => {
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none transition-all focus:border-brand-500 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-white resize-none h-24"
                 />
             </div>
+          </form>
+      </Modal>
+
+      {/* Report Modal */}
+      <Modal
+          isOpen={isReportModalOpen}
+          onClose={() => setIsReportModalOpen(false)}
+          className="max-w-md"
+          title="Download Attendance Report"
+          description="Generate and download attendance report PDF."
+          footer={
+              <div className="flex justify-end gap-3">
+                  <button onClick={() => setIsReportModalOpen(false)} className="rounded-xl px-4 py-2 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.05]">Cancel</button>
+                  <button type="submit" form="report-form" className="rounded-xl bg-brand-500 px-6 py-2 text-sm font-medium text-white transition-all hover:bg-brand-600 shadow-lg shadow-brand-500/20">Download PDF</button>
+              </div>
+          }
+      >
+          <form id="report-form" onSubmit={handleDownloadReport} className="space-y-4">
+              <CustomSelect
+                  label="Class"
+                  placeholder="Select Class..."
+                  value={reportParams.classId}
+                  onChange={(val) => setReportParams({ ...reportParams, classId: String(val) })}
+                  options={classOptions}
+              />
+              <div className="grid grid-cols-2 gap-4">
+                  <DatePicker // @ts-expect-error - DatePicker types mismatch
+                      label="Start Date"
+                      value={reportParams.startDate}
+                      onChange={(val: string) => setReportParams({ ...reportParams, startDate: val })}
+                      required
+                  />
+                  <DatePicker // @ts-expect-error - DatePicker types mismatch
+                      label="End Date"
+                      value={reportParams.endDate}
+                      onChange={(val: string) => setReportParams({ ...reportParams, endDate: val })}
+                      required
+                  />
+              </div>
           </form>
       </Modal>
 

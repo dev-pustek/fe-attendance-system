@@ -42,6 +42,9 @@ const StudentManagement: React.FC = () => {
     const debouncedSearch = useDebounce(searchQuery, 500);
     const { confirm, confirmState } = useConfirm();
 
+    // Selection State
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
     // Filters derived from URL
     const classFilter = searchParams.get("classId") || "all";
     const yearFilter = searchParams.get("academicYearId") || "all";
@@ -161,8 +164,47 @@ const StudentManagement: React.FC = () => {
         if (confirmed) {
             try {
                 await deleteMutation.mutateAsync(student.userId);
+                showSuccess("Student profile deleted successfully.");
             } catch (e) {
                 showError(e);
+            }
+        }
+    };
+
+    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.checked) {
+            setSelectedIds(students.map((s: StudentProfile) => s.userId));
+        } else {
+            setSelectedIds([]);
+        }
+    };
+
+    const handleSelectRow = (id: string) => {
+        if (selectedIds.includes(id)) {
+            setSelectedIds(selectedIds.filter(selectedId => selectedId !== id));
+        } else {
+            setSelectedIds([...selectedIds, id]);
+        }
+    };
+
+    const handleBulkDelete = async () => {
+        if (selectedIds.length === 0) return;
+
+        const confirmed = await confirm({
+            variant: "delete",
+            title: "Bulk Delete Students",
+            message: `Are you sure you want to permanently delete ${selectedIds.length} selected student profiles? This action cannot be undone.`,
+            confirmText: `Delete ${selectedIds.length} Students`
+        });
+
+        if (confirmed) {
+            try {
+                const promises = selectedIds.map(id => deleteMutation.mutateAsync(id));
+                await Promise.all(promises);
+                showSuccess(`Successfully removed ${selectedIds.length} student profiles.`);
+                setSelectedIds([]);
+            } catch (e) {
+                showError(e, "Failed to remove some students");
             }
         }
     };
@@ -214,6 +256,33 @@ const StudentManagement: React.FC = () => {
                         Add New Student
                     </button>
                 </div>
+
+                {/* Bulk Selection Actions Bar */}
+                {selectedIds.length > 0 && (
+                    <div className="flex items-center justify-between p-4 bg-brand-50 border border-brand-100 rounded-2xl dark:bg-brand-500/10 dark:border-brand-500/20 animate-in slide-in-from-top-2 duration-300">
+                        <div className="flex items-center gap-3">
+                            <div className="size-8 rounded-full bg-brand-500 text-white flex items-center justify-center text-sm font-bold shadow-sm font-mono">
+                                {selectedIds.length}
+                            </div>
+                            <p className="text-sm font-semibold text-brand-700 dark:text-brand-400">Students Selected</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={handleBulkDelete}
+                                className="flex items-center gap-2 px-4 py-2 bg-error-50 dark:bg-error-500/10 border border-error-100 dark:border-error-500/20 rounded-xl text-sm font-bold text-error-600 dark:text-error-400 hover:bg-error-100 transition-all shadow-sm"
+                            >
+                                <TrashBinIcon className="size-4" />
+                                Delete Selected
+                            </button>
+                            <button
+                                onClick={() => setSelectedIds([])}
+                                className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-700 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 {/* Filters */}
                 <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -280,6 +349,16 @@ const StudentManagement: React.FC = () => {
                     <Table>
                         <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
                             <TableRow>
+                                <TableCell isHeader className="w-10 px-5 py-4">
+                                    <div className="flex items-center">
+                                        <input 
+                                            type="checkbox" 
+                                            className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                                            checked={students.length > 0 && selectedIds.length === students.length}
+                                            onChange={handleSelectAll}
+                                        />
+                                    </div>
+                                </TableCell>
                                 <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Student Information</TableCell>
                                 <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ID & NISN</TableCell>
                                 <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Active Enrollment</TableCell>
@@ -290,7 +369,7 @@ const StudentManagement: React.FC = () => {
                         <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
                             {isStudentsLoading ? (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="py-20 text-center">
+                                    <TableCell colSpan={6} className="py-20 text-center">
                                         <div className="flex flex-col items-center gap-3">
                                             <div className="size-8 animate-spin rounded-full border-2 border-brand-500 border-t-transparent"></div>
                                             <span className="text-sm font-medium text-gray-400">Loading student directory...</span>
@@ -299,7 +378,7 @@ const StudentManagement: React.FC = () => {
                                 </TableRow>
                             ) : students.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="py-20 text-center text-gray-400">
+                                    <TableCell colSpan={6} className="py-20 text-center text-gray-400">
                                         <div className="flex flex-col items-center gap-2">
                                             <div className="size-10 rounded-full bg-gray-50 dark:bg-white/5 flex items-center justify-center mb-1">
                                                 <UserCircleIcon className="size-5 opacity-20" />
@@ -310,7 +389,17 @@ const StudentManagement: React.FC = () => {
                                 </TableRow>
                             ) : (
                                 students.map((student: StudentProfile) => (
-                                    <TableRow key={student.id} className="group hover:bg-gray-50/50 dark:hover:bg-white/[0.01] transition-colors">
+                                    <TableRow key={student.id} className={`group hover:bg-gray-50/50 dark:hover:bg-white/[0.01] transition-colors ${selectedIds.includes(student.userId) ? 'bg-brand-50/30 dark:bg-brand-500/5' : ''}`}>
+                                        <TableCell className="px-5 py-4">
+                                            <div className="flex items-center">
+                                                <input 
+                                                    type="checkbox" 
+                                                    className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                                                    checked={selectedIds.includes(student.userId)}
+                                                    onChange={() => handleSelectRow(student.userId)}
+                                                />
+                                            </div>
+                                        </TableCell>
                                         <TableCell className="px-5 py-4">
                                             <div className="flex items-center gap-3">
                                                 <div className={`flex size-10 items-center justify-center rounded-xl font-bold text-base overflow-hidden ${!student.user?.photo ? 'bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400' : ''}`}>

@@ -226,6 +226,7 @@ const ClassSchedules: React.FC = () => {
     lateToleranceMinutes: 15,
     earlyLeaveThresholdMinutes: 15,
   });
+  const [selectedIds, setSelectedIds] = useState<(number | string)[]>([]);
 
   const handleOpenModal = (schedule?: ClassSchedule) => {
     if (schedule) {
@@ -313,6 +314,45 @@ const ClassSchedules: React.FC = () => {
     }
   };
 
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedIds(sortedSchedules.map(s => s.id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleSelectRow = (id: number | string) => {
+    if (selectedIds.includes(id)) {
+      setSelectedIds(selectedIds.filter(selectedId => selectedId !== id));
+    } else {
+      setSelectedIds([...selectedIds, id]);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+
+    const count = selectedIds.length;
+    const confirmed = await confirm({
+      variant: 'delete',
+      title: 'Bulk Delete Schedules',
+      message: `Are you sure you want to permanently delete ${count} selected class schedules? This action cannot be undone.`,
+      confirmText: `Delete ${count} Schedules`
+    });
+
+    if (confirmed) {
+      try {
+        const promises = selectedIds.map(id => deleteMutation.mutateAsync(id));
+        await Promise.all(promises);
+        showSuccess(`Successfully deleted ${count} schedules.`);
+        setSelectedIds([]);
+      } catch (error) {
+        showError(error, "Failed to delete some schedules");
+      }
+    }
+  };
+
   return (
     <>
       <PageMeta title="Class Schedules | Academic" description="Manage weekly class schedules." />
@@ -395,12 +435,47 @@ const ClassSchedules: React.FC = () => {
           />
         </div>
 
+        {/* Bulk Selection Actions Bar */}
+        {selectedIds.length > 0 && (
+          <div className="flex items-center justify-between p-4 bg-brand-50 border border-brand-100 rounded-2xl dark:bg-brand-500/10 dark:border-brand-500/20 animate-in slide-in-from-top-2 duration-300">
+            <div className="flex items-center gap-3">
+              <div className="size-8 rounded-full bg-brand-500 text-white flex items-center justify-center text-sm font-bold shadow-sm font-mono">
+                {selectedIds.length}
+              </div>
+              <p className="text-sm font-semibold text-brand-700 dark:text-brand-400">Schedules Selected</p>
+            </div>
+            <div className="flex items-center gap-2">
+                <button
+                    onClick={handleBulkDelete}
+                    className="flex items-center gap-2 px-4 py-2 bg-error-50 dark:bg-error-500/10 border border-error-100 dark:border-error-500/20 rounded-xl text-sm font-bold text-error-600 dark:text-error-400 hover:bg-error-100 transition-all shadow-sm"
+                >
+                    <TrashBinIcon className="size-4" />
+                    Delete Selected
+                </button>
+                <button
+                    onClick={() => setSelectedIds([])}
+                    className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                    Cancel
+                </button>
+            </div>
+          </div>
+        )}
+
         {/* Table */}
         {viewMode === "list" ? (
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-white/[0.05] dark:bg-white/[0.03]">
           <Table>
             <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
               <TableRow>
+                <TableCell isHeader className="px-5 py-4 w-12">
+                    <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                        checked={sortedSchedules.length > 0 && selectedIds.length === sortedSchedules.length}
+                        onChange={handleSelectAll}
+                    />
+                </TableCell>
                 <TableCell isHeader className="px-5 py-4 text-left">
                   <button onClick={() => handleSort("class.name")} className="flex items-center gap-2 text-theme-xs font-medium text-gray-500 dark:text-gray-400 hover:text-brand-500 transition-colors uppercase tracking-wider">
                     Class <SortIcon column="class.name" />
@@ -423,15 +498,23 @@ const ClassSchedules: React.FC = () => {
             <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="py-12 text-center text-gray-400">Loading schedules...</TableCell>
+                  <TableCell colSpan={6} className="py-12 text-center text-gray-400">Loading schedules...</TableCell>
                 </TableRow>
               ) : sortedSchedules.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="py-12 text-center text-gray-400">No schedules found.</TableCell>
+                  <TableCell colSpan={6} className="py-12 text-center text-gray-400">No schedules found.</TableCell>
                 </TableRow>
               ) : (
                 sortedSchedules.map((schedule) => (
                   <TableRow key={schedule.id} className="group hover:bg-gray-50/50 dark:hover:bg-white/[0.01] transition-colors">
+                    <TableCell className="px-5 py-4">
+                        <input 
+                            type="checkbox" 
+                            className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                            checked={selectedIds.includes(schedule.id)}
+                            onChange={() => handleSelectRow(schedule.id)}
+                        />
+                    </TableCell>
                     <TableCell className="px-5 py-4">
                       <div className="font-medium text-gray-900 dark:text-white">{schedule.class?.name || schedule.classId}</div>
                     </TableCell>

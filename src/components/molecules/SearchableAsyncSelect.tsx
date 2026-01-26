@@ -90,7 +90,7 @@ export const SearchableAsyncSelect: React.FC<SearchableAsyncSelectProps> = ({
          if (dropdownRef.current && dropdownRef.current.contains(e.target as Node)) {
            return;
          }
-         setIsOpen(false);
+         calculateCoords();
        }; 
       window.addEventListener("scroll", handleScroll, true);
       window.addEventListener("resize", handleScroll);

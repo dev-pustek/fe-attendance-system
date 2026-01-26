@@ -1,15 +1,13 @@
 import { useEffect, useState } from "react";
-import { useAuthStore } from "../../store/authStore";
 import { dashboardService } from "../../api/services/dashboardService";
 import { StudentDashboardSummary } from "../../api/types/dashboard";
 import StudentPerformance from "../../components/organisms/Dashboard/Student/StudentPerformance";
 import ArrivalHabitsChart from "../../components/organisms/Dashboard/Student/ArrivalHabitsChart";
 import StudentScanHistory from "../../components/organisms/Dashboard/Student/StudentScanHistory";
+import SubjectAttendanceMetrics from "../../components/organisms/Dashboard/Student/SubjectAttendanceMetrics";
 import PageMeta from "../../components/atoms/PageMeta";
-import StudentIdCardSection from "../../components/organisms/Dashboard/Student/StudentIdCardSection";
 
 export default function StudentDashboard() {
-  const { user } = useAuthStore();
   const [summary, setSummary] = useState<StudentDashboardSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -69,8 +67,9 @@ export default function StudentDashboard() {
             <div className="col-span-12 xl:col-span-8 h-full space-y-6">
                 <ArrivalHabitsChart trends={summary.trends} />
                 
-                {/* ID Card Section */}
-                <StudentIdCardSection user={user} />
+                {summary.subjectAttendance && (
+                    <SubjectAttendanceMetrics metrics={summary.subjectAttendance.metrics} />
+                )}
             </div>
             <div className="col-span-12 xl:col-span-4 h-full">
                 <StudentScanHistory logs={summary.recentLogs} />

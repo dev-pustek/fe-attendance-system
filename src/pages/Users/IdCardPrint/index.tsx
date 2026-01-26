@@ -150,6 +150,24 @@ export default function IdCardPrint() {
       });
   };
 
+  const handleBulkRemoveFromQueue = () => {
+    if (selectedQueueIds.length === 0) return;
+    
+    setPrintQueue(prev => prev.filter(u => u && !selectedQueueIds.includes(String(u.public_id))));
+    
+    setCardOffsets(prev => {
+        const newOffsets = { ...prev };
+        selectedQueueIds.forEach(userId => {
+            delete newOffsets[`${userId}-front`];
+            delete newOffsets[`${userId}-back`];
+        });
+        return newOffsets;
+    });
+    
+    setSelectedQueueIds([]);
+    toast.success(`Removed ${selectedQueueIds.length} users from queue`);
+  };
+
 
   // Canvas Selection Handlers
   const toggleQueueSelection = (id: string) => {
@@ -688,6 +706,14 @@ export default function IdCardPrint() {
                                         <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-[10px]">{printQueue.length}</span>
                                     </h3>
                                     <div className="flex items-center gap-2">
+                                        {selectedQueueIds.length > 0 && (
+                                            <button 
+                                                onClick={handleBulkRemoveFromQueue} 
+                                                className="text-[10px] font-bold text-red-500 hover:text-red-600 bg-red-50 px-2 py-1 rounded-md transition-colors"
+                                            >
+                                                Remove Selected ({selectedQueueIds.length})
+                                            </button>
+                                        )}
                                         {printQueue.length > 0 && (
                                             <button onClick={() => setPrintQueue([])} className="text-[10px] font-bold text-gray-400 hover:text-red-500 ml-2">
                                                 Clear Queue

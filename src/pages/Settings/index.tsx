@@ -25,6 +25,8 @@ const Settings: React.FC = () => {
     limit,
   });
 
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSetting, setSelectedSetting] = useState<SystemSetting | null>(null);
   const [sortConfig, setSortConfig] = useState<{ key: keyof SystemSetting; direction: "asc" | "desc" } | null>(null);
@@ -127,6 +129,44 @@ const Settings: React.FC = () => {
     }
   };
 
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.checked) {
+          setSelectedKeys(sortedSettings.map((s: SystemSetting) => s.key));
+      } else {
+          setSelectedKeys([]);
+      }
+  };
+
+  const handleSelectRow = (key: string) => {
+      if (selectedKeys.includes(key)) {
+          setSelectedKeys(selectedKeys.filter(selectedKey => selectedKey !== key));
+      } else {
+          setSelectedKeys([...selectedKeys, key]);
+      }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedKeys.length === 0) return;
+
+    const confirmed = await confirm({
+        variant: 'delete',
+        title: 'Bulk Delete Settings',
+        message: `Are you sure you want to permanently delete ${selectedKeys.length} selected settings? This may affect system behavior.`,
+        confirmText: `Delete ${selectedKeys.length} Settings`
+    });
+
+    if (confirmed) {
+        try {
+            const promises = selectedKeys.map(key => deleteMutation.mutateAsync(key));
+            await Promise.all(promises);
+            showSuccess(`Successfully removed ${selectedKeys.length} settings.`);
+            setSelectedKeys([]);
+        } catch (error) {
+            showError(error, "Failed to remove some settings");
+        }
+    }
+  };
+
   return (
     <>
       <PageMeta title="System Settings | Visia" description="Manage system-wide configuration settings." />
@@ -147,6 +187,33 @@ const Settings: React.FC = () => {
             Add Setting
           </button>
         </div>
+
+        {/* Bulk Selection Actions Bar */}
+        {selectedKeys.length > 0 && (
+          <div className="flex items-center justify-between p-4 bg-brand-50 border border-brand-100 rounded-2xl dark:bg-brand-500/10 dark:border-brand-500/20 animate-in slide-in-from-top-2 duration-300">
+            <div className="flex items-center gap-3">
+              <div className="size-8 rounded-full bg-brand-500 text-white flex items-center justify-center text-sm font-bold shadow-sm font-mono">
+                {selectedKeys.length}
+              </div>
+              <p className="text-sm font-semibold text-brand-700 dark:text-brand-400">Settings Selected</p>
+            </div>
+            <div className="flex items-center gap-2">
+                <button
+                    onClick={handleBulkDelete}
+                    className="flex items-center gap-2 px-4 py-2 bg-error-50 dark:bg-error-500/10 border border-error-100 dark:border-error-500/20 rounded-xl text-sm font-bold text-error-600 dark:text-error-400 hover:bg-error-100 transition-all shadow-sm"
+                >
+                    <TrashBinIcon className="size-4" />
+                    Delete Selected
+                </button>
+                <button
+                    onClick={() => setSelectedKeys([])}
+                    className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                    Cancel
+                </button>
+            </div>
+          </div>
+        )}
 
         {/* Filters */}
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -171,6 +238,14 @@ const Settings: React.FC = () => {
           <Table>
             <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
               <TableRow>
+                <TableCell isHeader className="px-5 py-4 w-12">
+                    <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                        checked={sortedSettings.length > 0 && selectedKeys.length === sortedSettings.length}
+                        onChange={handleSelectAll}
+                    />
+                </TableCell>
                 <TableCell isHeader className="px-5 py-4">
                   <button onClick={() => handleSort("key")} className="flex items-center gap-2 text-theme-xs font-medium text-gray-500 dark:text-gray-400 hover:text-brand-500 transition-colors uppercase tracking-wider">
                     Key <SortIcon column="key" />
@@ -214,6 +289,14 @@ const Settings: React.FC = () => {
               ) : (
                 sortedSettings.map((setting: SystemSetting) => (
                   <TableRow key={setting.key} className="group hover:bg-gray-50/50 dark:hover:bg-white/[0.01] transition-colors">
+                    <TableCell className="px-5 py-4">
+                        <input 
+                            type="checkbox" 
+                            className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                            checked={selectedKeys.includes(setting.key)}
+                            onChange={() => handleSelectRow(setting.key)}
+                        />
+                    </TableCell>
                     <TableCell className="px-5 py-4">
                       <div className="flex items-center gap-3">
                         <div className="flex size-9 items-center justify-center rounded-full bg-gray-100 dark:bg-white/5">

@@ -23,6 +23,9 @@ const IdentityChannels: React.FC = () => {
     const debouncedSearch = useDebounce(searchQuery, 500);
     const { confirm, confirmState } = useConfirm();
 
+    // Selection State
+    const [selectedIds, setSelectedIds] = useState<number[]>([]);
+
     const { data: response, isLoading } = useIdentityChannels({
         page,
         limit,
@@ -147,6 +150,44 @@ const IdentityChannels: React.FC = () => {
         }
     };
 
+    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.checked) {
+            setSelectedIds(channels.map((c: IdentityChannel) => c.id));
+        } else {
+            setSelectedIds([]);
+        }
+    };
+
+    const handleSelectRow = (id: number) => {
+        if (selectedIds.includes(id)) {
+            setSelectedIds(selectedIds.filter(selectedId => selectedId !== id));
+        } else {
+            setSelectedIds([...selectedIds, id]);
+        }
+    };
+
+    const handleBulkDelete = async () => {
+        if (selectedIds.length === 0) return;
+
+        const confirmed = await confirm({
+            variant: 'delete',
+            title: 'Bulk Delete Channels',
+            message: `Are you sure you want to permanently delete ${selectedIds.length} selected channels? This action cannot be undone.`,
+            confirmText: `Delete ${selectedIds.length} Channels`
+        });
+
+        if (confirmed) {
+            try {
+                const promises = selectedIds.map(id => deleteMutation.mutateAsync(id));
+                await Promise.all(promises);
+                showSuccess(`Successfully removed ${selectedIds.length} channels.`);
+                setSelectedIds([]);
+            } catch (error) {
+                showError(error, "Failed to remove some channels");
+            }
+        }
+    };
+
     return (
         <>
             <PageMeta title="Identity Channels | ID Link" description="Manage authentication channels." />
@@ -167,9 +208,45 @@ const IdentityChannels: React.FC = () => {
                     </button>
                 </div>
 
+                {/* Bulk Selection Actions Bar */}
+                {selectedIds.length > 0 && (
+                  <div className="flex items-center justify-between p-4 bg-brand-50 border border-brand-100 rounded-2xl dark:bg-brand-500/10 dark:border-brand-500/20 animate-in slide-in-from-top-2 duration-300">
+                    <div className="flex items-center gap-3">
+                      <div className="size-8 rounded-full bg-brand-500 text-white flex items-center justify-center text-sm font-bold shadow-sm font-mono">
+                        {selectedIds.length}
+                      </div>
+                      <p className="text-sm font-semibold text-brand-700 dark:text-brand-400">Channels Selected</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={handleBulkDelete}
+                            className="flex items-center gap-2 px-4 py-2 bg-error-50 dark:bg-error-500/10 border border-error-100 dark:border-error-500/20 rounded-xl text-sm font-bold text-error-600 dark:text-error-400 hover:bg-error-100 transition-all shadow-sm"
+                        >
+                            <TrashBinIcon className="size-4" />
+                            Delete Selected
+                        </button>
+                        <button
+                            onClick={() => setSelectedIds([])}
+                            className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-700 transition-colors"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Filters & Actions */}
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div className="flex flex-1 flex-col gap-4 sm:flex-row sm:items-center">
+                        <div className="flex items-center gap-2 px-1">
+                            <input 
+                                type="checkbox" 
+                                className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                                checked={channels.length > 0 && selectedIds.length === channels.length}
+                                onChange={handleSelectAll}
+                            />
+                            <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Select All</span>
+                        </div>
                         <div className="relative flex-1 max-w-sm">
                             <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">
                                 <SearchIcon className="size-4" />
@@ -261,8 +338,16 @@ const IdentityChannels: React.FC = () => {
                         {channels.map((channel: IdentityChannel) => (
                             <div
                                 key={channel.id}
-                                className="group relative flex flex-col justify-between rounded-2xl border border-gray-200 bg-white shadow-sm transition-all hover:shadow-xl hover:border-brand-500/40 dark:border-white/[0.05] dark:bg-white/[0.03] dark:hover:border-brand-500/40 overflow-hidden"
+                                className={`group relative flex flex-col justify-between rounded-2xl border border-gray-200 bg-white shadow-sm transition-all hover:shadow-xl hover:border-brand-500/40 dark:border-white/[0.05] dark:bg-white/[0.03] dark:hover:border-brand-500/40 overflow-hidden ${selectedIds.includes(channel.id) ? 'ring-2 ring-brand-500 border-brand-500/50 bg-brand-50/10' : ''}`}
                             >
+                                <div className="absolute top-3 right-3 z-10">
+                                    <input 
+                                        type="checkbox" 
+                                        className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                                        checked={selectedIds.includes(channel.id)}
+                                        onChange={() => handleSelectRow(channel.id)}
+                                    />
+                                </div>
                                 <div className="p-5 flex flex-col gap-5">
                                     {/* Top Header: Code & Status */}
                                     <div className="flex flex-col gap-2">

@@ -13,6 +13,7 @@ import {
   CloseIcon,
   AlertIcon,
   DocsIcon,
+  TrashBinIcon,
 } from "../../components/atoms/Icons";
 import PageMeta from "../../components/atoms/PageMeta";
 import PageBreadcrumb from "../../components/molecules/PageBreadcrumb";
@@ -30,6 +31,10 @@ import TabNavigation, { TabItem } from "../../components/molecules/TabNavigation
 import Badge from "../../components/atoms/Badge";
 import Avatar from "../../components/atoms/Avatar";
 import DatePicker from "../../components/molecules/DatePicker";
+import { useConfirm } from "../../hooks/useConfirm";
+import ConfirmDialog from "../../components/molecules/ConfirmDialog";
+import { showSuccess, showError } from "../../utils/toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 type AttendanceTab = 'gate' | 'class' | 'event';
 
@@ -64,6 +69,16 @@ const AttendanceHistory: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateFrom, setDateFrom] = useState(format(startOfWeek(new Date()), 'yyyy-MM-dd'));
   const [dateTo, setDateTo] = useState(format(endOfWeek(new Date()), 'yyyy-MM-dd'));
+
+  // Bulk Selection
+  const [selectedIds, setSelectedIds] = useState<Set<number | string>>(new Set());
+  const { confirm, confirmState } = useConfirm();
+  const queryClient = useQueryClient();
+
+  // Reset selection on tab change
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [activeTab]);
 
   // New filters
   const [academicYearId] = useState<string>("");
@@ -146,6 +161,70 @@ const AttendanceHistory: React.FC = () => {
       }),
     enabled: activeTab === 'event' && !isMobile,
   });
+
+  // --- Mutations ---
+  const deleteGateMutation = useMutation({
+    mutationFn: (id: number | string) => attendanceService.deleteAttendanceRecord(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["gateHistory"] }),
+  });
+
+  const deleteClassMutation = useMutation({
+    mutationFn: (id: number | string) => attendanceService.deleteSubjectAttendance(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["classHistory"] }),
+  });
+
+  // --- Bulk Actions ---
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const data = activeTab === 'gate' ? gateResponse?.data : activeTab === 'class' ? classResponse?.data : eventResponse?.data;
+      if (!data) return;
+
+      if (e.target.checked) {
+          const ids = data.map((r: any) => r.id || r.public_id).filter(Boolean);
+          setSelectedIds(new Set(ids));
+      } else {
+          setSelectedIds(new Set());
+      }
+  };
+
+  const handleSelectRow = (id: number | string) => {
+      const next = new Set(selectedIds);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      setSelectedIds(next);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+
+    const count = selectedIds.size;
+    const isGate = activeTab === 'gate';
+    const isClass = activeTab === 'class';
+    
+    if (!isGate && !isClass) {
+        showError("Bulk delete is not supported for this tab yet.");
+        return;
+    }
+
+    const confirmed = await confirm({
+        variant: 'delete',
+        title: 'Bulk Delete Records',
+        message: `Are you sure you want to permanently delete ${count} selected records? This action cannot be undone.`,
+        confirmText: `Delete ${count} Records`
+    });
+
+    if (confirmed) {
+        try {
+            const promises = Array.from(selectedIds).map(id => 
+                isGate ? deleteGateMutation.mutateAsync(id) : deleteClassMutation.mutateAsync(id)
+            );
+            await Promise.all(promises);
+            showSuccess(`Successfully removed ${count} records.`);
+            setSelectedIds(new Set());
+        } catch (error) {
+            showError(error, "Failed to remove some records");
+        }
+    }
+  };
 
   // --- Mobile Queries (Infinite Scroll / Lazy Load) ---
 
@@ -474,6 +553,32 @@ const AttendanceHistory: React.FC = () => {
                </div>
             </div>
 
+            {/* Bulk Selection Actions Bar */}
+            {selectedIds.size > 0 && (
+              <div className="flex items-center justify-between p-4 bg-brand-50 border border-brand-100 rounded-2xl dark:bg-brand-500/10 dark:border-brand-500/20 animate-in slide-in-from-top-2 duration-300 mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="size-8 rounded-full bg-brand-500 text-white flex items-center justify-center text-sm font-bold shadow-sm font-mono">
+                    {selectedIds.size}
+                  </div>
+                  <p className="text-sm font-semibold text-brand-700 dark:text-brand-400">Records Selected</p>
+                </div>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={handleBulkDelete}
+                        className="flex items-center gap-2 px-4 py-2 bg-error-50 dark:bg-error-500/10 border border-error-100 dark:border-error-500/20 rounded-xl text-sm font-bold text-error-600 dark:text-error-400 hover:bg-error-100 transition-all shadow-sm"
+                    >
+                        <TrashBinIcon className="size-4" />
+                        Delete Selected
+                    </button>
+                    <button
+                        onClick={() => setSelectedIds(new Set())}
+                        className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-700 transition-colors"
+                    >
+                        Cancel
+                    </button>
+                </div>
+              </div>
+            )}
 
           {/* Mobile Card View (Lazy Load) */}
           <div className="block md:hidden space-y-4">
@@ -683,6 +788,14 @@ const AttendanceHistory: React.FC = () => {
                 <TableRow>
                   {activeTab === 'gate' && (
                     <>
+                      <TableCell isHeader className="px-5 py-4 w-12">
+                          <input 
+                              type="checkbox" 
+                              className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                              checked={currentData.length > 0 && selectedIds.size === currentData.length}
+                              onChange={handleSelectAll}
+                          />
+                      </TableCell>
                       <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         User Details
                       </TableCell>
@@ -703,6 +816,14 @@ const AttendanceHistory: React.FC = () => {
 
                   {activeTab === 'class' && (
                     <>
+                       <TableCell isHeader className="px-5 py-4 w-12">
+                          <input 
+                              type="checkbox" 
+                              className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                              checked={currentData.length > 0 && selectedIds.size === currentData.length}
+                              onChange={handleSelectAll}
+                          />
+                      </TableCell>
                       <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         Subject
                       </TableCell>
@@ -770,6 +891,14 @@ const AttendanceHistory: React.FC = () => {
                       {activeTab === 'gate' && (
                         <>
                           <TableCell className="px-5 py-4">
+                              <input 
+                                  type="checkbox" 
+                                  className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                                  checked={selectedIds.has(record.id)}
+                                  onChange={() => handleSelectRow(record.id)}
+                              />
+                          </TableCell>
+                          <TableCell className="px-5 py-4">
                             <div className="flex items-center gap-3">
                               <Avatar
                                 src={record.user?.photo || record.user?.profile?.photo}
@@ -825,12 +954,22 @@ const AttendanceHistory: React.FC = () => {
                       {activeTab === 'class' && (
                         <>
                           <TableCell className="px-5 py-4">
-                            <span className="text-sm font-medium text-gray-900 dark:text-white block">
-                              {record.teachingSession?.classSubject?.subject?.name || '-'}
-                            </span>
+                              <input 
+                                  type="checkbox" 
+                                  className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                                  checked={selectedIds.has(record.id)}
+                                  onChange={() => handleSelectRow(record.id)}
+                              />
+                          </TableCell>
+                          <TableCell className="px-5 py-4">
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                {record.teachingSession?.classSubject?.subject?.name || 'Unknown'}
+                              </span>
                             <span className="text-xs text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-500/10 px-1.5 py-0.5 rounded mt-1 inline-block">
                               {record.teachingSession?.classSubject?.category || 'Subject'}
                             </span>
+                            </div>
                           </TableCell>
                           <TableCell className="px-5 py-4">
                              <div className="flex items-center gap-2">
@@ -933,6 +1072,7 @@ const AttendanceHistory: React.FC = () => {
           </div>
         </div>
       </main>
+      <ConfirmDialog {...confirmState} />
     </div>
   );
 };

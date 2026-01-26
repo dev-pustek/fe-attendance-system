@@ -74,6 +74,7 @@ const TeachingAssignments: React.FC = () => {
     role: "primary",
     isActive: true,
   });
+  const [selectedIds, setSelectedIds] = useState<(number | string)[]>([]);
 
   const [isSearchingTeachers, setIsSearchingTeachers] = useState(false);
   const [teacherOptions, setTeacherOptions] = useState<{ label: string; value: string; subLabel?: string }[]>([]);
@@ -253,6 +254,45 @@ const TeachingAssignments: React.FC = () => {
     }
   };
 
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedIds(sortedAssignments.map(a => a.id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleSelectRow = (id: number | string) => {
+    if (selectedIds.includes(id)) {
+      setSelectedIds(selectedIds.filter(selectedId => selectedId !== id));
+    } else {
+      setSelectedIds([...selectedIds, id]);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+
+    const count = selectedIds.length;
+    const confirmed = await confirm({
+      variant: 'delete',
+      title: 'Bulk Delete Assignments',
+      message: `Are you sure you want to permanently delete ${count} selected teaching assignments? This action cannot be undone.`,
+      confirmText: `Delete ${count} Assignments`
+    });
+
+    if (confirmed) {
+      try {
+        const promises = selectedIds.map(id => deleteMutation.mutateAsync(id));
+        await Promise.all(promises);
+        showSuccess(`Successfully deleted ${count} assignments.`);
+        setSelectedIds([]);
+      } catch (error) {
+        showError(error, "Failed to delete some assignments");
+      }
+    }
+  };
+
   return (
     <>
       <PageMeta title="Teaching Assignments | Visia" description="Manage teachers assigned to subjects in specific classes." />
@@ -339,6 +379,14 @@ const TeachingAssignments: React.FC = () => {
           <Table>
             <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
               <TableRow>
+                <TableCell isHeader className="px-5 py-4 w-12">
+                    <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                        checked={sortedAssignments.length > 0 && selectedIds.length === sortedAssignments.length}
+                        onChange={handleSelectAll}
+                    />
+                </TableCell>
                 <TableCell isHeader className="px-5 py-4 text-left">
                   <button onClick={() => handleSort("teacher")} className="flex items-center gap-2 text-theme-xs font-medium text-gray-500 dark:text-gray-400 hover:text-brand-500 transition-colors uppercase tracking-wider">
                     Teacher <SortIcon column={"teacher"} />
@@ -382,6 +430,14 @@ const TeachingAssignments: React.FC = () => {
               ) : (
                 sortedAssignments.map((assignment: TeachingAssignment) => (
                   <TableRow key={assignment.id} className="group hover:bg-gray-50/50 dark:hover:bg-white/[0.01] transition-colors">
+                    <TableCell className="px-5 py-4">
+                        <input 
+                            type="checkbox" 
+                            className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                            checked={selectedIds.includes(assignment.id)}
+                            onChange={() => handleSelectRow(assignment.id)}
+                        />
+                    </TableCell>
                     <TableCell className="px-5 py-4">
                       <div className="flex items-center gap-3">
                         <div className="flex size-9 items-center justify-center rounded-full bg-gray-100 dark:bg-white/5 overflow-hidden">

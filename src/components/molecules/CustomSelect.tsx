@@ -66,9 +66,8 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
          if (dropdownRef.current && dropdownRef.current.contains(e.target as Node)) {
              return;
          }
-         // If scrolling happens outside the dropdown (e.g. main page), close it for simplicity
-         // or we could recalculate coords, but closing is safer to avoid detachment.
-         setIsOpen(false);
+         // Recalculate coords on scroll to keep attached
+         calculateCoords();
        }; 
       window.addEventListener("scroll", handleScroll, true);
       window.addEventListener("resize", handleScroll);
@@ -147,7 +146,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
 
       {isOpen && createPortal(
         <div 
-            className="fixed z-[999999] overflow-hidden rounded-xl border border-gray-200 bg-white py-1.5 shadow-xl shadow-gray-200/20 animate-in fade-in zoom-in duration-200 dark:border-white/[0.08] dark:bg-[#1E1E1E] dark:shadow-none"
+            className="fixed z-[999999] max-h-60 overflow-y-auto rounded-xl border border-gray-200 bg-white py-1.5 shadow-xl shadow-gray-200/20 animate-in fade-in zoom-in duration-200 dark:border-white/[0.08] dark:bg-[#1E1E1E] dark:shadow-none"
             style={{
                 top: coords.top,
                 left: coords.left,

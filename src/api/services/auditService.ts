@@ -18,4 +18,8 @@ export const auditService = {
     const response = await apiClient.get<AuditStats>("/audit/stats");
     return response.data;
   },
+
+  deleteLog: async (id: number | string): Promise<void> => {
+    await apiClient.delete(`/audit/logs/${id}`);
+  },
 };

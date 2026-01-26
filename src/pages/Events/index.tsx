@@ -105,6 +105,7 @@ const Events: React.FC = () => {
   const [isManageModalOpen, setIsManageModalOpen] = useState(false);
   const [dayViewDate, setDayViewDate] = useState<string | null>(null); // For DayEventsModal
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number | string>>(new Set());
   const [formData, setFormData] = useState<CreateEventDto & { isCancelled: boolean; cancellationReason: string | null }>({
     name: "",
     description: "",
@@ -262,6 +263,44 @@ const Events: React.FC = () => {
     }
   };
 
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedIds(new Set(sortedEvents.map(ev => ev.id)));
+    } else {
+      setSelectedIds(new Set());
+    }
+  };
+
+  const handleSelectRow = (id: number | string) => {
+    const next = new Set(selectedIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelectedIds(next);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+
+    const count = selectedIds.size;
+    const confirmed = await confirm({
+      variant: 'delete',
+      title: 'Bulk Delete Events',
+      message: `Are you sure you want to permanently delete ${count} selected events? This action cannot be undone.`,
+      confirmText: `Delete ${count} Events`
+    });
+
+    if (confirmed) {
+      try {
+        const promises = Array.from(selectedIds).map(id => deleteMutation.mutateAsync(String(id)));
+        await Promise.all(promises);
+        showSuccess(`Successfully deleted ${count} events.`);
+        setSelectedIds(new Set());
+      } catch (error) {
+        showError(error, "Failed to delete some events");
+      }
+    }
+  };
+
 
 
   const handleOpenManageModal = (event: Event) => {
@@ -362,11 +401,46 @@ const Events: React.FC = () => {
           </div>
         </div>
 
+        {/* Bulk Selection Actions Bar */}
+        {selectedIds.size > 0 && (
+          <div className="flex items-center justify-between p-4 bg-brand-50 border border-brand-100 rounded-2xl dark:bg-brand-500/10 dark:border-brand-500/20 animate-in slide-in-from-top-2 duration-300">
+            <div className="flex items-center gap-3">
+              <div className="size-8 rounded-full bg-brand-500 text-white flex items-center justify-center text-sm font-bold shadow-sm font-mono">
+                {selectedIds.size}
+              </div>
+              <p className="text-sm font-semibold text-brand-700 dark:text-brand-400">Events Selected</p>
+            </div>
+            <div className="flex items-center gap-2">
+                <button
+                    onClick={handleBulkDelete}
+                    className="flex items-center gap-2 px-4 py-2 bg-error-50 dark:bg-error-500/10 border border-error-100 dark:border-error-500/20 rounded-xl text-sm font-bold text-error-600 dark:text-error-400 hover:bg-error-100 transition-all shadow-sm"
+                >
+                    <TrashBinIcon className="size-4" />
+                    Delete Selected
+                </button>
+                <button
+                    onClick={() => setSelectedIds(new Set())}
+                    className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                    Cancel
+                </button>
+            </div>
+          </div>
+        )}
+
         {viewMode === "list" ? (
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-white/[0.05] dark:bg-white/[0.03]">
           <Table>
             <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
               <TableRow>
+                <TableCell isHeader className="px-5 py-4 w-12">
+                    <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                        checked={sortedEvents.length > 0 && selectedIds.size === sortedEvents.length}
+                        onChange={handleSelectAll}
+                    />
+                </TableCell>
                 <TableCell isHeader className="px-5 py-4 font-medium text-gray-500 dark:text-gray-400 uppercase text-xs tracking-wider">
                   <button onClick={() => handleSort("name")} className="flex items-center gap-2 hover:text-brand-500 transition-colors">
                     Event Details <SortIcon column="name" />
@@ -388,7 +462,7 @@ const Events: React.FC = () => {
             <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="py-12 text-center text-gray-400">
+                  <TableCell colSpan={5} className="py-12 text-center text-gray-400">
                     <div className="flex flex-col items-center gap-3">
                       <div className="size-6 animate-spin rounded-full border-2 border-brand-500 border-t-transparent"></div>
                       <span className="text-sm">Loading events...</span>
@@ -397,7 +471,7 @@ const Events: React.FC = () => {
                 </TableRow>
               ) : sortedEvents.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="py-12 text-center text-gray-400">
+                  <TableCell colSpan={5} className="py-12 text-center text-gray-400">
                     <div className="flex flex-col items-center gap-2">
                        <GridIcon className="size-10 opacity-20 mb-2" />
                       <p className="text-sm font-medium">No events found.</p>
@@ -415,6 +489,14 @@ const Events: React.FC = () => {
                     key={event.id} 
                     className="group hover:bg-gray-50/50 dark:hover:bg-white/[0.01] transition-colors"
                   >
+                    <TableCell className="px-5 py-4">
+                        <input 
+                            type="checkbox" 
+                            className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                            checked={selectedIds.has(event.id)}
+                            onChange={() => handleSelectRow(event.id)}
+                        />
+                    </TableCell>
                     <TableCell className="px-5 py-4">
                       <div className="flex items-start gap-4">
                         <div className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${

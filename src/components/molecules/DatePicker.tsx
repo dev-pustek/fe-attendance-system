@@ -43,6 +43,7 @@ const DatePicker: React.FC<DatePickerProps> = ({
         time_24hr: true,
         mode: mode as flatpickr.Options.Options["mode"],
         static: false,
+        disableMobile: true,
         monthSelectorType: "static",
         position: "auto",
         onChange: (_, dateStr) => {
