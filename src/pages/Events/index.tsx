@@ -555,12 +555,10 @@ const Events: React.FC = () => {
                           )}
 
                           {!event.isCancelled && (
-                            <button 
                               onClick={(e) => {
                                 e.stopPropagation();
-                                navigate(`/events/${event.id}/invitation-paper`);
+                                navigate(`/events/${event.public_id}/invitation-paper`);
                               }}
-                              className="text-[10px] font-bold text-brand-500 hover:text-brand-600 transition-colors uppercase tracking-widest flex items-center gap-1 group/btn"
                             >
                               Invitation Paper
                               <AngleRightIcon className="size-3 transition-transform group-hover/btn:translate-x-0.5" />

@@ -236,7 +236,7 @@ const EventInvitations: React.FC = () => {
                     <TableCell className="px-5 py-4 text-right">
                        <div className="flex justify-end gap-1">
                           <button
-                            onClick={() => navigate(`/events/${event?.id}/invitation-paper?userId=${invite.user?.public_id || invite.userId}`)}
+                            onClick={() => navigate(`/events/${event?.public_id}/invitation-paper?userId=${invite.user?.public_id || invite.userId}`)}
                             className="p-2 text-gray-400 hover:text-brand-500 transition-colors"
                             title="Print Personalized Invitation"
                           >
