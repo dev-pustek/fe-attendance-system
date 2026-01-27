@@ -249,16 +249,17 @@ export default function StudentEvents() {
                     const isAttended = invitation.status === "attended" || invitation.attendanceStatus?.hasAttended;
                     const isMissed = invitation.status === "missed";
                     
-                    const isCheckInOpen = invitation.availabilityStatus === 'open' && isAccepted && !isAttended;
+                    const isCheckInOpen = invitation.availabilityStatus === 'open' && isAccepted && !invitation.attendanceStatus?.clockIn;
+                    const isCheckOutOpen = invitation.availabilityStatus === 'open' && isAccepted && invitation.attendanceStatus?.clockIn && !invitation.attendanceStatus?.clockOut;
                     const isUpcoming = invitation.availabilityStatus === 'upcoming';
                     const isClosed = (invitation.availabilityStatus === 'closed' || invitation.availabilityStatus === 'ended') && !isAttended;
                     
                     let cardStyles = "bg-white dark:bg-gray-800 border-gray-200 dark:border-white/5"; 
                     
-                    if (isAttended) {
+                    if (isAttended && invitation.attendanceStatus?.clockOut) {
                         cardStyles = "bg-green-50/20 dark:bg-green-500/5 border-green-200 dark:border-green-500/20";
-                    } else if (isCheckInOpen) {
-                        cardStyles = "bg-brand-50/10 dark:bg-brand-500/5 border-brand-500 shadow-xl shadow-brand-500/10 ring-1 ring-brand-500/20";
+                    } else if (isCheckInOpen || isCheckOutOpen) {
+                        cardStyles = "bg-brand-50/10 dark:bg-brand-500/5 border-brand-500/50 shadow-xl shadow-brand-500/10 ring-1 ring-brand-500/20";
                     } else if (isClosed || isMissed) {
                         cardStyles = "bg-gray-50 dark:bg-gray-900/50 border-gray-100 dark:border-white/5 opacity-75 grayscale-[0.5]";
                     } else if (isUpcoming) {
@@ -270,44 +271,56 @@ export default function StudentEvents() {
                         key={invitation.id} 
                         className={`group relative overflow-hidden rounded-2xl border transition-all duration-300 flex flex-col sm:flex-row gap-6 p-4 sm:p-6 ${cardStyles} ${!isClosed && 'hover:shadow-lg'}`}
                     >
-                        {/* Active Indicator Strip */}
-                        {isCheckInOpen && (
-                            <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-brand-400 to-brand-600 animate-shimmer" />
+                        {/* Status Glow / Indicator */}
+                        {(isCheckInOpen || isCheckOutOpen) && (
+                            <div className="absolute top-0 right-0 left-0 h-1.5 bg-gradient-to-r from-brand-400 via-brand-600 to-brand-400 animate-shimmer" />
                         )}
-                        {isAttended && (
-                            <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-green-400 to-green-600" />
+                        {isAttended && invitation.attendanceStatus?.clockOut && (
+                            <div className="absolute top-0 right-0 left-0 h-1.5 bg-gradient-to-r from-green-400 to-green-600" />
                         )}
 
-                        {/* Date Component */}
-                        <div className={`flex-shrink-0 flex flex-col items-center justify-center rounded-2xl w-full sm:w-24 h-24 sm:h-auto border ${
-                            isAttended ? 'bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 border-green-100 dark:border-green-500/20' :
-                            isCheckInOpen ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 border-brand-100 dark:border-brand-500/20' :
-                            'bg-gray-50 dark:bg-white/5 text-gray-500 dark:text-gray-400 border-gray-100 dark:border-white/10'
-                        }`}>
-                            <span className="text-sm font-bold uppercase tracking-wider">{month}</span>
-                            <span className="text-3xl font-bold">{day}</span>
+                        {/* Left Side: Date & Status Illustration */}
+                        <div className="flex-shrink-0 flex flex-col items-center gap-4">
+                            <div className={`flex flex-col items-center justify-center rounded-2xl w-full sm:w-28 h-28 border shadow-sm transition-transform group-hover:scale-105 ${
+                                isAttended ? 'bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 border-green-100 dark:border-green-500/20' :
+                                (isCheckInOpen || isCheckOutOpen) ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 border-brand-100 dark:border-brand-500/20' :
+                                'bg-gray-50 dark:bg-white/5 text-gray-500 dark:text-gray-400 border-gray-100 dark:border-white/10'
+                            }`}>
+                                <span className="text-xs font-bold uppercase tracking-widest opacity-60 mb-0.5">{month}</span>
+                                <span className="text-4xl font-black leading-none">{day}</span>
+                                <span className="text-[10px] font-bold mt-1 opacity-60 uppercase">{time}</span>
+                            </div>
+                            
+                            {invitation.attendanceStatus?.hasAttended && (
+                                <div className="flex flex-col items-center gap-1 animate-in zoom-in-50 duration-500">
+                                    <div className="size-8 rounded-full bg-green-500 text-white flex items-center justify-center shadow-lg shadow-green-500/30">
+                                        <CheckCircleIcon className="size-5 stroke-[2.5]" />
+                                    </div>
+                                    <span className="text-[10px] font-bold text-green-600 uppercase tracking-tighter">Verified</span>
+                                </div>
+                            )}
                         </div>
 
-                        {/* Event Details */}
-                        <div className="flex-1 min-w-0 flex flex-col justify-center">
-                            <div className="flex items-start justify-between gap-4 mb-2">
-                                <div>
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                                            isCheckInOpen ? 'bg-brand-100 text-brand-600 dark:bg-brand-500/20 dark:text-brand-400' :
-                                            isAttended ? 'bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400' :
-                                            'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                        {/* Middle: Event Content */}
+                        <div className="flex-1 min-w-0 flex flex-col pt-1">
+                            <div className="flex items-start justify-between gap-4 mb-3">
+                                <div className="space-y-1.5">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded border uppercase tracking-widest ${
+                                            isCheckInOpen || isCheckOutOpen ? 'bg-brand-100 border-brand-200 text-brand-700 dark:bg-brand-500/20 dark:border-brand-500/30 dark:text-brand-300' :
+                                            isAttended ? 'bg-green-100 border-green-200 text-green-700 dark:bg-green-500/20 dark:border-green-500/30 dark:text-green-300' :
+                                            'bg-gray-100 border-gray-200 text-gray-600 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300'
                                         }`}>
                                             {event.eventType}
                                         </span>
-                                        {isCheckInOpen && (
-                                            <span className="flex items-center gap-1 text-[10px] font-bold text-brand-600 dark:text-brand-400 animate-pulse">
-                                                <div className="size-1.5 rounded-full bg-brand-500" />
-                                                LIVE NOW
+                                        {(isCheckInOpen || isCheckOutOpen) && (
+                                            <span className="flex items-center gap-1.5 text-[10px] font-black text-brand-600 dark:text-brand-400 animate-pulse bg-brand-50 dark:bg-brand-500/10 px-2 py-0.5 rounded-full">
+                                                <div className="size-1.5 rounded-full bg-brand-500 shadow-[0_0_8px_rgba(var(--color-brand-600),0.8)]" />
+                                                EVENT OPEN
                                             </span>
                                         )}
                                     </div>
-                                    <h3 className={`text-lg sm:text-xl font-bold transition-colors ${
+                                    <h3 className={`text-xl sm:text-2xl font-black tracking-tight transition-colors ${
                                         isAttended ? 'text-green-900 dark:text-green-50' : 
                                         'text-gray-900 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400'
                                     }`}>
@@ -319,94 +332,167 @@ export default function StudentEvents() {
                                 </div>
                             </div>
 
-                            <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 line-clamp-2">
-                                {event.description}
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 leading-relaxed line-clamp-2 italic">
+                                "{event.description}"
                             </p>
 
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
-                                    <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
-                                        <TimeIcon className="size-4 shrink-0" />
-                                        <span>{time}</span>
-                                        {event.endTime && (
-                                          <span className="text-xs text-gray-400">
-                                            - {format(new Date(event.endTime), "p")}
-                                          </span>
-                                        )}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                <div className="space-y-3">
+                                    <div className="flex items-center gap-3 group/info">
+                                        <div className="size-8 rounded-lg bg-gray-50 dark:bg-white/5 flex items-center justify-center text-gray-400 group-hover/info:text-brand-500 transition-colors">
+                                            <TimeIcon className="size-4" />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-0.5">Schedule</span>
+                                            <span className="text-sm font-bold text-gray-700 dark:text-gray-200">
+                                                {time} — {event.endTime ? format(new Date(event.endTime), "p") : 'End'}
+                                            </span>
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
-                                        <AlertIcon className="size-4 shrink-0" />
-                                        <span className="truncate">{event.location}</span>
+                                    <div className="flex items-center gap-3 group/info">
+                                        <div className="size-8 rounded-lg bg-gray-50 dark:bg-white/5 flex items-center justify-center text-gray-400 group-hover/info:text-brand-500 transition-colors">
+                                            <AlertIcon className="size-4" />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-0.5">Location</span>
+                                            <span className="text-sm font-bold text-gray-700 dark:text-gray-200 truncate max-w-[200px]" title={event.location}>
+                                                {event.location}
+                                            </span>
+                                        </div>
                                     </div>
-                                    
-                                    {isAttended && invitation.attendanceStatus?.clockIn && (
-                                        <div className="flex items-center gap-2 text-green-600 dark:text-green-400 font-medium">
-                                            <CheckCircleIcon className="size-4 shrink-0" />
-                                            <span>In: {format(new Date(invitation.attendanceStatus.clockIn), "HH:mm:ss")}</span>
+                                </div>
+
+                                <div className="space-y-3">
+                                    <div className="flex items-center gap-3 group/info">
+                                        <div className="size-8 rounded-lg bg-gray-50 dark:bg-white/5 flex items-center justify-center text-gray-400 group-hover/info:text-brand-500 transition-colors">
+                                            <PresentationChartLineIcon className="size-4" />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-0.5">Capacity</span>
+                                            <span className="text-sm font-bold text-gray-700 dark:text-gray-200">
+                                                {event.capacity || 'Unlimited'} Seats
+                                            </span>
+                                        </div>
+                                    </div>
+                                    {event.creator && (
+                                        <div className="flex items-center gap-3 group/info">
+                                            <div className="size-8 rounded-lg bg-gray-50 dark:bg-white/5 flex items-center justify-center text-gray-400 group-hover/info:text-brand-500 transition-colors text-[10px] font-bold">
+                                                ORG
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-0.5">Organizer</span>
+                                                <span className="text-sm font-bold text-gray-700 dark:text-gray-200">{event.creator.name}</span>
+                                            </div>
                                         </div>
                                     )}
                                 </div>
+                            </div>
 
-                                {/* Action Buttons */}
-                                <div className="flex items-center gap-2">
-                                    {invitation.status === "invited" ? (
-                                        <>
-                                            <Button 
-                                                variant="outline" 
-                                                size="sm" 
-                                                className="text-red-600 border-red-200 hover:bg-red-50 dark:border-red-500/20 dark:hover:bg-red-500/10"
-                                                onClick={() => handleResponseClick(invitation.id, "DECLINED")}
-                                                isLoading={isResponding}
-                                                disabled={isResponding}
-                                            >
-                                                Decline
-                                            </Button>
-                                            <Button 
-                                                variant="primary" 
-                                                size="sm"
-                                                onClick={() => handleResponseClick(invitation.id, "ACCEPTED")}
-                                                isLoading={isResponding}
-                                                disabled={isResponding}
-                                            >
-                                                Accept
-                                            </Button>
-                                        </>
-                                    ) : (isAccepted || isAttended) ? (
-                                      <>
+                            {/* Attendance Logs Section */}
+                            {(invitation.attendanceStatus?.clockIn || invitation.attendanceStatus?.clockOut) && (
+                                <div className="mt-auto pt-4 border-t border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.01] -mx-4 -mb-4 px-4 pb-4 sm:-mx-6 sm:-mb-6 sm:px-6 sm:pb-6 rounded-b-2xl">
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3">Attendance History</p>
+                                    <div className="flex flex-wrap gap-4">
+                                        {invitation.attendanceStatus.clockIn && (
+                                            <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-white/10 shadow-sm">
+                                                <div className="size-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+                                                <div className="flex flex-col">
+                                                    <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Clock In</span>
+                                                    <span className="text-xs font-black text-gray-900 dark:text-white">
+                                                        {format(new Date(invitation.attendanceStatus.clockIn), "HH:mm:ss")}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        )}
+                                        {invitation.attendanceStatus.clockOut && (
+                                            <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-white/10 shadow-sm">
+                                                <div className="size-2 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)]" />
+                                                <div className="flex flex-col">
+                                                    <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Clock Out</span>
+                                                    <span className="text-xs font-black text-gray-900 dark:text-white">
+                                                        {format(new Date(invitation.attendanceStatus.clockOut), "HH:mm:ss")}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        )}
+                                        {invitation.attendanceStatus.isLate && (
+                                            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-orange-50 dark:bg-orange-500/10 border border-orange-100 dark:border-orange-500/20">
+                                                <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400">
+                                                    LATE: {invitation.attendanceStatus.lateMinutes}m
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Action Buttons Strip */}
+                            <div className="flex items-center justify-end gap-3 mt-4 sm:mt-0 sm:absolute sm:bottom-6 sm:right-6">
+                                {invitation.status === "invited" ? (
+                                    <>
+                                        <Button 
+                                            variant="outline" 
+                                            size="sm" 
+                                            className="font-bold border-red-200 text-red-600 hover:bg-red-50 dark:border-red-500/20 dark:hover:bg-red-500/10"
+                                            onClick={() => handleResponseClick(invitation.id, "DECLINED")}
+                                            isLoading={isResponding}
+                                            disabled={isResponding}
+                                        >
+                                            Decline
+                                        </Button>
+                                        <Button 
+                                            variant="primary" 
+                                            size="sm"
+                                            className="font-black px-6 shadow-md"
+                                            onClick={() => handleResponseClick(invitation.id, "ACCEPTED")}
+                                            isLoading={isResponding}
+                                            disabled={isResponding}
+                                        >
+                                            Accept invitation
+                                        </Button>
+                                    </>
+                                ) : (isAccepted || isAttended) ? (
+                                    <div className="flex items-center gap-2 transition-all group-hover:translate-y-[-2px]">
                                         <Link to={`/events/${event.public_id}/invitation-paper?userId=${user?.public_id}`}>
-                                          <Button variant="outline" size="sm" className="flex items-center gap-1.5 h-9">
+                                          <button className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-gray-500 hover:text-brand-600 dark:text-gray-400 dark:hover:text-brand-400 transition-colors">
                                             <TicketIcon className="size-4" />
                                             <span>Card</span>
-                                          </Button>
+                                          </button>
                                         </Link>
                                         
                                         {isCheckInOpen ? (
                                             <Button 
                                               variant="primary" 
-                                              size="sm" 
-                                              className="flex items-center gap-2 h-9 animate-pulse shadow-lg shadow-brand-500/20"
+                                              size="md" 
+                                              className="flex items-center gap-2 h-10 px-6 font-black animate-pulse shadow-[0_0_20px_rgba(var(--color-brand-600),0.3)]"
                                               onClick={() => handleScanClick(event)}
                                             >
                                               <QrCodeIcon className="size-4" />
-                                              <span>Check In Now</span>
+                                              <span>Check In</span>
                                             </Button>
-                                        ) : isAttended ? (
-                                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-100 dark:bg-green-500/20 border border-green-200 dark:border-green-500/30 text-green-700 dark:text-green-300">
-                                                <CheckCircleIcon className="size-4" />
-                                                <span className="text-xs font-bold uppercase tracking-wider">Completed</span>
+                                        ) : isCheckOutOpen ? (
+                                            <Button 
+                                                variant="outline" 
+                                                size="md" 
+                                                className="flex items-center gap-2 h-10 px-6 font-black border-orange-500 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-500/10 shadow-lg shadow-orange-500/10"
+                                                onClick={() => handleScanClick(event)}
+                                            >
+                                                <QrCodeIcon className="size-4" />
+                                                <span>Check Out Now</span>
+                                            </Button>
+                                        ) : isAttended && invitation.attendanceStatus?.clockOut ? (
+                                            <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-500 text-white shadow-lg shadow-green-500/30">
+                                                <CheckCircleIcon className="size-4 stroke-[3]" />
+                                                <span className="text-[10px] font-black uppercase tracking-widest">Finalized</span>
                                             </div>
                                         ) : (
-                                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-400 dark:text-gray-500 cursor-not-allowed select-none">
-                                                <TimeIcon className="size-4" />
-                                                <span className="text-xs font-bold uppercase tracking-wide">
-                                                    {invitation.availabilityStatus === 'upcoming' ? 'UPCOMING' : 
-                                                     invitation.availabilityStatus === 'ended' ? 'ENDED' : 'CLOSED'}
-                                                </span>
+                                            <div className="px-4 py-2 rounded-xl bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-400 text-[10px] font-black uppercase tracking-widest select-none">
+                                                {invitation.availabilityStatus === 'upcoming' ? 'Upcoming' : 
+                                                 invitation.availabilityStatus === 'ended' ? 'Ended' : 'Closed'}
                                             </div>
                                         )}
-                                      </>
-                                    ) : null}
-                                </div>
+                                    </div>
+                                ) : null}
                             </div>
                         </div>
                     </div>
