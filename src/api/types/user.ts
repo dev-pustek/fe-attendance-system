@@ -13,6 +13,10 @@ export interface User {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   profile?: any | null; // Student or Employee profile data
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  studentProfile?: any | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  employeeProfile?: any | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   activeClass?: any | null; // Active class information
   typeAssignments?: UserTypeAssignment[];
 }

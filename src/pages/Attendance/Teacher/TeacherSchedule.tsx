@@ -344,12 +344,12 @@ const TeacherSchedule: React.FC = () => {
                                                </td>
                                                <td className="p-4">
                                                    <div className="flex items-center gap-3">
-                                                       <div className="size-8 rounded-full bg-gray-100 dark:bg-white/10 flex items-center justify-center overflow-hidden text-gray-500">
+                                                       <div className="w-9 h-12 rounded bg-gray-100 dark:bg-white/10 flex items-center justify-center overflow-hidden text-gray-500 border border-gray-100 dark:border-white/10 shrink-0">
                                                            {student.user?.photo ? <img src={student.user.photo} className="size-full object-cover" /> : <UserIcon className="size-4" />}
                                                        </div>
                                                        <div>
                                                            <p className="font-medium text-gray-900 dark:text-white">{student.user?.name}</p>
-                                                           <p className="text-xs text-gray-500">{student.user?.profile?.nis || student.user?.profile?.studentIdentificationNumber || student.user?.profile?.studentId || "No NIS"}</p>
+                                                           <p className="text-xs text-gray-500">{student.user?.studentProfile?.nis || student.user?.studentProfile?.studentIdentificationNumber || student.user?.studentProfile?.studentId || "No NIS"}</p>
                                                        </div>
                                                    </div>
                                                </td>
@@ -404,12 +404,12 @@ const TeacherSchedule: React.FC = () => {
                                                 </div>
                                                 <div className="flex-1">
                                                     <div className="flex items-center gap-3 mb-2">
-                                                        <div className="size-10 rounded-full bg-gray-100 dark:bg-white/10 flex items-center justify-center overflow-hidden text-gray-500 shrink-0">
+                                                        <div className="w-10 h-[13.33px] rounded bg-gray-100 dark:bg-white/10 flex items-center justify-center overflow-hidden text-gray-500 shrink-0 border border-gray-100 dark:border-white/10" style={{ height: '48px', width: '36px' }}>
                                                             {student.user?.photo ? <img src={student.user.photo} className="size-full object-cover" /> : <UserIcon className="size-5" />}
                                                         </div>
-                                                        <div>
-                                                            <p className="font-medium text-gray-900 dark:text-white">{student.user?.name}</p>
-                                                           <p className="text-xs text-gray-500">{student.user?.profile?.nis || student.user?.profile?.studentIdentificationNumber || student.user?.profile?.studentId || "No NIS"}</p>
+                                                        <div className="flex flex-col gap-0.5">
+                                                            <p className="font-semibold text-gray-900 dark:text-white leading-tight">{student.user?.name}</p>
+                                                            <p className="text-xs text-gray-400 font-medium">{student.user?.studentProfile?.nis || student.user?.studentProfile?.studentId || "No NIS"}</p>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -483,7 +483,7 @@ const TeacherSchedule: React.FC = () => {
 
     useEffect(() => {
         studentsRef.current = students;
-    }, [students]);
+    }, []);
 
     // Track mounting to prevent updates after unmount
     const isMounted = React.useRef(true);
