@@ -136,7 +136,7 @@ const Events: React.FC = () => {
   // Map Events to Calendar format
   const calendarEvents = React.useMemo(() => {
     return events.map((event): EventInput => ({
-      id: String(event.id),
+      id: event.public_id,
       title: event.name,
       start: event.startTime,
       end: event.endTime,
@@ -233,7 +233,7 @@ const Events: React.FC = () => {
     if (confirmed) {
       try {
         if (selectedEvent) {
-          await updateMutation.mutateAsync({ id: String(selectedEvent.id), data: formData as UpdateEventDto });
+          await updateMutation.mutateAsync({ id: selectedEvent.public_id, data: formData as UpdateEventDto });
           showSuccess("Event updated successfully!");
         } else {
           await createMutation.mutateAsync(formData as CreateEventDto);
@@ -255,7 +255,7 @@ const Events: React.FC = () => {
 
     if (confirmed) {
       try {
-        await deleteMutation.mutateAsync(String(event.id));
+        await deleteMutation.mutateAsync(event.public_id);
         showSuccess("Event deleted successfully!");
       } catch (error) {
         showError(error, "Failed to delete event");
@@ -486,15 +486,15 @@ const Events: React.FC = () => {
               ) : (
                 sortedEvents.map((event: Event) => (
                   <TableRow 
-                    key={event.id} 
+                    key={event.public_id} 
                     className="group hover:bg-gray-50/50 dark:hover:bg-white/[0.01] transition-colors"
                   >
                     <TableCell className="px-5 py-4">
                         <input 
                             type="checkbox" 
                             className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
-                            checked={selectedIds.has(event.id)}
-                            onChange={() => handleSelectRow(event.id)}
+                            checked={selectedIds.has(event.public_id)}
+                            onChange={() => handleSelectRow(event.public_id)}
                         />
                     </TableCell>
                     <TableCell className="px-5 py-4">
@@ -571,14 +571,14 @@ const Events: React.FC = () => {
                     <TableCell className="px-5 py-4 text-right">
                       <div className="flex justify-end gap-1 transition-opacity">
                         <button
-                          onClick={() => navigate(`/attendance/history?tab=gate&eventId=${event.id}`)}
+                          onClick={() => navigate(`/attendance/history?tab=gate&eventId=${event.public_id}`)}
                           className="rounded-lg p-2 text-emerald-500 transition-colors hover:bg-emerald-50 dark:hover:bg-emerald-500/10"
                           title="View Attendance List"
                         >
                           <ListIcon className="size-4" />
                         </button>
                         <button
-                          onClick={() => navigate(`/events/${event.id}/invitations`)}
+                          onClick={() => navigate(`/events/${event.public_id}/invitations`)}
                           className="rounded-lg p-2 text-brand-500 transition-colors hover:bg-brand-50 dark:hover:bg-brand-500/10"
                           title="See Invitations"
                         >
@@ -588,7 +588,7 @@ const Events: React.FC = () => {
                           onClick={() => handleOpenManageModal(event)}
                           disabled={event.isCancelled || new Date(event.endTime) < new Date()}
                           className={`rounded-lg p-2 transition-colors ${
-                            event.isCancelled || new Date(event.endDateTime || event.endTime) < new Date()
+                            event.isCancelled || new Date(event.endTime) < new Date()
                               ? "text-gray-300 cursor-not-allowed"
                               : "text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10"
                           }`}
