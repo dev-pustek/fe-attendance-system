@@ -28,6 +28,7 @@ import {
   SubjectMetrics,
   EventMetrics
 } from "../types/attendance";
+import { EventInvitation } from "../types/events";
 import apiClient from "../client";
 
 
@@ -341,8 +342,8 @@ export const attendanceService = {
     eventId?: string;
     upcoming?: boolean;
     past?: boolean;
-  }): Promise<PaginatedResponse<unknown> & { metrics: EventMetrics }> => {
-    const response = await apiClient.get<PaginatedResponse<unknown> & { metrics: EventMetrics }>("/events/my-events", { 
+  }): Promise<PaginatedResponse<EventInvitation> & { metrics: EventMetrics }> => {
+    const response = await apiClient.get<PaginatedResponse<EventInvitation> & { metrics: EventMetrics }>("/events/my-events", { 
       params 
     });
     return response.data;

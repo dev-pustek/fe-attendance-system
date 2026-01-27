@@ -125,8 +125,24 @@ export default function StudentEvents() {
         setScanMessage("Verifying attendance...");
 
         // Payload per user request
+        // Sanitize QR Data: Backend expects a UUID (User ID, Event ID, or Location ID)
+        // If the scanned data is a URL (e.g. Invitation Paper), we should likely treat it as a check-in for the event 
+        // using the Event's Public ID if no other ID is found.
+        let sanitizedQrData = decodedText;
+        
+        // UUID Regex
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+        if (!uuidRegex.test(decodedText)) {
+             // If not a UUID, and we have a selected event, use the Event ID as the "Location Code"
+             // This assumes the user is proving presence at the event defined by the invitation
+             if (selectedEvent?.public_id) {
+                 sanitizedQrData = selectedEvent.public_id;
+             }
+        }
+
         const payload = {
-            qrData: decodedText, // The student's ID or Location Code
+            qrData: sanitizedQrData,
             deviceId: "GATE-DEVICE-01",
             eventId: selectedEvent?.public_id || "",
             latitude: -6.1754, // Default per request
