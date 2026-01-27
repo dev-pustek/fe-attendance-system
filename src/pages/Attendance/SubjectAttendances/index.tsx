@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router";
 import { useSubjectAttendances } from "../../../api/hooks/useAttendance";
 import { useClasses } from "../../../api/hooks/useAcademic";
 import { profilesService } from "../../../api/services/profilesService";
+import { academicService } from "../../../api/services/academicService";
 import { attendanceService } from "../../../api/services/attendanceService";
 import { 
   SubjectAttendance, 
@@ -114,7 +115,7 @@ const SubjectAttendances: React.FC = () => {
         students.data.map((s) => ({
           label: s.user?.name || "Unknown",
           value: s.user?.public_id || "",
-          subLabel: s.studentId || s.nis || "",
+          subLabel: s.user?.studentProfile?.nis || s.studentId || s.nis || "",
         }))
       );
     } catch (error) {
@@ -242,13 +243,13 @@ const SubjectAttendances: React.FC = () => {
               showError("Warning: Class ID not found. Displaying all students.");
           }
           
-          // Fetch students
-          const res = await profilesService.getStudents({ 
+          // Fetch students via Class Enrollments for accurate class list
+          const res = await academicService.getClassEnrollments({ 
               limit: 100,
-              // @ts-expect-error - Custom param
-              activeClassId: classIdToFetch || undefined 
+              classId: classIdToFetch || undefined,
+              status: 'active'
           });
-          setBulkStudents(res.data);
+          setBulkStudents(res.data as any);
           
           // Default select all
           const allIds = new Set(res.data.map(s => s.user?.public_id).filter(Boolean) as string[]);
@@ -792,8 +793,7 @@ const SubjectAttendances: React.FC = () => {
                             <thead className="bg-gray-50 dark:bg-white/5 border-b border-gray-100 dark:border-white/5 sticky top-0 z-10">
                                 <tr>
                                     <th className="p-4 font-medium text-gray-500">Select</th>
-                                    <th className="p-4 font-medium text-gray-500">Name</th>
-                                    <th className="p-4 font-medium text-gray-500">ID / NIS</th>
+                                    <th className="p-4 font-medium text-gray-500">Student Info</th>
                                     <th className="p-4 font-medium text-gray-500">Status</th>
                                 </tr>
                             </thead>
@@ -815,19 +815,21 @@ const SubjectAttendances: React.FC = () => {
                                                    }}
                                                 />
                                             </td>
-                                            <td className="p-4 font-medium text-gray-900 dark:text-white">
+                                            <td className="p-4">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="size-8 rounded-full bg-gray-100 dark:bg-white/10 overflow-hidden">
+                                                    <div className="w-9 h-12 rounded bg-gray-100 dark:bg-white/10 overflow-hidden shrink-0 border border-gray-100 dark:border-white/10">
                                                         {student.user?.photo ? (
                                                             <img src={student.user.photo} alt={student.user.name} className="size-full object-cover" />
                                                         ) : (
                                                             <div className="flex size-full items-center justify-center text-gray-400"><UserIcon className="size-4" /></div>
                                                         )}
                                                     </div>
-                                                    {student.user?.name}
+                                                    <div className="flex flex-col gap-0.5">
+                                                        <span className="font-semibold text-gray-900 dark:text-white leading-tight">{student.user?.name}</span>
+                                                        <span className="text-xs text-gray-400 font-medium">{student.user?.studentProfile?.nis || student.studentId || student.nis}</span>
+                                                    </div>
                                                 </div>
                                             </td>
-                                            <td className="p-4 text-gray-500">{student.studentId || student.nis}</td>
                                             <td className="p-4">
                                                 <div className="relative w-32">
                                                     <select
