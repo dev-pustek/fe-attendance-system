@@ -155,11 +155,25 @@ export default function StudentEvents() {
     }
   }, [scanStatus, selectedEvent, fetchInvitations, user]);
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string, attendance?: EventInvitation['attendanceStatus']) => {
+    if (status === "attended" || attendance?.hasAttended) {
+      return (
+        <div className="flex flex-col items-end gap-1">
+          <Badge color="success">Attended</Badge>
+          {attendance?.status && (
+            <span className={`text-[10px] font-bold uppercase tracking-wider ${attendance.isLate ? 'text-orange-500' : 'text-green-500'}`}>
+              {attendance.status}
+            </span>
+          )}
+        </div>
+      );
+    }
+
     switch (status) {
       case "accepted": return <Badge color="success">Accepted</Badge>;
       case "declined": return <Badge color="error">Declined</Badge>;
       case "tentative": return <Badge color="warning">Tentative</Badge>;
+      case "missed": return <Badge color="error">Missed</Badge>;
       default: return <Badge color="info">Invited</Badge>;
     }
   };
@@ -232,33 +246,44 @@ export default function StudentEvents() {
                     const { month, day, time } = getEventDateComponents(event.startTime);
                     const isResponding = respondingId === invitation.id;
                     const isAccepted = invitation.status === "accepted";
+                    const isAttended = invitation.status === "attended" || invitation.attendanceStatus?.hasAttended;
+                    const isMissed = invitation.status === "missed";
                     
-                    const isCheckInOpen = invitation.availabilityStatus === 'open' && isAccepted;
+                    const isCheckInOpen = invitation.availabilityStatus === 'open' && isAccepted && !isAttended;
                     const isUpcoming = invitation.availabilityStatus === 'upcoming';
-                    const isClosed = invitation.availabilityStatus === 'closed' || invitation.availabilityStatus === 'ended';
+                    const isClosed = (invitation.availabilityStatus === 'closed' || invitation.availabilityStatus === 'ended') && !isAttended;
                     
-                    let cardStyles = "bg-white dark:bg-gray-800 border-gray-200 dark:border-white/5 hover:shadow-lg"; // Default/Upcoming
+                    let cardStyles = "bg-white dark:bg-gray-800 border-gray-200 dark:border-white/5"; 
                     
-                    if (isCheckInOpen) {
+                    if (isAttended) {
+                        cardStyles = "bg-green-50/20 dark:bg-green-500/5 border-green-200 dark:border-green-500/20";
+                    } else if (isCheckInOpen) {
                         cardStyles = "bg-brand-50/10 dark:bg-brand-500/5 border-brand-500 shadow-xl shadow-brand-500/10 ring-1 ring-brand-500/20";
-                    } else if (isClosed) {
+                    } else if (isClosed || isMissed) {
                         cardStyles = "bg-gray-50 dark:bg-gray-900/50 border-gray-100 dark:border-white/5 opacity-75 grayscale-[0.5]";
                     } else if (isUpcoming) {
-                         // Optional: Distinct style for upcoming if needed, or keep default active-looking but waiting
-                         cardStyles = "bg-blue-50/30 dark:bg-blue-900/10 border-blue-100 dark:border-blue-500/20";
+                        cardStyles = "bg-blue-50/30 dark:bg-blue-900/10 border-blue-100 dark:border-blue-500/20";
                     }
 
                     return (
                     <div 
                         key={invitation.id} 
-                        className={`group relative overflow-hidden rounded-2xl border transition-all duration-300 flex flex-col sm:flex-row gap-6 p-4 sm:p-6 ${cardStyles}`}
+                        className={`group relative overflow-hidden rounded-2xl border transition-all duration-300 flex flex-col sm:flex-row gap-6 p-4 sm:p-6 ${cardStyles} ${!isClosed && 'hover:shadow-lg'}`}
                     >
                         {/* Active Indicator Strip */}
                         {isCheckInOpen && (
-                            <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-brand-400 to-brand-600" />
+                            <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-brand-400 to-brand-600 animate-shimmer" />
                         )}
+                        {isAttended && (
+                            <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-green-400 to-green-600" />
+                        )}
+
                         {/* Date Component */}
-                        <div className="flex-shrink-0 flex flex-col items-center justify-center bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 rounded-2xl w-full sm:w-24 h-24 sm:h-auto border border-brand-100 dark:border-brand-500/20">
+                        <div className={`flex-shrink-0 flex flex-col items-center justify-center rounded-2xl w-full sm:w-24 h-24 sm:h-auto border ${
+                            isAttended ? 'bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 border-green-100 dark:border-green-500/20' :
+                            isCheckInOpen ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 border-brand-100 dark:border-brand-500/20' :
+                            'bg-gray-50 dark:bg-white/5 text-gray-500 dark:text-gray-400 border-gray-100 dark:border-white/10'
+                        }`}>
                             <span className="text-sm font-bold uppercase tracking-wider">{month}</span>
                             <span className="text-3xl font-bold">{day}</span>
                         </div>
@@ -268,16 +293,29 @@ export default function StudentEvents() {
                             <div className="flex items-start justify-between gap-4 mb-2">
                                 <div>
                                     <div className="flex items-center gap-2 mb-1">
-                                        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 capitalize">
+                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                                            isCheckInOpen ? 'bg-brand-100 text-brand-600 dark:bg-brand-500/20 dark:text-brand-400' :
+                                            isAttended ? 'bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400' :
+                                            'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                                        }`}>
                                             {event.eventType}
                                         </span>
+                                        {isCheckInOpen && (
+                                            <span className="flex items-center gap-1 text-[10px] font-bold text-brand-600 dark:text-brand-400 animate-pulse">
+                                                <div className="size-1.5 rounded-full bg-brand-500" />
+                                                LIVE NOW
+                                            </span>
+                                        )}
                                     </div>
-                                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
+                                    <h3 className={`text-lg sm:text-xl font-bold transition-colors ${
+                                        isAttended ? 'text-green-900 dark:text-green-50' : 
+                                        'text-gray-900 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400'
+                                    }`}>
                                         {event.name}
                                     </h3>
                                 </div>
                                 <div className="flex-shrink-0">
-                                    {getStatusBadge(invitation.status)}
+                                    {getStatusBadge(invitation.status, invitation.attendanceStatus)}
                                 </div>
                             </div>
 
@@ -286,8 +324,8 @@ export default function StudentEvents() {
                             </p>
 
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-500 dark:text-gray-400">
-                                    <div className="flex items-center gap-2">
+                                <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+                                    <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
                                         <TimeIcon className="size-4 shrink-0" />
                                         <span>{time}</span>
                                         {event.endTime && (
@@ -296,10 +334,17 @@ export default function StudentEvents() {
                                           </span>
                                         )}
                                     </div>
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
                                         <AlertIcon className="size-4 shrink-0" />
                                         <span className="truncate">{event.location}</span>
                                     </div>
+                                    
+                                    {isAttended && invitation.attendanceStatus?.clockIn && (
+                                        <div className="flex items-center gap-2 text-green-600 dark:text-green-400 font-medium">
+                                            <CheckCircleIcon className="size-4 shrink-0" />
+                                            <span>In: {format(new Date(invitation.attendanceStatus.clockIn), "HH:mm:ss")}</span>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Action Buttons */}
@@ -326,31 +371,36 @@ export default function StudentEvents() {
                                                 Accept
                                             </Button>
                                         </>
-                                    ) : isAccepted ? (
+                                    ) : (isAccepted || isAttended) ? (
                                       <>
                                         <Link to={`/events/${event.public_id}/invitation-paper?userId=${user?.public_id}`}>
-                                          <Button variant="outline" size="sm" className="flex items-center gap-2">
+                                          <Button variant="outline" size="sm" className="flex items-center gap-1.5 h-9">
                                             <TicketIcon className="size-4" />
-                                            <span>Invitation Card</span>
+                                            <span>Card</span>
                                           </Button>
                                         </Link>
-                                        {/* Check In Button - Controlled by availabilityStatus */}
-                                        {invitation.availabilityStatus === 'open' ? (
+                                        
+                                        {isCheckInOpen ? (
                                             <Button 
                                               variant="primary" 
                                               size="sm" 
-                                              className="flex items-center gap-2 animate-pulse-slow shadow-lg shadow-brand-500/20"
+                                              className="flex items-center gap-2 h-9 animate-pulse shadow-lg shadow-brand-500/20"
                                               onClick={() => handleScanClick(event)}
                                             >
                                               <QrCodeIcon className="size-4" />
                                               <span>Check In Now</span>
                                             </Button>
+                                        ) : isAttended ? (
+                                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-100 dark:bg-green-500/20 border border-green-200 dark:border-green-500/30 text-green-700 dark:text-green-300">
+                                                <CheckCircleIcon className="size-4" />
+                                                <span className="text-xs font-bold uppercase tracking-wider">Completed</span>
+                                            </div>
                                         ) : (
                                             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-400 dark:text-gray-500 cursor-not-allowed select-none">
                                                 <TimeIcon className="size-4" />
                                                 <span className="text-xs font-bold uppercase tracking-wide">
                                                     {invitation.availabilityStatus === 'upcoming' ? 'UPCOMING' : 
-                                                     invitation.availabilityStatus === 'ended' ? 'ENDED' : 'UNAVAILABLE'}
+                                                     invitation.availabilityStatus === 'ended' ? 'ENDED' : 'CLOSED'}
                                                 </span>
                                             </div>
                                         )}

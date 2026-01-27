@@ -55,19 +55,28 @@ export interface UpdateEventDto extends Partial<CreateEventDto> {
   cancellationReason?: string | null;
 }
 
+export interface EventAttendanceStatus {
+  hasAttended: boolean;
+  clockIn: string | null;
+  clockOut: string | null;
+  isLate: boolean;
+  status: string | null;
+  lateMinutes: number;
+}
+
 export interface EventInvitation {
   id: number;
   createdAt: string;
   updatedAt: string;
   eventId: number;
   userId: string;
-  status: "invited" | "accepted" | "declined" | "tentative";
+  status: "invited" | "accepted" | "declined" | "tentative" | "attended" | "missed";
   invitedAt: string | null;
   respondedAt: string | null;
   responseNotes: string | null;
   user?: User;
   event?: Event;
-  attendanceStatus?: string | null;
+  attendanceStatus?: EventAttendanceStatus | null;
   availabilityStatus?: "open" | "closed" | "upcoming" | "ended";
 }
 
