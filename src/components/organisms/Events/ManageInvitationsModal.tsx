@@ -45,13 +45,13 @@ const ManageInvitationsModal: React.FC<ManageInvitationsModalProps> = ({
   const classOptions = (classesRes?.data || []).map((c) => ({ label: c.name, value: String(c.id) }));
 
   const fetchExistingInvitations = React.useCallback(async () => {
-    if (isOpen && event?.id) {
+    if (isOpen && event?.public_id) {
       setInviteMode("bulk");
       setAcademicYearId("");
       setClassId("");
       
       try {
-        const res = await eventService.getInvitations(String(event.id), { limit: 100 });
+        const res = await eventService.getInvitations(event.public_id, { limit: 100 });
         const existingInvites = res.data || [];
         const ids = existingInvites.map(i => i.userId);
         setUserIds(ids);
@@ -63,10 +63,10 @@ const ManageInvitationsModal: React.FC<ManageInvitationsModalProps> = ({
         console.error("Failed to fetch existing invitations", error);
       }
     }
-  }, [isOpen, event?.id]);
+  }, [isOpen, event?.public_id]);
 
   useEffect(() => {
-    if (isOpen && event?.id) {
+    if (isOpen && event?.public_id) {
       fetchExistingInvitations();
     } else if (!isOpen) {
       setUserIds([]);
@@ -74,7 +74,7 @@ const ManageInvitationsModal: React.FC<ManageInvitationsModalProps> = ({
       setAcademicYearId("");
       setClassId("");
     }
-  }, [isOpen, event?.id, fetchExistingInvitations]);
+  }, [isOpen, event?.public_id, fetchExistingInvitations]);
 
   const searchUsers = React.useCallback(async (term: string) => {
     if (!event) return;
@@ -141,9 +141,9 @@ const ManageInvitationsModal: React.FC<ManageInvitationsModalProps> = ({
     if (confirmed) {
       try {
         if (inviteMode === "bulk") {
-          await bulkInviteMutation.mutateAsync({ eventId: String(event.id), data: { userIds } });
+          await bulkInviteMutation.mutateAsync({ eventId: event.public_id, data: { userIds } });
         } else {
-          await inviteClassMutation.mutateAsync({ eventId: String(event.id), data: { classId, academicYearId } });
+          await inviteClassMutation.mutateAsync({ eventId: event.public_id, data: { classId, academicYearId } });
         }
         showSuccess("Invitations sent successfully!");
         onClose();

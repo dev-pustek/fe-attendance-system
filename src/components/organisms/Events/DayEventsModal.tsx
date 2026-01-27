@@ -125,7 +125,7 @@ const DayEventsModal: React.FC<DayEventsModalProps> = ({
                         const isNow = !isUpcoming && !isPast;
                         
                         return (
-                            <div key={event.id} className="group relative grid grid-cols-[1rem_1fr] gap-2 md:grid-cols-[5rem_1rem_1fr] md:gap-4">
+                            <div key={event.public_id} className="group relative grid grid-cols-[1rem_1fr] gap-2 md:grid-cols-[5rem_1rem_1fr] md:gap-4">
                                 {/* Time Column - Hidden on Mobile */}
                                 <div className="hidden md:flex flex-col items-end text-right pt-4">
                                     <span className="text-sm font-bold text-gray-900 dark:text-white">

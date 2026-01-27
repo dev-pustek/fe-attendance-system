@@ -265,7 +265,7 @@ const Events: React.FC = () => {
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
-      setSelectedIds(new Set(sortedEvents.map(ev => ev.id)));
+      setSelectedIds(new Set(sortedEvents.map(ev => ev.public_id)));
     } else {
       setSelectedIds(new Set());
     }
