@@ -332,6 +332,8 @@ export interface CreateSubjectAttendanceDto {
   status: "present" | "absent" | "late" | "excused" | "sick";
   remarks?: string;
   method?: "qr" | "manual" | "biometric";
+  latitude?: number;
+  longitude?: number;
 }
 
 export type UpdateSubjectAttendanceDto = Partial<CreateSubjectAttendanceDto>;
@@ -392,7 +394,7 @@ export interface UserPolicyResponse {
   };
   rules?: {
     ruleType: AttendanceRuleType | string;
-    ruleValue: any;
+    ruleValue: unknown;
   }[];
   todayStatus?: {
     clockIn: string | null;

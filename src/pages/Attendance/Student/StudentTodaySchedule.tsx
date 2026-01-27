@@ -1,8 +1,9 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useAuthStore } from '../../../store/authStore';
-import { useStudentTodaySchedule } from '../../../api/hooks/useAttendance';
+import { useStudentTodaySchedule, useAttendancePolicy } from '../../../api/hooks/useAttendance';
 import { TodayScheduleItem } from '../../../api/types/attendance';
+import { AttendanceRuleType } from '../../../api/types/rules';
 import { attendanceService } from '../../../api/services/attendanceService';
 import PageMeta from '../../../components/atoms/PageMeta';
 import PageBreadcrumb from '../../../components/molecules/PageBreadcrumb';
@@ -18,6 +19,7 @@ import FullPageScanner from '../../../components/organisms/FullPageScanner';
 const StudentTodaySchedule = () => {
     const { user } = useAuthStore();
     const { data: schedule, isLoading, refetch } = useStudentTodaySchedule(user?.public_id);
+    const { data: policyData } = useAttendancePolicy(user?.public_id);
     
     // Scanning State
     const [isScanModalOpen, setIsScanModalOpen] = useState(false);
@@ -54,11 +56,38 @@ const StudentTodaySchedule = () => {
                  throw new Error(`Wrong Session! You scanned ${qrData.sessionId}, but selected ${selectedSession?.sessionId}`);
             }
 
+            // Check if Geo Location is required from policy
+            const geoRule = policyData?.rules?.find((r: { ruleType: string; ruleValue: unknown }) => r.ruleType === AttendanceRuleType.REQUIRE_GEO_LOCATION);
+            const isGeoRequired = geoRule?.ruleValue === true || geoRule?.ruleValue === 'true';
+
+            let latitude: number | undefined;
+            let longitude: number | undefined;
+
+            if (isGeoRequired) {
+                setScanMessage("Capturing location...");
+                try {
+                    const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(resolve, reject, {
+                            enableHighAccuracy: true,
+                            timeout: 5000,
+                            maximumAge: 0
+                        });
+                    });
+                    latitude = position.coords.latitude;
+                    longitude = position.coords.longitude;
+                } catch (geoError) {
+                    console.error("Geo Location Error:", geoError);
+                    throw new Error("Location access is required to check in. Please enable location permissions.");
+                }
+            }
+
             const payload = {
                 teachingSessionId: qrData.sessionId, 
                 studentId: user?.public_id || "",
                 status: "present" as const,
-                method: "qr" as const
+                method: "qr" as const,
+                latitude,
+                longitude
             };
 
             await attendanceService.createSubjectAttendance(payload);
@@ -86,7 +115,7 @@ const StudentTodaySchedule = () => {
             
             isProcessingScanRef.current = false; 
         }
-    }, [scanStatus, selectedSession, user?.public_id, refetch]);
+    }, [scanStatus, selectedSession, user?.public_id, refetch, policyData]);
 
     const handleScanSuccessRef = useRef(handleScanSuccess);
     useEffect(() => {

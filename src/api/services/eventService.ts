@@ -53,7 +53,14 @@ export const eventService = {
   },
 
   inviteClass: async (eventId: string, data: ClassInviteDto): Promise<void> => {
-    await apiClient.post(`/events/${eventId}/invitations/class`, data);
+    const response = await apiClient.post<{ data: { successCount: number; errors: string[] } }>(`/events/${eventId}/invitations/class`, data);
+    
+    const result = response.data?.data;
+    if (result) {
+        if (result.successCount === 0 && result.errors && result.errors.length > 0) {
+            throw new Error(result.errors[0]); // Throw the first error message (e.g., "No students found")
+        }
+    }
   },
 
   getAvailableUsers: async (params: AvailableUsersParams): Promise<User[]> => {

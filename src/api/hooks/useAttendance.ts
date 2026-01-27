@@ -286,4 +286,12 @@ export const useStudentTodaySchedule = (studentId?: string) => {
   });
 };
 
+export const useAttendancePolicy = (userId?: string) => {
+  return useQuery({
+    queryKey: ["attendance-policy", userId],
+    queryFn: () => attendanceService.getAttendancePolicy(userId!),
+    enabled: !!userId,
+  });
+};
+
 

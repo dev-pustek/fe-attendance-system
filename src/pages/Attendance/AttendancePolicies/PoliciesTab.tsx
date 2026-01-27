@@ -36,8 +36,9 @@ const PoliciesTab: React.FC<PoliciesTabProps> = ({ contextId, selectedContext, o
         const newValues = { ...prev };
         let hasChanges = false;
         rules.forEach(rule => {
-          if (Object.keys(newValues).includes(rule.ruleType) && newValues[rule.ruleType as keyof typeof newValues] !== rule.ruleValue) {
-            newValues[rule.ruleType as keyof typeof newValues] = rule.ruleValue;
+          const type = rule.ruleType as keyof typeof newValues;
+          if (Object.keys(newValues).includes(rule.ruleType) && String(newValues[type]) !== String(rule.ruleValue)) {
+            newValues[type] = String(rule.ruleValue);
             hasChanges = true;
           }
         });
@@ -57,7 +58,7 @@ const PoliciesTab: React.FC<PoliciesTabProps> = ({ contextId, selectedContext, o
     }
 
     try {
-      const changes: Promise<any>[] = [];
+      const changes: Promise<unknown>[] = [];
       
       // strict check: log available rules for debugging
       console.log("Current Rules:", rules);

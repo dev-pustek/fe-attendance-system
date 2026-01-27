@@ -42,23 +42,23 @@ export const attendanceService = {
     return response.data;
   },
 
-  getAttendanceRecordById: async (id: number | string): Promise<ApiResponse<AttendanceRecord>> => {
+  /* getAttendanceRecordById: async (id: number | string): Promise<ApiResponse<AttendanceRecord>> => {
       const response = await apiClient.get<ApiResponse<AttendanceRecord>>(`/attendance/records/${id}`);
       return response.data;
-  },
+  }, */
 
   createAttendanceRecord: async (data: Partial<AttendanceRecord>): Promise<ApiResponse<AttendanceRecord>> => {
-      const response = await apiClient.post<ApiResponse<AttendanceRecord>>("/attendance/records", data);
+      const response = await apiClient.post<ApiResponse<AttendanceRecord>>("/attendance/admin/manual", data);
       return response.data;
   },
 
   updateAttendanceRecord: async (id: number | string, data: Partial<AttendanceRecord>): Promise<ApiResponse<AttendanceRecord>> => {
-      const response = await apiClient.patch<ApiResponse<AttendanceRecord>>(`/attendance/records/${id}`, data);
+      const response = await apiClient.patch<ApiResponse<AttendanceRecord>>(`/attendance/admin/${id}`, data);
       return response.data;
   },
 
   deleteAttendanceRecord: async (id: number | string): Promise<void> => {
-      await apiClient.delete(`/attendance/records/${id}`);
+      await apiClient.delete(`/attendance/admin/${id}`);
   },
 
   createManualAttendance: async (data: FormData): Promise<ApiResponse<AttendanceRecord>> => {
@@ -260,14 +260,14 @@ export const attendanceService = {
     await apiClient.post("/attendance/subject-attendances/bulk", data);
   },
 
-  scanQRCode: async (data: { qrData: string, deviceId: string }): Promise<any> => {
+  scanQRCode: async (data: { qrData: string, deviceId: string }): Promise<unknown> => {
     const response = await apiClient.post('/attendance/qr-scan', data);
     return response.data;
   },
 
-  getAttendancePolicy: async (userId: string): Promise<ApiResponse<UserPolicyResponse>> => {
+  getAttendancePolicy: async (userId: string): Promise<UserPolicyResponse> => {
       const response = await apiClient.get<ApiResponse<UserPolicyResponse>>(`/attendance/policy/${userId}`);
-      return response.data;
+      return response.data as unknown as UserPolicyResponse;
   },
 
   getTodaySchedule: async (teacherId: string): Promise<TodayScheduleResponse> => {
@@ -341,8 +341,8 @@ export const attendanceService = {
     eventId?: string;
     upcoming?: boolean;
     past?: boolean;
-  }): Promise<PaginatedResponse<any> & { metrics: EventMetrics }> => {
-    const response = await apiClient.get<PaginatedResponse<any> & { metrics: EventMetrics }>("/events/my-events", { 
+  }): Promise<PaginatedResponse<unknown> & { metrics: EventMetrics }> => {
+    const response = await apiClient.get<PaginatedResponse<unknown> & { metrics: EventMetrics }>("/events/my-events", { 
       params 
     });
     return response.data;
