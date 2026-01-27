@@ -38,7 +38,7 @@ const EventInvitations: React.FC = () => {
 
   const { confirm, confirmState } = useConfirm();
   const { data: event } = useEvent(id || "");
-  const { data: response, isLoading } = useEventInvitations(id || "", {
+  const { data: response, isLoading, refetch } = useEventInvitations(id || "", {
     page,
     limit,
   });
@@ -215,7 +215,7 @@ const EventInvitations: React.FC = () => {
                       <div className="space-y-1">
                         <div className="flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400">
                            <TimeIcon className="size-3" />
-                           <span>Invited: {new Date(invite.invitedAt).toLocaleString()}</span>
+                           <span>Invited: {invite.invitedAt ? new Date(invite.invitedAt).toLocaleString() : "N/A"}</span>
                         </div>
                         {invite.respondedAt && (
                           <div className="flex items-center gap-2 text-[11px] font-medium text-brand-500">
@@ -252,10 +252,11 @@ const EventInvitations: React.FC = () => {
                               if (confirmed && id) {
                                 try {
                                   await deleteInvitationMutation.mutateAsync({ 
-                                    eventId: id, 
+                                    eventId: event?.public_id || id, 
                                     invitationId: String(invite.id) 
                                   });
                                   showSuccess("Invitation deleted successfully");
+                                  refetch();
                                 } catch (error) {
                                   showError(error, "Failed to delete invitation");
                                 }

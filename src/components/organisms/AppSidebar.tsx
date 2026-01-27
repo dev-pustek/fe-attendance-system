@@ -227,8 +227,8 @@ const useNavItems = () => {
       });
     }
 
-    // Events - Admin and Staff only
-    if (isAdmin || isStaff) {
+    // Events - Admin, Staff, and Teachers
+    if (isAdmin || isStaff || isTeacher) {
       items.push({
         icon: <ShootingStarIcon />,
         name: "Events",
