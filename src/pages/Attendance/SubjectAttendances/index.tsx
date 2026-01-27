@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { useSearchParams } from "react-router";
-import { useSubjectAttendances } from "../../../api/hooks/useAttendance";
+import { useSubjectAttendances, useAttendanceStatuses } from "../../../api/hooks/useAttendance";
 import { useClasses } from "../../../api/hooks/useAcademic";
 import { profilesService } from "../../../api/services/profilesService";
 import { academicService } from "../../../api/services/academicService";
@@ -25,7 +25,7 @@ import Modal from "../../../components/molecules/Modal";
 import CustomSelect from "../../../components/molecules/CustomSelect";
 import SearchableAsyncSelect from "../../../components/molecules/SearchableAsyncSelect";
 import Checkbox from "../../../components/atoms/Checkbox";
-import DatePicker from "../../../components/molecules/DatePicker";
+import VisiaDatePicker from "../../../components/molecules/DatePicker";
 import {
   PencilIcon,
   TrashBinIcon,
@@ -79,6 +79,24 @@ const SubjectAttendances: React.FC = () => {
     limit,
   });
 
+  const { data: statusesRes } = useAttendanceStatuses();
+
+  const statusOptions = useMemo(() => {
+    const apiOptions = (statusesRes?.data || []).map((s) => ({
+      label: s.name,
+      value: s.code.toLowerCase(),
+    }));
+    return apiOptions.length > 0
+      ? apiOptions
+      : [
+          { label: "Present", value: "present" },
+          { label: "Absent", value: "absent" },
+          { label: "Late", value: "late" },
+          { label: "Excused", value: "excused" },
+          { label: "Sick", value: "sick" },
+        ];
+  }, [statusesRes]);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAttendance, setSelectedAttendance] =
     useState<SubjectAttendance | null>(null);
@@ -108,9 +126,34 @@ const SubjectAttendances: React.FC = () => {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [reportParams, setReportParams] = useState({
     classId: "",
+    subjectId: "",
     startDate: new Date().toISOString().split("T")[0],
     endDate: new Date().toISOString().split("T")[0],
   });
+  const [reportSubjectOptions, setReportSubjectOptions] = useState<
+    { label: string; value: string }[]
+  >([]);
+
+  // Fetch subjects when class changes in report modal
+  useEffect(() => {
+    if (reportParams.classId) {
+      academicService
+        .getClassSubjects({ classId: reportParams.classId })
+        .then((res) => {
+          setReportSubjectOptions(
+            res.data.map((cs) => ({
+              label: cs.subject?.name || "Unknown",
+              value: String(cs.subjectId),
+            })),
+          );
+        })
+        .catch((err) => {
+          console.error("Failed to fetch subjects for report", err);
+        });
+    } else {
+      setReportSubjectOptions([]);
+    }
+  }, [reportParams.classId]);
 
   const { data: classesRes } = useClasses({ limit: 100 });
 
@@ -404,6 +447,9 @@ const SubjectAttendances: React.FC = () => {
         classId: Number(reportParams.classId),
         startDate: reportParams.startDate,
         endDate: reportParams.endDate,
+        subjectId: reportParams.subjectId
+          ? Number(reportParams.subjectId)
+          : undefined,
       });
 
       // Create download link
@@ -503,11 +549,7 @@ const SubjectAttendances: React.FC = () => {
               }}
               options={[
                 { label: "All Status", value: "" },
-                { label: "Present", value: "present" },
-                { label: "Absent", value: "absent" },
-                { label: "Late", value: "late" },
-                { label: "Excused", value: "excused" },
-                { label: "Sick", value: "sick" },
+                ...statusOptions,
               ]}
             />
 
@@ -833,13 +875,7 @@ const SubjectAttendances: React.FC = () => {
                 status: String(val) as SubjectAttendance["status"],
               })
             }
-            options={[
-              { label: "Present", value: "present" },
-              { label: "Absent", value: "absent" },
-              { label: "Late", value: "late" },
-              { label: "Excused", value: "excused" },
-              { label: "Sick", value: "sick" },
-            ]}
+            options={statusOptions}
           />
 
           <div className="space-y-1.5">
@@ -895,8 +931,25 @@ const SubjectAttendances: React.FC = () => {
             }
             options={classOptions}
           />
+          <CustomSelect
+            label="Subject"
+            placeholder={
+              reportParams.classId
+                ? "All Subjects"
+                : "Select Class first..."
+            }
+            value={reportParams.subjectId}
+            onChange={(val) =>
+              setReportParams({ ...reportParams, subjectId: String(val) })
+            }
+            options={[
+              { label: "All Subjects", value: "" },
+              ...reportSubjectOptions,
+            ]}
+            disabled={!reportParams.classId}
+          />
           <div className="grid grid-cols-2 gap-4">
-            <DatePicker // @ts-expect-error - DatePicker types mismatch
+            <VisiaDatePicker
               label="Start Date"
               value={reportParams.startDate}
               onChange={(val: string) =>
@@ -904,7 +957,7 @@ const SubjectAttendances: React.FC = () => {
               }
               required
             />
-            <DatePicker // @ts-expect-error - DatePicker types mismatch
+            <VisiaDatePicker
               label="End Date"
               value={reportParams.endDate}
               onChange={(val: string) =>
@@ -965,11 +1018,11 @@ const SubjectAttendances: React.FC = () => {
                   }}
                   className="h-9 w-40 appearance-none rounded-lg border border-gray-300 bg-white px-3 py-1 text-sm outline-none transition-all focus:border-brand-500 focus:ring-2 focus:ring-brand-500/10 dark:border-white/[0.1] dark:bg-white/[0.05] dark:text-white"
                 >
-                  <option value="present">Present</option>
-                  <option value="absent">Absent</option>
-                  <option value="late">Late</option>
-                  <option value="excused">Excused</option>
-                  <option value="sick">Sick</option>
+                  {statusOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
                 </select>
                 <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400">
                   <ChevronDownIcon className="size-3.5" />
@@ -1081,11 +1134,11 @@ const SubjectAttendances: React.FC = () => {
                               }`}
                               disabled={!isSelected}
                             >
-                              <option value="present">Present</option>
-                              <option value="absent">Absent</option>
-                              <option value="late">Late</option>
-                              <option value="excused">Excused</option>
-                              <option value="sick">Sick</option>
+                              {statusOptions.map((opt) => (
+                                <option key={opt.value} value={opt.value}>
+                                  {opt.label}
+                                </option>
+                              ))}
                             </select>
                             <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400">
                               <ChevronDownIcon className="size-3.5" />

@@ -305,7 +305,12 @@ export const attendanceService = {
     return response.data;
   },
 
-  downloadSubjectAttendanceReport: async (params: { classId: number; startDate: string; endDate: string }): Promise<Blob> => {
+  downloadSubjectAttendanceReport: async (params: { 
+    classId: number; 
+    startDate: string; 
+    endDate: string;
+    subjectId?: number;
+  }): Promise<Blob> => {
       const response = await apiClient.get("/attendance/subject-attendances/report", {
           params,
           responseType: "blob",

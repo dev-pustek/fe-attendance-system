@@ -32,8 +32,6 @@ export default function NotificationDropdown() {
 
   useEffect(() => {
       fetchNotifications();
-      const timer = setInterval(fetchNotifications, 30000); // Poll every 30s
-      return () => clearInterval(timer);
   }, []);
 
   function toggleDropdown() {

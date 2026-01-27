@@ -4,7 +4,7 @@ import { attendanceService } from "../../../api/services/attendanceService";
 import { academicService } from "../../../api/services/academicService";
 import { TodayScheduleItem, CreateTeachingSessionDto, SubjectAttendance } from "../../../api/types/attendance";
 import { ClassEnrollment } from "../../../api/types/academic";
-import { useTodaySchedule } from "../../../api/hooks/useAttendance";
+import { useTodaySchedule, useAttendanceStatuses } from "../../../api/hooks/useAttendance";
 import PageMeta from "../../../components/atoms/PageMeta";
 import PageBreadcrumb from "../../../components/molecules/PageBreadcrumb";
 import { 
@@ -22,16 +22,29 @@ import CustomSelect from "../../../components/molecules/CustomSelect";
 import QRCode from "react-qr-code";
 import { Html5Qrcode } from "html5-qrcode";
 
-const STATUS_OPTIONS = [
-    { label: "Present", value: "present" },
-    { label: "Late", value: "late" },
-    { label: "Absent", value: "absent" },
-    { label: "Excused", value: "excused" },
-];
+
 
 const TeacherSchedule: React.FC = () => {
   const { user } = useAuthStore();
   const { data: scheduleRes, isLoading, refetch } = useTodaySchedule(user?.public_id);
+  const { data: statusesRes } = useAttendanceStatuses();
+
+  const statusOptions = React.useMemo(() => {
+    const apiOptions = (statusesRes?.data || []).map((s) => ({
+      label: s.name,
+      value: s.code.toLowerCase(),
+    }));
+    return apiOptions.length > 0
+      ? apiOptions
+      : [
+          { label: "Present", value: "present" },
+          { label: "Late", value: "late" },
+          { label: "Absent", value: "absent" },
+          { label: "Excused", value: "excused" },
+          { label: "Sick", value: "sick" },
+        ];
+  }, [statusesRes]);
+
   const schedule = scheduleRes?.data || [];
   const [currentTime, setCurrentTime] = useState(new Date());
   
@@ -286,7 +299,7 @@ const TeacherSchedule: React.FC = () => {
                                     });
                                     setAttendanceStatuses(newStatuses);
                                 }}
-                                options={STATUS_OPTIONS}
+                                options={statusOptions}
                                 placeholder="Set Default Status"
                            />
                         </div>
@@ -365,7 +378,7 @@ const TeacherSchedule: React.FC = () => {
                                                                    return next;
                                                                });
                                                            }}
-                                                           options={STATUS_OPTIONS}
+                                                           options={statusOptions}
                                                            placeholder="Select..."
                                                            className={isMissing ? "ring-1 ring-red-500 rounded-xl" : ""}
                                                        />
@@ -426,7 +439,7 @@ const TeacherSchedule: React.FC = () => {
                                                             return next;
                                                         });
                                                     }}
-                                                    options={STATUS_OPTIONS}
+                                                    options={statusOptions}
                                                     placeholder="Select..."
                                                     className={isMissing ? "ring-1 ring-red-500 rounded-xl" : ""}
                                                 />
