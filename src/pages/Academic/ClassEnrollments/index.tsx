@@ -41,7 +41,8 @@ const ClassEnrollments: React.FC = () => {
   const [isSearchingStudents, setIsSearchingStudents] = useState(false);
 
   // Fetch students function
-  const fetchStudents = async (term: string) => {
+  // Fetch students function
+  const fetchStudents = React.useCallback(async (term: string) => {
     setIsSearchingStudents(true);
     try {
       const response = await userService.getUsers({
@@ -65,14 +66,14 @@ const ClassEnrollments: React.FC = () => {
     } finally {
       setIsSearchingStudents(false);
     }
-  };
+  }, []);
 
   // Initial load of students (for edit mode mostly)
   React.useEffect(() => {
     if (isModalOpen) {
       fetchStudents("");
     }
-  }, [isModalOpen]);
+  }, [isModalOpen, fetchStudents]);
 
   const { data: classesResponse } = useClasses({ limit: 100 });
   const { data: academicYearsResponse } = useAcademicYears({ limit: 100 });
@@ -251,7 +252,7 @@ const ClassEnrollments: React.FC = () => {
               onChange={(val) => { setAcademicYearFilter(val ? String(val) : ""); setPage(1); }}
               options={[
                 { label: "All Years", value: "" },
-                ...(academicYearsResponse?.data.map(y => ({ label: y.name, value: String(y.id) })) || []),
+                ...(academicYearsResponse?.data.map(y => ({ label: y.code, value: String(y.id) })) || []),
               ]}
             />
 
@@ -261,7 +262,7 @@ const ClassEnrollments: React.FC = () => {
               onChange={(val) => { setClassFilter(val ? String(val) : ""); setPage(1); }}
               options={[
                 { label: "All Classes", value: "" },
-                ...(classesResponse?.data.map(c => ({ label: c.name, value: String(c.id) })) || []),
+                ...(classesResponse?.data.map(c => ({ label: c.code, value: String(c.id) })) || []),
               ]}
             />
 
@@ -414,12 +415,29 @@ const ClassEnrollments: React.FC = () => {
         )}
       </div>
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} className="max-w-md">
-        <div className="p-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
-            {selectedEnrollment ? "Update Enrollment" : "New Enrollment"}
-          </h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={selectedEnrollment ? "Update Enrollment" : "New Enrollment"} className="max-w-md" footer={
+         <div className="flex justify-end gap-3 pt-4">
+             <button
+               type="button"
+               onClick={() => setIsModalOpen(false)}
+               className="rounded-xl px-4 py-2 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.05]"
+             >
+               Cancel
+             </button>
+             <button
+               onClick={handleSubmit} // Using a wrapper or form ref might be better, but for now linking logic
+               type="button" // This will trigger form submit if inside form, but footer is outside usually. 
+               // Actually Modal structure usually puts footer outside form. 
+               // If Modal renders children then footer, we need form to wrap children? 
+               // Or we can just trigger form submission via ref or make the button type="submit" and form ID.
+               className="rounded-xl bg-brand-500 px-6 py-2 text-sm font-medium text-white transition-all hover:bg-brand-600 shadow-lg shadow-brand-500/20"
+             >
+               {selectedEnrollment ? "Update" : "Enroll Student"}
+             </button>
+           </div>
+      }>
+        <div className="">
+          <form id="enrollment-form" onSubmit={handleSubmit} className="space-y-4">
             <SearchableAsyncSelect
               label="Student"
               value={formData.userId as string}
@@ -428,6 +446,7 @@ const ClassEnrollments: React.FC = () => {
               options={studentOptions}
               isLoading={isSearchingStudents}
               placeholder="Type to search student name or email..."
+              initialLabel={selectedEnrollment?.user?.name}
             />
             
             <div className="grid grid-cols-2 gap-4">
@@ -439,7 +458,7 @@ const ClassEnrollments: React.FC = () => {
                   { label: "Select Class", value: "" },
                   ...(classesResponse?.data
                     ?.filter(c => c.id && String(c.id) !== "undefined")
-                    ?.map(c => ({ label: c.name, value: String(c.id) })) || []),
+                    ?.map(c => ({ label: c.code, value: String(c.id) })) || []),
                 ]}
               />
               <CustomSelect
@@ -450,7 +469,7 @@ const ClassEnrollments: React.FC = () => {
                   { label: "Select Year", value: "" },
                   ...(academicYearsResponse?.data
                     ?.filter(y => y.id && String(y.id) !== "undefined")
-                    ?.map(y => ({ label: y.name, value: String(y.id) })) || []),
+                    ?.map(y => ({ label: y.code, value: String(y.id) })) || []),
                 ]}
               />
             </div>
@@ -472,22 +491,6 @@ const ClassEnrollments: React.FC = () => {
                   { label: "Graduated", value: "graduated" },
                 ]}
               />
-            </div>
-
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-white/[0.05]">
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="rounded-xl px-4 py-2 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.05]"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="rounded-xl bg-brand-500 px-6 py-2 text-sm font-medium text-white transition-all hover:bg-brand-600 shadow-lg shadow-brand-500/20"
-              >
-                {selectedEnrollment ? "Update" : "Enroll Student"}
-              </button>
             </div>
           </form>
         </div>

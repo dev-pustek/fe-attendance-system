@@ -187,6 +187,7 @@ const useNavItems = () => {
        // Teacher only or shared? 
        // Classes is usually shared
        academicSubItems.push({ name: "Classes", path: "/academic/classes" });
+       academicSubItems.push({ name: "Enrollments", path: "/academic/enrollments" });
        
        const uniqueAcademic = Array.from(new Map(academicSubItems.map(item => [item.path, item])).values());
        if (uniqueAcademic.length > 0) {
