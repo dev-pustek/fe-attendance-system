@@ -138,8 +138,8 @@ const Events: React.FC = () => {
     return events.map((event): EventInput => ({
       id: String(event.id),
       title: event.name,
-      start: event.startDateTime || event.startTime,
-      end: event.endDateTime || event.endTime,
+      start: event.startTime,
+      end: event.endTime,
       extendedProps: {
         event: event,
         calendar: event.eventType === "meeting" ? "primary" : 
@@ -156,8 +156,8 @@ const Events: React.FC = () => {
         name: event.name,
         description: event.description,
         location: event.location,
-        startDateTime: event.startDateTime || event.startTime,
-        endDateTime: event.endDateTime || event.endTime,
+        startDateTime: event.startTime,
+        endDateTime: event.endTime,
         eventType: event.eventType,
         capacity: event.capacity,
         affectsAttendance: event.affectsAttendance,
@@ -527,11 +527,11 @@ const Events: React.FC = () => {
                       <div className="space-y-1.5">
                         <div className="flex items-center gap-2 text-xs font-medium text-gray-700 dark:text-gray-300">
                           <CalenderIcon className="size-3.5 text-brand-500" />
-                          <span>{new Date(event.startDateTime || event.startTime).toLocaleString()}</span>
+                          <span>{new Date(event.startTime).toLocaleString()}</span>
                         </div>
                         <div className="flex items-center gap-2 text-[11px] text-gray-400">
                           <TimeIcon className="size-3.5" />
-                          <span>Until: {new Date(event.endDateTime || event.endTime).toLocaleString()}</span>
+                          <span>Until: {new Date(event.endTime).toLocaleString()}</span>
                         </div>
                       </div>
                     </TableCell>
@@ -548,17 +548,19 @@ const Events: React.FC = () => {
                              </div>
                           ) : new Date(event.startTime) > new Date() ? (
                              <Badge color="success" size="sm">Upcoming</Badge>
-                          ) : new Date(event.endDateTime || event.endTime) < new Date() ? (
+                          ) : new Date(event.endTime) < new Date() ? (
                              <Badge color="warning" size="sm">Ended</Badge>
                           ) : (
                              <Badge color="primary" size="sm">Live</Badge>
                           )}
 
                           {!event.isCancelled && (
+                            <button 
                               onClick={(e) => {
                                 e.stopPropagation();
                                 navigate(`/events/${event.public_id}/invitation-paper`);
                               }}
+                              className="text-[10px] font-bold text-brand-500 hover:text-brand-600 transition-colors uppercase tracking-widest flex items-center gap-1 group/btn"
                             >
                               Invitation Paper
                               <AngleRightIcon className="size-3 transition-transform group-hover/btn:translate-x-0.5" />
@@ -584,13 +586,13 @@ const Events: React.FC = () => {
                         </button>
                         <button
                           onClick={() => handleOpenManageModal(event)}
-                          disabled={event.isCancelled || new Date(event.endDateTime || event.endTime) < new Date()}
+                          disabled={event.isCancelled || new Date(event.endTime) < new Date()}
                           className={`rounded-lg p-2 transition-colors ${
                             event.isCancelled || new Date(event.endDateTime || event.endTime) < new Date()
                               ? "text-gray-300 cursor-not-allowed"
                               : "text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10"
                           }`}
-                          title={event.isCancelled ? "Cannot invite to cancelled event" : new Date(event.endDateTime || event.endTime) < new Date() ? "Cannot invite to past event" : "Manage Invitations"}
+                          title={event.isCancelled ? "Cannot invite to cancelled event" : new Date(event.endTime) < new Date() ? "Cannot invite to past event" : "Manage Invitations"}
                         >
                           <UserIcon className="size-4" />
                         </button>
@@ -864,7 +866,7 @@ const Events: React.FC = () => {
                   </div>
                 )}
 
-                {selectedEvent && new Date(selectedEvent.endDateTime || selectedEvent.endTime) < new Date() && (
+                {selectedEvent && new Date(selectedEvent.endTime) < new Date() && (
                   <div className="flex items-center justify-center p-3 rounded-xl border border-warning-100 bg-warning-50/50 dark:border-warning-500/10 dark:bg-warning-500/5">
                     <Badge color="warning" size="sm">This event has ended</Badge>
                   </div>
