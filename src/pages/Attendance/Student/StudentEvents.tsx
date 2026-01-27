@@ -161,7 +161,7 @@ export default function StudentEvents() {
         <div className="flex flex-col items-end gap-1">
           <Badge color="success">Attended</Badge>
           {attendance?.status && (
-            <span className={`text-[10px] font-bold uppercase tracking-wider ${attendance.isLate ? 'text-orange-500' : 'text-green-500'}`}>
+            <span className={`text-[10px] font-semibold uppercase tracking-wider ${attendance.isLate ? 'text-orange-500' : 'text-green-500'}`}>
               {attendance.status}
             </span>
           )}
@@ -195,7 +195,7 @@ export default function StudentEvents() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-             <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-1">My Events</h1>
+             <h1 className="text-2xl font-semibold text-gray-800 dark:text-white mb-1">My Events</h1>
              <p className="text-sm text-gray-500 dark:text-gray-400">Events you have been invited to.</p>
           </div>
         </div>
@@ -208,8 +208,8 @@ export default function StudentEvents() {
                 <CalenderIcon className="size-6" />
               </div>
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider">Total Events</p>
-                <p className="text-xl font-bold dark:text-white">{metrics.totalEvents}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold tracking-wider">Total Events</p>
+                <p className="text-xl font-semibold dark:text-white">{metrics.totalEvents}</p>
               </div>
             </div>
             <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-white/5 flex items-center gap-4">
@@ -217,8 +217,8 @@ export default function StudentEvents() {
                 <CheckCircleIcon className="size-6" />
               </div>
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider">Attended</p>
-                <p className="text-xl font-bold dark:text-white">{metrics.attendedCount}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold tracking-wider">Attended</p>
+                <p className="text-xl font-semibold dark:text-white">{metrics.attendedCount}</p>
               </div>
             </div>
             <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-white/5 flex items-center gap-4">
@@ -226,8 +226,8 @@ export default function StudentEvents() {
                 <PresentationChartLineIcon className="size-6" />
               </div>
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider">Missed</p>
-                <p className="text-xl font-bold dark:text-white">{metrics.missedCount}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold tracking-wider">Missed</p>
+                <p className="text-xl font-semibold dark:text-white">{metrics.missedCount}</p>
               </div>
             </div>
           </div>
@@ -267,236 +267,217 @@ export default function StudentEvents() {
                     }
 
                     return (
-                    <div 
-                        key={invitation.id} 
-                        className={`group relative overflow-hidden rounded-2xl border transition-all duration-300 flex flex-col sm:flex-row gap-6 p-4 sm:p-6 ${cardStyles} ${!isClosed && 'hover:shadow-lg'}`}
-                    >
-                        {/* Status Glow / Indicator */}
-                        {(isCheckInOpen || isCheckOutOpen) && (
-                            <div className="absolute top-0 right-0 left-0 h-1.5 bg-gradient-to-r from-brand-400 via-brand-600 to-brand-400 animate-shimmer" />
-                        )}
-                        {isAttended && invitation.attendanceStatus?.clockOut && (
-                            <div className="absolute top-0 right-0 left-0 h-1.5 bg-gradient-to-r from-green-400 to-green-600" />
-                        )}
-
-                        {/* Left Side: Date & Status Illustration */}
-                        <div className="flex-shrink-0 flex flex-col items-center gap-4">
-                            <div className={`flex flex-col items-center justify-center rounded-2xl w-full sm:w-28 h-28 border shadow-sm transition-transform group-hover:scale-105 ${
-                                isAttended ? 'bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 border-green-100 dark:border-green-500/20' :
-                                (isCheckInOpen || isCheckOutOpen) ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 border-brand-100 dark:border-brand-500/20' :
-                                'bg-gray-50 dark:bg-white/5 text-gray-500 dark:text-gray-400 border-gray-100 dark:border-white/10'
-                            }`}>
-                                <span className="text-xs font-bold uppercase tracking-widest opacity-60 mb-0.5">{month}</span>
-                                <span className="text-4xl font-black leading-none">{day}</span>
-                                <span className="text-[10px] font-bold mt-1 opacity-60 uppercase">{time}</span>
-                            </div>
-                            
-                            {invitation.attendanceStatus?.hasAttended && (
-                                <div className="flex flex-col items-center gap-1 animate-in zoom-in-50 duration-500">
-                                    <div className="size-8 rounded-full bg-green-500 text-white flex items-center justify-center shadow-lg shadow-green-500/30">
-                                        <CheckCircleIcon className="size-5 stroke-[2.5]" />
-                                    </div>
-                                    <span className="text-[10px] font-bold text-green-600 uppercase tracking-tighter">Verified</span>
-                                </div>
+                        <div 
+                            key={invitation.id} 
+                            className={`group relative overflow-hidden rounded-2xl border transition-all duration-300 flex flex-col gap-0 shadow-sm ${cardStyles} ${!isClosed && 'hover:shadow-lg hover:border-brand-500/30'}`}
+                        >
+                            {/* Status Glow / Indicator */}
+                            {(isCheckInOpen || isCheckOutOpen) && (
+                                <div className="absolute top-0 right-0 left-0 h-1.5 bg-gradient-to-r from-brand-400 via-brand-600 to-brand-400 animate-shimmer" />
                             )}
-                        </div>
+                            {isAttended && invitation.attendanceStatus?.clockOut && (
+                                <div className="absolute top-0 right-0 left-0 h-1.5 bg-gradient-to-r from-green-400 to-green-600" />
+                            )}
 
-                        {/* Middle: Event Content */}
-                        <div className="flex-1 min-w-0 flex flex-col pt-1">
-                            <div className="flex items-start justify-between gap-4 mb-3">
-                                <div className="space-y-1.5">
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded border uppercase tracking-widest ${
-                                            isCheckInOpen || isCheckOutOpen ? 'bg-brand-100 border-brand-200 text-brand-700 dark:bg-brand-500/20 dark:border-brand-500/30 dark:text-brand-300' :
-                                            isAttended ? 'bg-green-100 border-green-200 text-green-700 dark:bg-green-500/20 dark:border-green-500/30 dark:text-green-300' :
-                                            'bg-gray-100 border-gray-200 text-gray-600 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300'
-                                        }`}>
-                                            {event.eventType}
-                                        </span>
-                                        {(isCheckInOpen || isCheckOutOpen) && (
-                                            <span className="flex items-center gap-1.5 text-[10px] font-black text-brand-600 dark:text-brand-400 animate-pulse bg-brand-50 dark:bg-brand-500/10 px-2 py-0.5 rounded-full">
-                                                <div className="size-1.5 rounded-full bg-brand-500 shadow-[0_0_8px_rgba(var(--color-brand-600),0.8)]" />
-                                                EVENT OPEN
-                                            </span>
-                                        )}
-                                    </div>
-                                    <h3 className={`text-xl sm:text-2xl font-black tracking-tight transition-colors ${
-                                        isAttended ? 'text-green-900 dark:text-green-50' : 
-                                        'text-gray-900 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400'
+                            <div className="flex flex-col sm:flex-row gap-6 p-5 sm:p-7">
+                                {/* Left Side: Date & Status Illustration */}
+                                <div className="flex-shrink-0 flex flex-col items-center gap-4">
+                                    <div className={`flex flex-col items-center justify-center rounded-2xl w-24 h-24 sm:w-28 sm:h-28 border shadow-sm transition-transform group-hover:scale-105 ${
+                                        isAttended ? 'bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 border-green-100 dark:border-green-500/20' :
+                                        (isCheckInOpen || isCheckOutOpen) ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 border-brand-100 dark:border-brand-500/20' :
+                                        'bg-gray-50 dark:bg-white/5 text-gray-500 dark:text-gray-400 border-gray-100 dark:border-white/10'
                                     }`}>
-                                        {event.name}
-                                    </h3>
-                                </div>
-                                <div className="flex-shrink-0">
-                                    {getStatusBadge(invitation.status, invitation.attendanceStatus)}
-                                </div>
-                            </div>
-
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 leading-relaxed line-clamp-2 italic">
-                                "{event.description}"
-                            </p>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                                <div className="space-y-3">
-                                    <div className="flex items-center gap-3 group/info">
-                                        <div className="size-8 rounded-lg bg-gray-50 dark:bg-white/5 flex items-center justify-center text-gray-400 group-hover/info:text-brand-500 transition-colors">
-                                            <TimeIcon className="size-4" />
-                                        </div>
-                                        <div className="flex flex-col">
-                                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-0.5">Schedule</span>
-                                            <span className="text-sm font-bold text-gray-700 dark:text-gray-200">
-                                                {time} — {event.endTime ? format(new Date(event.endTime), "p") : 'End'}
-                                            </span>
-                                        </div>
+                                        <span className="text-xs font-semibold uppercase tracking-widest opacity-60 mb-0.5">{month}</span>
+                                        <span className="text-4xl font-black leading-none">{day}</span>
+                                        <span className="text-[10px] font-semibold mt-1 opacity-60 uppercase">{time}</span>
                                     </div>
-                                    <div className="flex items-center gap-3 group/info">
-                                        <div className="size-8 rounded-lg bg-gray-50 dark:bg-white/5 flex items-center justify-center text-gray-400 group-hover/info:text-brand-500 transition-colors">
-                                            <AlertIcon className="size-4" />
-                                        </div>
-                                        <div className="flex flex-col">
-                                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-0.5">Location</span>
-                                            <span className="text-sm font-bold text-gray-700 dark:text-gray-200 truncate max-w-[200px]" title={event.location}>
-                                                {event.location}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-3">
-                                    <div className="flex items-center gap-3 group/info">
-                                        <div className="size-8 rounded-lg bg-gray-50 dark:bg-white/5 flex items-center justify-center text-gray-400 group-hover/info:text-brand-500 transition-colors">
-                                            <PresentationChartLineIcon className="size-4" />
-                                        </div>
-                                        <div className="flex flex-col">
-                                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-0.5">Capacity</span>
-                                            <span className="text-sm font-bold text-gray-700 dark:text-gray-200">
-                                                {event.capacity || 'Unlimited'} Seats
-                                            </span>
-                                        </div>
-                                    </div>
-                                    {event.creator && (
-                                        <div className="flex items-center gap-3 group/info">
-                                            <div className="size-8 rounded-lg bg-gray-50 dark:bg-white/5 flex items-center justify-center text-gray-400 group-hover/info:text-brand-500 transition-colors text-[10px] font-bold">
-                                                ORG
+                                    
+                                    {invitation.attendanceStatus?.hasAttended && (
+                                        <div className="flex flex-col items-center gap-1 animate-in zoom-in-50 duration-500">
+                                            <div className="size-8 rounded-full bg-green-500 text-white flex items-center justify-center shadow-lg shadow-green-500/30">
+                                                <CheckCircleIcon className="size-5 stroke-[2.5]" />
                                             </div>
-                                            <div className="flex flex-col">
-                                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-0.5">Organizer</span>
-                                                <span className="text-sm font-bold text-gray-700 dark:text-gray-200">{event.creator.name}</span>
-                                            </div>
+                                            <span className="text-[10px] font-semibold text-green-600 uppercase tracking-tighter">Verified</span>
                                         </div>
                                     )}
                                 </div>
+
+                                {/* Middle: Event Content */}
+                                <div className="flex-1 min-w-0 flex flex-col">
+                                    <div className="flex items-start justify-between gap-4 mb-4">
+                                        <div className="space-y-1">
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded border uppercase tracking-widest ${
+                                                    isCheckInOpen || isCheckOutOpen ? 'bg-brand-100 border-brand-200 text-brand-700 dark:bg-brand-500/20 dark:border-brand-500/30 dark:text-brand-300' :
+                                                    isAttended ? 'bg-green-100 border-green-200 text-green-700 dark:bg-green-500/20 dark:border-green-500/30 dark:text-brand-300' :
+                                                    'bg-gray-100 border-gray-200 text-gray-600 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300'
+                                                }`}>
+                                                    {event.eventType}
+                                                </span>
+                                                {(isCheckInOpen || isCheckOutOpen) && (
+                                                    <span className="flex items-center gap-1.5 text-[10px] font-black text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-500/10 px-2 py-0.5 rounded-full ring-1 ring-brand-500/20">
+                                                        <div className="size-1.5 rounded-full bg-brand-500 animate-pulse shadow-[0_0_8px_rgba(var(--color-brand-600),0.8)]" />
+                                                        OPEN
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <h3 className={`text-2xl sm:text-3xl font-black tracking-tight transition-colors leading-tight ${
+                                                isAttended ? 'text-green-900 dark:text-green-50' : 
+                                                'text-gray-900 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400'
+                                            }`}>
+                                                {event.name}
+                                            </h3>
+                                            <p className="text-sm text-gray-500 dark:text-gray-400 italic line-clamp-1 max-w-2xl">
+                                                "{event.description}"
+                                            </p>
+                                        </div>
+                                        <div className="flex-shrink-0">
+                                            {getStatusBadge(invitation.status, invitation.attendanceStatus)}
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <div className="flex items-center gap-3 group/info">
+                                            <div className="size-9 rounded-xl bg-gray-50 dark:bg-white/5 flex items-center justify-center text-gray-400 group-hover/info:text-brand-500 transition-all">
+                                                <TimeIcon className="size-5" />
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest leading-none mb-1">Schedule</span>
+                                                <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                                                    {time} — {event.endTime ? format(new Date(event.endTime), "p") : 'End'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-3 group/info">
+                                            <div className="size-9 rounded-xl bg-gray-50 dark:bg-white/5 flex items-center justify-center text-gray-400 group-hover/info:text-brand-500 transition-all">
+                                                <AlertIcon className="size-5" />
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest leading-none mb-1">Location</span>
+                                                <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 truncate max-w-[150px]" title={event.location}>
+                                                    {event.location}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-3 group/info">
+                                            <div className="size-9 rounded-xl bg-gray-50 dark:bg-white/5 flex items-center justify-center text-gray-400 group-hover/info:text-brand-500 transition-all">
+                                                <PresentationChartLineIcon className="size-5" />
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest leading-none mb-1">Capacity</span>
+                                                <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                                                    {event.capacity || 'Unlimited'} Seats
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
-                            {/* Attendance Logs Section */}
-                            {(invitation.attendanceStatus?.clockIn || invitation.attendanceStatus?.clockOut) && (
-                                <div className="mt-auto pt-4 border-t border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.01] -mx-4 -mb-4 px-4 pb-4 sm:-mx-6 sm:-mb-6 sm:px-6 sm:pb-6 rounded-b-2xl">
-                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3">Attendance History</p>
-                                    <div className="flex flex-wrap gap-4">
-                                        {invitation.attendanceStatus.clockIn && (
-                                            <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-white/10 shadow-sm">
-                                                <div className="size-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
-                                                <div className="flex flex-col">
-                                                    <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Clock In</span>
+                            {/* Footer Section: Logs & Actions */}
+                            <div className="border-t border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02] px-5 py-4 sm:px-7 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                {/* Logs */}
+                                <div className="flex flex-wrap items-center gap-3">
+                                    {(invitation.attendanceStatus?.clockIn || invitation.attendanceStatus?.clockOut) ? (
+                                        <>
+                                            {invitation.attendanceStatus.clockIn && (
+                                                <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-100 dark:border-white/10 shadow-sm">
+                                                    <div className="size-2 rounded-full bg-green-500" />
+                                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">In</span>
                                                     <span className="text-xs font-black text-gray-900 dark:text-white">
                                                         {format(new Date(invitation.attendanceStatus.clockIn), "HH:mm:ss")}
                                                     </span>
                                                 </div>
-                                            </div>
-                                        )}
-                                        {invitation.attendanceStatus.clockOut && (
-                                            <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-white/10 shadow-sm">
-                                                <div className="size-2 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)]" />
-                                                <div className="flex flex-col">
-                                                    <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Clock Out</span>
+                                            )}
+                                            {invitation.attendanceStatus.clockOut && (
+                                                <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-100 dark:border-white/10 shadow-sm">
+                                                    <div className="size-2 rounded-full bg-orange-500" />
+                                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Out</span>
                                                     <span className="text-xs font-black text-gray-900 dark:text-white">
                                                         {format(new Date(invitation.attendanceStatus.clockOut), "HH:mm:ss")}
                                                     </span>
                                                 </div>
-                                            </div>
-                                        )}
-                                        {invitation.attendanceStatus.isLate && (
-                                            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-orange-50 dark:bg-orange-500/10 border border-orange-100 dark:border-orange-500/20">
-                                                <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400">
-                                                    LATE: {invitation.attendanceStatus.lateMinutes}m
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <div className="flex items-center gap-2 text-gray-400">
+                                            <div className="size-1.5 rounded-full bg-gray-300" />
+                                            <span className="text-[10px] font-semibold uppercase tracking-widest">No attendance recorded</span>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
 
-                            {/* Action Buttons Strip */}
-                            <div className="flex items-center justify-end gap-3 mt-4 sm:mt-0 sm:absolute sm:bottom-6 sm:right-6">
-                                {invitation.status === "invited" ? (
-                                    <>
-                                        <Button 
-                                            variant="outline" 
-                                            size="sm" 
-                                            className="font-bold border-red-200 text-red-600 hover:bg-red-50 dark:border-red-500/20 dark:hover:bg-red-500/10"
-                                            onClick={() => handleResponseClick(invitation.id, "DECLINED")}
-                                            isLoading={isResponding}
-                                            disabled={isResponding}
-                                        >
-                                            Decline
-                                        </Button>
-                                        <Button 
-                                            variant="primary" 
-                                            size="sm"
-                                            className="font-black px-6 shadow-md"
-                                            onClick={() => handleResponseClick(invitation.id, "ACCEPTED")}
-                                            isLoading={isResponding}
-                                            disabled={isResponding}
-                                        >
-                                            Accept invitation
-                                        </Button>
-                                    </>
-                                ) : (isAccepted || isAttended) ? (
-                                    <div className="flex items-center gap-2 transition-all group-hover:translate-y-[-2px]">
-                                        <Link to={`/events/${event.public_id}/invitation-paper?userId=${user?.public_id}`}>
-                                          <button className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-gray-500 hover:text-brand-600 dark:text-gray-400 dark:hover:text-brand-400 transition-colors">
-                                            <TicketIcon className="size-4" />
-                                            <span>Card</span>
-                                          </button>
-                                        </Link>
-                                        
-                                        {isCheckInOpen ? (
-                                            <Button 
-                                              variant="primary" 
-                                              size="md" 
-                                              className="flex items-center gap-2 h-10 px-6 font-black animate-pulse shadow-[0_0_20px_rgba(var(--color-brand-600),0.3)]"
-                                              onClick={() => handleScanClick(event)}
-                                            >
-                                              <QrCodeIcon className="size-4" />
-                                              <span>Check In</span>
-                                            </Button>
-                                        ) : isCheckOutOpen ? (
+                                {/* Actions */}
+                                <div className="flex items-center justify-end gap-3 flex-shrink-0">
+                                    {invitation.status === "invited" ? (
+                                        <>
                                             <Button 
                                                 variant="outline" 
-                                                size="md" 
-                                                className="flex items-center gap-2 h-10 px-6 font-black border-orange-500 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-500/10 shadow-lg shadow-orange-500/10"
-                                                onClick={() => handleScanClick(event)}
+                                                size="sm" 
+                                                className="font-semibold border-red-200 text-red-600 hover:bg-red-50 dark:border-red-500/20 dark:hover:bg-red-500/10"
+                                                onClick={() => handleResponseClick(invitation.id, "DECLINED")}
+                                                isLoading={isResponding}
+                                                disabled={isResponding}
                                             >
-                                                <QrCodeIcon className="size-4" />
-                                                <span>Check Out Now</span>
+                                                Decline
                                             </Button>
-                                        ) : isAttended && invitation.attendanceStatus?.clockOut ? (
-                                            <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-500 text-white shadow-lg shadow-green-500/30">
-                                                <CheckCircleIcon className="size-4 stroke-[3]" />
-                                                <span className="text-[10px] font-black uppercase tracking-widest">Finalized</span>
-                                            </div>
-                                        ) : (
-                                            <div className="px-4 py-2 rounded-xl bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-400 text-[10px] font-black uppercase tracking-widest select-none">
-                                                {invitation.availabilityStatus === 'upcoming' ? 'Upcoming' : 
-                                                 invitation.availabilityStatus === 'ended' ? 'Ended' : 'Closed'}
-                                            </div>
-                                        )}
-                                    </div>
-                                ) : null}
+                                            <Button 
+                                                variant="primary" 
+                                                size="sm"
+                                                className="font-black px-6 shadow-md"
+                                                onClick={() => handleResponseClick(invitation.id, "ACCEPTED")}
+                                                isLoading={isResponding}
+                                                disabled={isResponding}
+                                            >
+                                                Accept invitation
+                                            </Button>
+                                        </>
+                                    ) : (isAccepted || isAttended) ? (
+                                        <div className="flex items-center gap-2">
+                                            <Link to={`/events/${event.public_id}/invitation-paper?userId=${user?.public_id}`}>
+                                              <button className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-500 hover:text-brand-600 hover:bg-brand-50 dark:text-gray-400 dark:hover:text-brand-400 dark:hover:bg-brand-500/10 rounded-lg transition-all">
+                                                <TicketIcon className="size-4" />
+                                                <span>Card</span>
+                                              </button>
+                                            </Link>
+                                            
+                                            {isCheckInOpen ? (
+                                                <Button 
+                                                  variant="primary" 
+                                                  size="sm" 
+                                                  className="flex items-center gap-2 h-9 px-5 font-black animate-pulse shadow-lg shadow-brand-500/20"
+                                                  onClick={() => handleScanClick(event)}
+                                                >
+                                                  <QrCodeIcon className="size-4" />
+                                                  <span>Check In</span>
+                                                </Button>
+                                            ) : isCheckOutOpen ? (
+                                                <Button 
+                                                    variant="outline" 
+                                                    size="sm" 
+                                                    className="flex items-center gap-2 h-9 px-5 font-black border-orange-500 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-500/10 shadow-lg shadow-orange-500/10"
+                                                    onClick={() => handleScanClick(event)}
+                                                >
+                                                    <QrCodeIcon className="size-4" />
+                                                    <span>Check Out Now</span>
+                                                </Button>
+                                            ) : isAttended && invitation.attendanceStatus?.clockOut ? (
+                                                <div className="flex items-center gap-2 px-4 py-1.5 rounded-xl bg-green-500 text-white shadow-lg shadow-green-500/20">
+                                                    <CheckCircleIcon className="size-4 stroke-[3]" />
+                                                    <span className="text-[10px] font-black uppercase tracking-widest">Finalized</span>
+                                                </div>
+                                            ) : (
+                                                <div className="px-4 py-1.5 rounded-xl bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-400 text-[10px] font-black uppercase tracking-widest select-none shadow-sm">
+                                                    {invitation.availabilityStatus === 'upcoming' ? 'Upcoming' : 
+                                                     invitation.availabilityStatus === 'ended' ? 'Ended' : 'Closed'}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : null}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                )})}
+                    )})}
             </div>
         ) : (
             <div className="p-12 text-center bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-white/5">

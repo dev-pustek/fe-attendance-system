@@ -656,9 +656,16 @@ const AttendanceHistory: React.FC = () => {
                                     </>
                                  )}
                                  {activeTab === 'event' && (
-                                    <div>
-                                       <p className="text-sm font-medium text-gray-900 dark:text-white">{record.event?.name || '-'}</p>
-                                       <p className="text-xs text-gray-500">{record.event?.startTime ? format(parseISO(record.event.startTime), 'dd MMM yyyy HH:mm') : '-'}</p>
+                                    <div className="flex flex-col gap-1">
+                                       <div className="flex items-center gap-2">
+                                          <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded border border-gray-100 dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-500 uppercase tracking-widest">
+                                             {record.event?.eventType || 'event'}
+                                          </span>
+                                          <p className="text-sm font-bold text-gray-900 dark:text-white truncate max-w-[180px]">{record.event?.name || '-'}</p>
+                                       </div>
+                                       <p className="text-[10px] text-gray-400 font-medium">
+                                          {record.event?.startTime ? format(parseISO(record.event.startTime), 'dd MMM yyyy') : '-'}
+                                       </p>
                                     </div>
                                  )}
                                </div>
@@ -746,11 +753,53 @@ const AttendanceHistory: React.FC = () => {
                                {/* Event Details */}
                                {activeTab === 'event' && (
                                  <>
-                                    <div>
-                                       <p className="text-xs text-gray-500 mb-0.5">Invitation Status</p>
-                                       <p className="font-medium text-gray-900 dark:text-white capitalize">
-                                          {record.status || '-'}
-                                       </p>
+                                    <div className="col-span-2">
+                                       <p className="text-xs text-gray-500 mb-0.5">Location & Schedule</p>
+                                       <div className="flex flex-col gap-1">
+                                          <div className="flex items-center gap-1.5 text-gray-700 dark:text-gray-200">
+                                             <AlertIcon className="size-3 text-gray-400" />
+                                             <span className="text-sm font-medium">{record.event?.location || 'No location set'}</span>
+                                          </div>
+                                          <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
+                                             <TimeIcon className="size-3" />
+                                             <span className="text-xs font-medium">
+                                                {record.event?.startTime ? format(parseISO(record.event.startTime), 'HH:mm') : '--:--'}
+                                                {' - '}
+                                                {record.event?.endTime ? format(parseISO(record.event.endTime), 'HH:mm') : '--:--'}
+                                             </span>
+                                          </div>
+                                       </div>
+                                    </div>
+                                    <div className="col-span-2 mt-2 bg-gray-50 dark:bg-white/5 p-2 rounded-lg border border-gray-100 dark:border-white/5">
+                                       <div className="flex items-center justify-between mb-2">
+                                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Attendance Status</p>
+                                          <span className="text-[10px] font-bold text-gray-400 italic">Invited: {record.status || '-'}</span>
+                                       </div>
+                                       {record.attendanceStatus?.hasAttended ? (
+                                          <div className="flex gap-4">
+                                             <div className="flex-1">
+                                                <p className="text-[10px] text-green-600 dark:text-green-400 font-bold uppercase tracking-tighter">Clock In</p>
+                                                <p className="text-sm font-black text-gray-900 dark:text-white">
+                                                   {record.attendanceStatus.clockIn ? format(parseISO(record.attendanceStatus.clockIn), 'HH:mm:ss') : '--:--'}
+                                                </p>
+                                             </div>
+                                             <div className="w-px bg-gray-200 dark:bg-white/10"></div>
+                                             <div className="flex-1 text-right">
+                                                <p className="text-[10px] text-orange-600 dark:text-orange-400 font-bold uppercase tracking-tighter">Clock Out</p>
+                                                <p className="text-sm font-black text-gray-900 dark:text-white">
+                                                   {record.attendanceStatus.clockOut ? format(parseISO(record.attendanceStatus.clockOut), 'HH:mm:ss') : '--:--'}
+                                                </p>
+                                             </div>
+                                          </div>
+                                       ) : (
+                                          <p className="text-xs text-gray-400 italic py-1">No attendance recorded</p>
+                                       )}
+                                       {record.responseNotes && (
+                                          <div className="mt-2 pt-2 border-t border-gray-100 dark:border-white/5">
+                                             <p className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">Response Note</p>
+                                             <p className="text-xs text-gray-600 dark:text-gray-400 italic">"{record.responseNotes}"</p>
+                                          </div>
+                                       )}
                                     </div>
                                  </>
                                )}
@@ -845,19 +894,19 @@ const AttendanceHistory: React.FC = () => {
                     </>
                   )}
 
-                  {activeTab === 'event' && (
+                   {activeTab === 'event' && (
                     <>
                       <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Event Name
+                        Event Details
                       </TableCell>
                       <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Start Time
+                        Location & Schedule
                       </TableCell>
                       <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Invitation Status
+                        Inv. Status
                       </TableCell>
                       <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider text-center">
-                        Attendance
+                        Attendance Details
                       </TableCell>
                     </>
                   )}
@@ -1006,24 +1055,72 @@ const AttendanceHistory: React.FC = () => {
                         </>
                       )}
 
-                      {activeTab === 'event' && (
+                       {activeTab === 'event' && (
                         <>
                           <TableCell className="px-5 py-4">
-                             <span className="text-sm font-medium text-gray-900 dark:text-white">
-                                {record.event?.name || '-'}
-                             </span>
-                          </TableCell>
-                          <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
-                            {record.event?.startTime ? format(parseISO(record.event.startTime), 'dd MMM yyyy HH:mm') : '-'}
+                             <div className="flex flex-col gap-1">
+                                <span className="text-[9px] font-black w-fit px-1.5 py-0.5 rounded bg-gray-100 dark:bg-white/5 text-gray-500 border border-gray-200 dark:border-white/10 uppercase tracking-widest">
+                                   {record.event?.eventType || 'event'}
+                                </span>
+                                <span className="text-sm font-bold text-gray-900 dark:text-white">
+                                   {record.event?.name || '-'}
+                                </span>
+                             </div>
                           </TableCell>
                           <TableCell className="px-5 py-4">
-                            <span className="capitalize">{record.status}</span>
+                             <div className="flex flex-col gap-1">
+                                <div className="flex items-center gap-1.5 text-sm text-gray-700 dark:text-gray-200 font-medium">
+                                   <AlertIcon className="size-4 text-gray-400" />
+                                   <span className="truncate max-w-[150px]" title={record.event?.location}>{record.event?.location || '-'}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                                   <TimeIcon className="size-3.5" />
+                                   <span>
+                                     {record.event?.startTime ? format(parseISO(record.event.startTime), 'dd MMM yyyy, HH:mm') : '-'}
+                                     {' - '}
+                                     {record.event?.endTime ? format(parseISO(record.event.endTime), 'HH:mm') : ''}
+                                   </span>
+                                </div>
+                             </div>
                           </TableCell>
-                          <TableCell className="px-5 py-4 text-center">
-                             {record.attendanceStatus?.hasAttended 
-                               ? getStatusBadge(record.attendanceStatus.status, record.attendanceStatus.isLate)
-                               : <Badge color="warning">Not Attended</Badge>
-                             }
+                          <TableCell className="px-5 py-4">
+                             <div className="flex flex-col gap-1">
+                                <span className="text-sm font-semibold capitalize text-gray-700 dark:text-gray-300">
+                                   {record.status}
+                                </span>
+                                {record.responseNotes && (
+                                   <span className="text-[10px] text-gray-400 italic line-clamp-1 max-w-[120px]" title={record.responseNotes}>
+                                      "{record.responseNotes}"
+                                   </span>
+                                )}
+                             </div>
+                          </TableCell>
+                          <TableCell className="px-5 py-4">
+                             <div className="flex flex-col items-center gap-2">
+                                {record.attendanceStatus?.hasAttended 
+                                  ? (
+                                    <>
+                                       {getStatusBadge(record.attendanceStatus.status, record.attendanceStatus.isLate)}
+                                       <div className="flex items-center gap-3 text-[10px] font-mono font-bold bg-gray-50 dark:bg-white/5 px-2 py-1 rounded-lg border border-gray-100 dark:border-white/5">
+                                          <div className="flex flex-col items-center">
+                                             <span className="text-[8px] text-gray-400 uppercase tracking-tighter">In</span>
+                                             <span className="text-green-600 dark:text-green-400">
+                                                {record.attendanceStatus.clockIn ? format(parseISO(record.attendanceStatus.clockIn), 'HH:mm') : '--:--'}
+                                             </span>
+                                          </div>
+                                          <div className="w-px h-4 bg-gray-200 dark:bg-white/10" />
+                                          <div className="flex flex-col items-center">
+                                             <span className="text-[8px] text-gray-400 uppercase tracking-tighter">Out</span>
+                                             <span className="text-orange-600 dark:text-orange-400">
+                                                {record.attendanceStatus.clockOut ? format(parseISO(record.attendanceStatus.clockOut), 'HH:mm') : '--:--'}
+                                             </span>
+                                          </div>
+                                       </div>
+                                    </>
+                                  )
+                                  : <Badge color="warning">Not Attended</Badge>
+                                }
+                             </div>
                           </TableCell>
                         </>
                       )}
