@@ -396,7 +396,7 @@ const InvitationPaper: React.FC = () => {
       <div 
         ref={printRef}
         id="print-area"
-        className="flex justify-center min-h-screen overflow-y-auto"
+        className="flex justify-center pb-12"
       >
         {isPersonalized ? (
           <PersonalizedTicket 
