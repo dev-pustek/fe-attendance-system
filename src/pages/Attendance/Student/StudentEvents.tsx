@@ -148,12 +148,22 @@ export default function StudentEvents() {
 
     } catch (error: unknown) {
         console.error(error);
-        setScanStatus('error');
+        // Revert to scanning state so user can try again immediately
+        setScanStatus('scanning');
+        
         const errorMessage = (error as { response?: { data?: { message?: string } } }).response?.data?.message || (error as Error).message || "Failed to record attendance.";
-        setScanMessage(errorMessage);
+        
+        // Show toast instead of full page error overlay
+        toast.error(errorMessage);
+        
         isProcessingScanRef.current = false; 
     }
   }, [scanStatus, selectedEvent, fetchInvitations, user]);
+
+  const handleScanSuccessRef = useRef(handleScanSuccess);
+  useEffect(() => {
+    handleScanSuccessRef.current = handleScanSuccess;
+  }, [handleScanSuccess]);
 
   const getStatusBadge = (status: string, attendance?: EventInvitation['attendanceStatus']) => {
     if (status === "attended" || attendance?.hasAttended) {
@@ -492,7 +502,7 @@ export default function StudentEvents() {
 
       {isScanModalOpen && selectedEvent && (
         <FullPageScanner 
-          onScan={handleScanSuccess} 
+          onScan={(text) => handleScanSuccessRef.current(text)} 
           onClose={() => {
             setIsScanModalOpen(false);
             setScanStatus('idle');
