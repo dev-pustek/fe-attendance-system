@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useAttendanceList, useAttendanceStatuses } from "../../api/hooks/useAttendance";
 import { useEvents } from "../../api/hooks/useEvents";
 import { useClasses, useAcademicYears, useMajors } from "../../api/hooks/useAcademic";
+import { useSettings } from "../../api/hooks/useSettings";
 import { AttendanceRecord } from "../../api/types/attendance";
 import { Class } from "../../api/types/academic";
 import { Event } from "../../api/types/events";
@@ -48,6 +49,20 @@ import DataActionsMenu from "../../components/molecules/DataActionsMenu";
 import { showSuccess, showError } from "../../utils/toast";
 import { SmoothHeight } from "../../components/atoms/SmoothHeight";
 import QrScanner from "../../components/molecules/QrScanner";
+import { MapPinIcon } from "@heroicons/react/24/outline";
+
+const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371e3; // Earth's radius in meters
+    const φ1 = (lat1 * Math.PI) / 180;
+    const φ2 = (lat2 * Math.PI) / 180;
+    const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+    const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c; // Distance in meters
+};
 import QRCode from "react-qr-code";
 import { useAuthStore } from "../../store/authStore";
 import { useIsMobile } from "../../hooks/useIsMobile";
@@ -123,6 +138,7 @@ const AttendanceList: React.FC = () => {
   const [classId, setClassId] = useState("");
   const [academicYearId, setAcademicYearId] = useState("");
   const [majorId, setMajorId] = useState("");
+  const { data: settingsResponse } = useSettings({ limit: 100 });
   const [attendanceType, setAttendanceType] = useState<string>("");
   const [eventId, setEventId] = useState("");
   const [lateMinutes, setLateMinutes] = useState("");
@@ -2076,6 +2092,99 @@ const AttendanceList: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            {(() => {
+                const hasLocation = selectedRecord.latitude != null && selectedRecord.longitude != null && (selectedRecord.latitude !== 0 || selectedRecord.longitude !== 0);
+                
+                if (!hasLocation) {
+                    return (
+                        <div className="rounded-2xl border border-gray-100 bg-gray-50/50 p-6 text-center dark:border-white/[0.05] dark:bg-white/[0.02]">
+                            <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-gray-100 text-gray-400 dark:bg-white/5">
+                                <MapPinIcon className="size-6" />
+                            </div>
+                            <h3 className="mt-3 text-sm font-bold text-gray-900 dark:text-white">Location Not Recorded</h3>
+                            <p className="mt-1 text-xs text-gray-500">This attendance record does not contain GPS coordinates.</p>
+                        </div>
+                    );
+                }
+
+                const schoolLat = parseFloat(settingsResponse?.data?.find((s: any) => s.key === 'SCHOOL_LATITUDE')?.value || '0');
+                const schoolLng = parseFloat(settingsResponse?.data?.find((s: any) => s.key === 'SCHOOL_LONGITUDE')?.value || '0');
+                const isLocationValid = schoolLat !== 0 && schoolLng !== 0 && selectedRecord.latitude !== 0 && selectedRecord.longitude !== 0;
+                const distance = isLocationValid ? Math.round(calculateDistance(selectedRecord.latitude, selectedRecord.longitude, schoolLat, schoolLng)) : null;
+                const radiusStr = settingsResponse?.data?.find((s: any) => s.key === 'ATTENDANCE_RADIUS')?.value;
+                const radius = radiusStr ? parseFloat(radiusStr) : 50;
+                const isWithinZone = distance !== null && distance <= radius;
+
+                return (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-3 p-5 rounded-2xl border border-gray-100 bg-white shadow-sm dark:bg-white/[0.02] dark:border-white/[0.05]">
+                            <div className="flex items-center gap-2 mb-2">
+                                <div className="size-8 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center dark:bg-blue-500/10">
+                                    <MapPinIcon className="size-4" />
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-bold text-gray-900 dark:text-white leading-tight">Recorded Location</h3>
+                                    <p className="text-[10px] text-gray-500 uppercase tracking-wider">GPS Coordinates</p>
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between text-sm">
+                                    <span className="text-gray-500 dark:text-gray-400">Lat:</span>
+                                    <span className="font-mono text-gray-900 dark:text-gray-200">{Number(selectedRecord.latitude).toFixed(6)}</span>
+                                </div>
+                                <div className="flex items-center justify-between text-sm">
+                                    <span className="text-gray-500 dark:text-gray-400">Lng:</span>
+                                    <span className="font-mono text-gray-900 dark:text-gray-200">{Number(selectedRecord.longitude).toFixed(6)}</span>
+                                </div>
+                            </div>
+                            <a 
+                                href={`https://www.google.com/maps/search/?api=1&query=${selectedRecord.latitude},${selectedRecord.longitude}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="mt-3 flex items-center justify-center gap-2 w-full py-2 bg-gray-50 hover:bg-gray-100 text-brand-600 text-xs font-bold rounded-lg border border-gray-200 transition-colors dark:bg-white/[0.03] dark:border-white/[0.05] dark:hover:bg-white/[0.08]"
+                            >
+                                Open in Google Maps
+                            </a>
+                        </div>
+
+                        <div className="space-y-3 p-5 rounded-2xl border border-gray-100 bg-white shadow-sm dark:bg-white/[0.02] dark:border-white/[0.05]">
+                            <div className="flex items-center gap-2 mb-2">
+                                <div className="size-8 rounded-full bg-brand-50 text-brand-500 flex items-center justify-center dark:bg-brand-500/10">
+                                    <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-bold text-gray-900 dark:text-white leading-tight">Distance to School</h3>
+                                    <p className="text-[10px] text-gray-500 uppercase tracking-wider">Geo-Fencing Status</p>
+                                </div>
+                            </div>
+                            
+                            {isLocationValid ? (
+                                <div className="flex flex-col h-full justify-center space-y-3 mt-4">
+                                    <div className="flex items-end gap-2">
+                                        <span className="text-3xl font-bold text-gray-900 dark:text-white leading-none">{distance}</span>
+                                        <span className="text-sm font-medium text-gray-500 pb-0.5">meters away</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        {isWithinZone ? (
+                                            <Badge color="success" className="px-2 py-0.5 text-[10px]">IN ZONE</Badge>
+                                        ) : (
+                                            <Badge color="error" className="px-2 py-0.5 text-[10px]">OUT OF ZONE</Badge>
+                                        )}
+                                        <span className="text-xs text-gray-400">Radius limit: {radius}m</span>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col h-full justify-center items-center text-center p-4 bg-gray-50 rounded-xl dark:bg-white/[0.02]">
+                                    <p className="text-xs text-gray-500">School coordinates not configured properly.</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                );
+            })()}
 
             <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-3 p-5 rounded-2xl bg-success-50/30 border border-success-100 dark:bg-success-500/5 dark:border-success-500/10 transition-all hover:bg-success-50/50">

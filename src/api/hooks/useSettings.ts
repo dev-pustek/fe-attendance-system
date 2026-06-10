@@ -18,15 +18,15 @@ export const useSettings = (params?: SettingParams) => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ key, data }: { key: string; data: UpdateSettingDto }) =>
-      settingsService.updateSetting(key, data),
+    mutationFn: ({ id, data }: { id: number | string; data: UpdateSettingDto }) =>
+      settingsService.updateSetting(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["settings"] });
     },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (key: string) => settingsService.deleteSetting(key),
+    mutationFn: (id: number | string) => settingsService.deleteSetting(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["settings"] });
     },

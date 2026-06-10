@@ -26,12 +26,12 @@ export const settingsService = {
     return response.data;
   },
 
-  updateSetting: async (key: string, data: UpdateSettingDto): Promise<SystemSetting> => {
-    const response = await apiClient.patch<SystemSetting>(`/settings/${key}`, data);
+  updateSetting: async (id: number | string, data: UpdateSettingDto): Promise<SystemSetting> => {
+    const response = await apiClient.patch<SystemSetting>(`/settings/${id}`, data);
     return response.data;
   },
 
-  deleteSetting: async (key: string): Promise<void> => {
-    await apiClient.delete(`/settings/${key}`);
+  deleteSetting: async (id: number | string): Promise<void> => {
+    await apiClient.delete(`/settings/${id}`);
   },
 };

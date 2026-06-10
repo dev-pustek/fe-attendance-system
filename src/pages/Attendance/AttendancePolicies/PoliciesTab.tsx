@@ -5,6 +5,7 @@ import { useAttendanceRules } from "../../../api/hooks/useRules";
 import { AttendanceRuleType, RuleContextType, CreateAttendanceRuleDto } from "../../../api/types/rules";
 import Switch from "../../../components/atoms/Switch";
 import { showSuccess, showError } from "../../../utils/toast";
+import GeoFencingSettings from "./GeoFencingSettings";
 
 interface PoliciesTabProps {
   contextId?: number;
@@ -263,6 +264,10 @@ const PoliciesTab: React.FC<PoliciesTabProps> = ({ contextId, selectedContext, o
         </div>
 
       </div>
+
+      {selectedContext.type === RuleContextType.GLOBAL && (
+        <GeoFencingSettings />
+      )}
     </div>
   );
 };

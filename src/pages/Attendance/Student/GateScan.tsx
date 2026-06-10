@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 import { useNavigate } from "react-router";
 import { attendanceService } from "../../../api/services/attendanceService";
+import { settingsService } from "../../../api/services/settingsService";
 import { UserPolicyResponse } from "../../../api/types/attendance";
 import {
   ChevronLeftIcon,
@@ -29,6 +30,9 @@ const GateScan = () => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [scanError, setScanError] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [geoSettings, setGeoSettings] = useState<{lat: number, lng: number, radius: number} | null>(null);
+  const [distance, setDistance] = useState<number | null>(null);
   const [userPolicy, setUserPolicy] = useState<UserPolicyResponse | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [policyError, setPolicyError] = useState<string | null>(null);
@@ -292,8 +296,14 @@ const GateScan = () => {
 
     // Always request location on mount for Gate Scanner and keep tracking it
     const watchId = navigator.geolocation.watchPosition(
-       (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-       (err) => console.error("Gate Scanner geolocation failed:", err),
+       (pos) => {
+           setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+           setLocationError(null);
+       },
+       (err) => {
+           console.error("Gate Scanner geolocation failed:", err);
+           setLocationError(err.message);
+       },
        { enableHighAccuracy: true }
     );
 
@@ -309,12 +319,78 @@ const GateScan = () => {
     return () => clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await settingsService.getSettings({ limit: 100 });
+        if (res?.data) {
+          const latSetting = res.data.find((s: any) => s.key === "SCHOOL_LATITUDE");
+          const lngSetting = res.data.find((s: any) => s.key === "SCHOOL_LONGITUDE");
+          const radiusSetting = res.data.find((s: any) => s.key === "ATTENDANCE_RADIUS");
+          
+          if (latSetting && lngSetting && radiusSetting) {
+            const lat = parseFloat(latSetting.value);
+            const lng = parseFloat(lngSetting.value);
+            const radius = parseFloat(radiusSetting.value);
+            
+            if (!isNaN(lat) && !isNaN(lng) && !isNaN(radius) && radius > 0) {
+              setGeoSettings({ lat, lng, radius });
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch geo settings:", err);
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371e3; // Earth radius in meters
+    const rad = Math.PI / 180;
+    const phi1 = lat1 * rad;
+    const phi2 = lat2 * rad;
+    const deltaPhi = (lat2 - lat1) * rad;
+    const deltaLambda = (lon2 - lon1) * rad;
+
+    const a =
+      Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+      Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c; // Distance in meters
+  };
+
+  useEffect(() => {
+    if (userLocation && geoSettings) {
+      const dist = calculateDistance(userLocation.lat, userLocation.lng, geoSettings.lat, geoSettings.lng);
+      setDistance(dist);
+    }
+  }, [userLocation, geoSettings]);
+
   const getRestrictionState = (): {
     isRestricted: boolean;
-    reason: "too_early" | "too_late" | null;
+    reason: "too_early" | "too_late" | "out_of_zone" | "no_location" | null;
     message: string | null;
     openTime?: Date;
   } => {
+    if (geoSettings) {
+      if (!userLocation) {
+        return {
+          isRestricted: true,
+          reason: "no_location",
+          message: locationError ? "Location Denied" : "Getting Location..."
+        };
+      }
+      if (distance !== null && distance > geoSettings.radius) {
+        return {
+          isRestricted: true,
+          reason: "out_of_zone",
+          message: `Out of Zone (${Math.round(distance)}m / ${geoSettings.radius}m)`
+        };
+      }
+    }
+
     if (!userPolicy || !userPolicy.attendancePolicy)
       return { isRestricted: false, reason: null, message: null };
 

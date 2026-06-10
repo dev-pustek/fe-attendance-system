@@ -76,7 +76,6 @@ const NotificationSettings = lazy(() => import("./pages/Settings/NotificationSet
 const NotificationInbox = lazy(() => import("./pages/Notifications/Inbox/NotificationInbox"));
 import Devices from "./pages/Devices";
 import Settings from "./pages/Settings";
-import LocationSettings from "./pages/Settings/LocationSettings";
 import Backups from "./pages/Settings/Backups";
 import AccessControlRoles from "./pages/AccessControl/Roles";
 import UserTypes from "./pages/AccessControl/UserTypes";
@@ -173,7 +172,6 @@ export default function App() {
               <Route path="/devices" element={<Devices />} />
               <Route path="/devices/live" element={<CctvDashboard />} />
               <Route path="/settings" element={<Settings />} />
-              <Route path="/settings/location" element={<LocationSettings />} />
               <Route path="/settings/storage" element={<StorageSettings />} />
               <Route path="/settings/storage/callback" element={<StorageCallback />} />
               <Route path="/settings/backups" element={<Backups />} />

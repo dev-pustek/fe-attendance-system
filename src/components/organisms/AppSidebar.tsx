@@ -358,7 +358,6 @@ const useNavGroups = (): NavGroup[] => {
             name: "Settings",
             subItems: [
               { name: "General Settings", path: "/settings" },
-              { name: "Location Settings", path: "/settings/location" },
               { name: "Storage", path: "/settings/storage" },
               { name: "Notification Templates", path: "/admin/notification-templates" },
               { name: "Notification Settings", path: "/settings/notifications" },
