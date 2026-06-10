@@ -107,13 +107,13 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
             if (!isOpen) calculateCoords();
             setIsOpen(!isOpen);
         }}
-        className={`flex h-11 items-center justify-between rounded-xl border px-3.5 py-2.5 text-sm transition-all dark:text-white ${
+        className={`flex h-11 items-center justify-between gap-2 overflow-hidden rounded-xl border px-3.5 py-2.5 text-sm transition-all dark:text-white ${
             disabled 
                 ? "cursor-not-allowed border-gray-100 bg-gray-50/50 text-gray-400 dark:border-white/5 dark:bg-white/[0.01]" 
                 : "cursor-pointer border-gray-200 bg-white hover:border-brand-300 focus:border-brand-500 dark:border-white/[0.08] dark:bg-white/[0.03]"
         }`}
       >
-        <span className={(selectedOption || selectedOptions.length > 0) ? "text-gray-900 dark:text-white" : "text-gray-400"}>
+        <span className={`truncate min-w-0 flex-1 ${(selectedOption || selectedOptions.length > 0) ? "text-gray-900 dark:text-white" : "text-gray-400"}`}>
           {multiple 
             ? selectedOptions.length > 0 
                 ? `${selectedOptions.length} selected` 

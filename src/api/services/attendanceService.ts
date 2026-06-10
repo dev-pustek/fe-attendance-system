@@ -82,9 +82,16 @@ export const attendanceService = {
     majorId?: number;
     grade?: string;
     isLate?: boolean;
-  }): Promise<PaginatedResponse<AttendanceRecord>> => {
-      // GET /attendance/piket with query params
-      const response = await apiClient.get<PaginatedResponse<AttendanceRecord>>('/attendance/piket', { params: query });
+    status?: string;    // 'late' | 'on-time' | 'all'
+    checkedOut?: string; // 'true' | 'false'
+  }): Promise<PaginatedResponse<AttendanceRecord> & { metrics: GateMetrics; generatedAt?: string }> => {
+      // Map isLate boolean to status string if status not provided
+      const params: Record<string, unknown> = { ...query };
+      if (query.isLate !== undefined && !query.status) {
+        params.status = query.isLate ? 'late' : 'on-time';
+        delete params.isLate;
+      }
+      const response = await apiClient.get<PaginatedResponse<AttendanceRecord> & { metrics: GateMetrics; generatedAt?: string }>('/attendance/piket', { params });
       return response.data;
   },
 
@@ -261,7 +268,7 @@ export const attendanceService = {
     await apiClient.post("/attendance/subject-attendances/bulk", data);
   },
 
-  scanQRCode: async (data: { qrData: string, deviceId: string }): Promise<unknown> => {
+  scanQRCode: async (data: { qrData: string, deviceId: string, latitude?: number, longitude?: number, photoEvidence?: string }): Promise<unknown> => {
     const response = await apiClient.post('/attendance/qr-scan', data);
     return response.data;
   },
@@ -291,17 +298,28 @@ export const attendanceService = {
   getAttendanceHistory: async (params?: {
     page?: number;
     limit?: number;
-    dateFrom?: string;
-    dateTo?: string;
+    startDate?: string;
+    endDate?: string;
+    dateFrom?: string; // alias kept for backward compat
+    dateTo?: string;   // alias kept for backward compat
     userId?: string;
     classId?: number;
     academicYearId?: number;
     majorId?: number;
     status?: string;
+    search?: string;
     eventId?: string;
   }): Promise<PaginatedResponse<AttendanceRecord> & { metrics: GateMetrics }> => {
+    // Normalize dateFrom/dateTo → startDate/endDate
+    const normalized = {
+      ...params,
+      startDate: params?.startDate ?? params?.dateFrom,
+      endDate: params?.endDate ?? params?.dateTo,
+    };
+    delete (normalized as any).dateFrom;
+    delete (normalized as any).dateTo;
     const response = await apiClient.get<PaginatedResponse<AttendanceRecord> & { metrics: GateMetrics }>("/attendance/history", { 
-      params 
+      params: normalized 
     });
     return response.data;
   },
@@ -322,15 +340,25 @@ export const attendanceService = {
   getSubjectAttendanceHistory: async (params?: {
     page?: number;
     limit?: number;
-    dateFrom?: string;
-    dateTo?: string;
+    startDate?: string;
+    endDate?: string;
+    dateFrom?: string; // alias kept for backward compat
+    dateTo?: string;   // alias kept for backward compat
     academicYearId?: number;
     subjectId?: number;
     teachingSessionId?: number;
     status?: string;
   }): Promise<PaginatedResponse<SubjectAttendance> & { metrics: SubjectMetrics }> => {
+    // Normalize dateFrom/dateTo → startDate/endDate
+    const normalized = {
+      ...params,
+      startDate: params?.startDate ?? params?.dateFrom,
+      endDate: params?.endDate ?? params?.dateTo,
+    };
+    delete (normalized as any).dateFrom;
+    delete (normalized as any).dateTo;
     const response = await apiClient.get<PaginatedResponse<SubjectAttendance> & { metrics: SubjectMetrics }>("/attendance/subject-attendances/my-history", { 
-      params 
+      params: normalized 
     });
     return response.data;
   },

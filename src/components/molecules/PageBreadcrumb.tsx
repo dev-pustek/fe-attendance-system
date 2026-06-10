@@ -11,15 +11,15 @@ interface PageBreadcrumbProps {
 
 const PageBreadcrumb: React.FC<PageBreadcrumbProps> = ({ pageTitle, breadcrumbs }) => {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-      <h2 className="text-xl font-semibold text-gray-800 dark:text-white/90">
+    <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-3 mb-4 sm:mb-6">
+      <h2 className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-white/90">
         {pageTitle}
       </h2>
       <nav>
         <ol className="flex items-center gap-1.5">
           <li>
             <Link
-              className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-brand-500 dark:text-gray-400 dark:hover:text-brand-500"
+              className="inline-flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm text-gray-500 hover:text-brand-500 dark:text-gray-400 dark:hover:text-brand-500"
               to="/"
             >
               Dashboard
@@ -41,14 +41,12 @@ const PageBreadcrumb: React.FC<PageBreadcrumbProps> = ({ pageTitle, breadcrumbs 
           
           {breadcrumbs?.map((crumb, index) => (
             <React.Fragment key={index}>
-                <li className="text-sm text-gray-500 hover:text-brand-500 dark:text-gray-400 dark:hover:text-brand-500">
+                <li className="text-xs sm:text-sm text-gray-500 hover:text-brand-500 dark:text-gray-400 dark:hover:text-brand-500">
                     <Link to={crumb.path}>{crumb.label}</Link>
                 </li>
                 <li>
                      <svg
-                        className="fill-current text-gray-400"
-                        width="16"
-                        height="16"
+                        className="fill-current text-gray-400 w-3 h-3 sm:w-4 sm:h-4"
                         viewBox="0 0 16 16"
                         fill="none"
                         xmlns="http://www.w3.org/2000/svg"
@@ -62,7 +60,7 @@ const PageBreadcrumb: React.FC<PageBreadcrumbProps> = ({ pageTitle, breadcrumbs 
             </React.Fragment>
           ))}
 
-          <li className="text-sm text-gray-800 dark:text-white/90">
+          <li className="text-xs sm:text-sm text-gray-800 dark:text-white/90">
             {pageTitle}
           </li>
         </ol>

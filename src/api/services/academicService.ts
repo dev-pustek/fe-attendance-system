@@ -24,7 +24,8 @@ import {
   TeacherWorkload, 
   TeacherWorkloadParams,
   WorkloadContractsResponse,
-  TeacherParams
+  TeacherParams,
+  BulkPromoteStudentsDto
 } from "../types/academic";
 import { BaseResponse, PaginatedResponse } from "../types/common";
 
@@ -54,6 +55,42 @@ export const academicService = {
     await apiClient.delete(`/academic-years/${id}`);
   },
 
+  exportAcademicYearsExcel: async (params?: AcademicYearParams) => {
+    const response = await apiClient.get("/academic-years/export/excel", {
+      params,
+      responseType: "blob",
+    });
+    return response.data as Blob;
+  },
+
+  exportAcademicYearsPdf: async (params?: AcademicYearParams) => {
+    const response = await apiClient.get("/academic-years/export/pdf", {
+      params,
+      responseType: "blob",
+    });
+    return response.data as Blob;
+  },
+
+  downloadAcademicYearsTemplate: async (withData?: boolean) => {
+    const response = await apiClient.get("/academic-years/template", {
+      params: { withData },
+      responseType: "blob",
+    });
+    return response.data as Blob;
+  },
+
+  importAcademicYears: async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await apiClient.post<{ created: number; updated: number; errors: string[] }>(
+      "/academic-years/import",
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    );
+    return response.data;
+  },
+
+
   // Classes
   getClasses: async (params?: ClassParams) => {
     const response = await apiClient.get<PaginatedResponse<Class>>("/classes", { params });
@@ -78,6 +115,11 @@ export const academicService = {
     const response = await apiClient.get<BaseResponse<Class>>(`/classes/${id}`);
     // The interceptor unwraps .data, so we just return response.data which IS the Class object
     return response.data as unknown as Class;
+  },
+
+  promoteStudents: async (data: BulkPromoteStudentsDto) => {
+    const response = await apiClient.post<BaseResponse<unknown>>("/classes/promote", data);
+    return response.data;
   },
 
   // Class Enrollments

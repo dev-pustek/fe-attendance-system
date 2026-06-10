@@ -24,7 +24,7 @@ const WorkloadBadge: React.FC<WorkloadBadgeProps> = ({ status, balance, classNam
   if (status === "OVERLOAD") {
       return (
           <Badge color="error" className={className}>
-              ⚠️ +{Math.abs(balance)} JP Over
+              ⚠️ +{Number(Math.abs(balance).toFixed(1))} JP Over
           </Badge>
       );
   }
@@ -32,7 +32,7 @@ const WorkloadBadge: React.FC<WorkloadBadgeProps> = ({ status, balance, classNam
   if (status === "UNDERLOAD") {
       return (
           <Badge color="warning" className={className}>
-              📉 Needs {Math.abs(balance)} JP
+              📉 Needs {Number(Math.abs(balance).toFixed(1))} JP
           </Badge>
       );
   }

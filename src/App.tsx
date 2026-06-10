@@ -42,6 +42,7 @@ const StudentProfile = lazy(() => import("./pages/Student/StudentProfile"));
 const MyProfile = lazy(() => import("./pages/MyProfile"));
 const ClassScheduleOverrides = lazy(() => import("./pages/Academic/ClassSchedules/Overrides"));
 const StudentManagement = lazy(() => import("./pages/Profiles/Students"));
+const ClassPromotion = lazy(() => import("./pages/Academic/ClassPromotion"));
 const EmployeeManagement = lazy(() => import("./pages/Profiles/Employees"));
 const ParentManagement = lazy(() => import("./pages/Profiles/Parents"));
 const CctvDashboard = lazy(() => import("./pages/Devices/CctvDashboard"));
@@ -69,12 +70,13 @@ const StudentLeaveRequest = lazy(() => import("./pages/Student/LeaveRequest"));
 const GateScan = lazy(() => import("./pages/Attendance/Student/GateScan"));
 const AttendancePolicies = lazy(() => import("./pages/Attendance/AttendancePolicies"));
 const PiketMonitor = lazy(() => import("./pages/Attendance/PiketMonitor"));
-const AttendanceHistory = lazy(() => import("./pages/Attendance/AttendanceHistory"));
+const AttendanceHistory = lazy(() => import("./pages/Attendance/History"));
 const NotificationTemplateList = lazy(() => import("./pages/Notifications/Templates/NotificationTemplateList"));
 const NotificationSettings = lazy(() => import("./pages/Settings/NotificationSettings"));
 const NotificationInbox = lazy(() => import("./pages/Notifications/Inbox/NotificationInbox"));
 import Devices from "./pages/Devices";
 import Settings from "./pages/Settings";
+import LocationSettings from "./pages/Settings/LocationSettings";
 import Backups from "./pages/Settings/Backups";
 import AccessControlRoles from "./pages/AccessControl/Roles";
 import UserTypes from "./pages/AccessControl/UserTypes";
@@ -162,6 +164,7 @@ export default function App() {
               <Route path="/academic/teaching-unit-policies" element={<TeachingUnitPolicies />} />
               <Route path="/academic/workload-contracts" element={<WorkloadContracts />} />
               <Route path="/academic/teaching-schedule-templates" element={<TeachingScheduleTemplates />} />
+              <Route path="/academic/class-promotion" element={<ClassPromotion />} />
               <Route path="/academic/students" element={<StudentManagement />} />
               <Route path="/students/:userId" element={<StudentProfile />} />
               <Route path="/hr/employees" element={<EmployeeManagement />} />
@@ -170,6 +173,7 @@ export default function App() {
               <Route path="/devices" element={<Devices />} />
               <Route path="/devices/live" element={<CctvDashboard />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/settings/location" element={<LocationSettings />} />
               <Route path="/settings/storage" element={<StorageSettings />} />
               <Route path="/settings/storage/callback" element={<StorageCallback />} />
               <Route path="/settings/backups" element={<Backups />} />

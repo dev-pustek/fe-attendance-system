@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { profilesService } from "../services/profilesService";
 import { PaginationParams } from "../types/common";
 import { 
@@ -13,6 +13,28 @@ export const useStudents = (params?: PaginationParams) => {
   return useQuery({
     queryKey: ["profiles", "students", params],
     queryFn: () => profilesService.getStudents(params),
+  });
+};
+
+export const useStudentsInfinite = (params?: Omit<PaginationParams, 'page'>) => {
+  return useInfiniteQuery({
+    queryKey: ["profiles", "students", "infinite", params],
+    queryFn: ({ pageParam = 1 }) =>
+      profilesService.getStudents({ ...params, page: pageParam as number, limit: 10 }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage: any) => {
+      const meta = lastPage?.meta;
+      if (!meta) return undefined;
+      return meta.page < meta.totalPages ? meta.page + 1 : undefined;
+    },
+  });
+};
+
+export const useImportStudents = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => profilesService.importStudents(file),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["profiles", "students"] }),
   });
 };
 
@@ -119,6 +141,28 @@ export const useParents = (params?: PaginationParams) => {
   return useQuery({
     queryKey: ["profiles", "parents", params],
     queryFn: () => profilesService.getParents(params),
+  });
+};
+
+export const useParentsInfinite = (params?: Omit<PaginationParams, 'page'>) => {
+  return useInfiniteQuery({
+    queryKey: ["profiles", "parents", "infinite", params],
+    queryFn: ({ pageParam = 1 }) =>
+      profilesService.getParents({ ...params, page: pageParam as number, limit: 10 }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage: any) => {
+      const meta = lastPage?.meta;
+      if (!meta) return undefined;
+      return meta.page < meta.totalPages ? meta.page + 1 : undefined;
+    },
+  });
+};
+
+export const useImportParents = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => profilesService.importParents(file),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["profiles", "parents"] }),
   });
 };
 

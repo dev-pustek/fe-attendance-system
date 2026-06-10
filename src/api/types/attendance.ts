@@ -56,6 +56,8 @@ export interface AttendanceRecord {
   isPresent?: boolean;
   method?: string;
   notes?: string | null;
+  photoUrl?: string | null;
+  photoEvidenceUrl?: string | null;
   isDeleted?: boolean;
   deletedAt?: string | null;
   createdAt?: string;

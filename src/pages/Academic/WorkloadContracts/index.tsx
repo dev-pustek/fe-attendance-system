@@ -517,7 +517,7 @@ const WorkloadContracts = () => {
                                           <span className="text-gray-500 dark:text-gray-400 font-medium">Utilization</span>
                                           <div className="text-right">
                                               <span className="font-mono font-bold text-gray-900 dark:text-white block leading-none">
-                                                  {contract.actualUnits || 0} <span className="text-gray-400 font-normal">/ {contract.targetUnitsPerWeek} JP</span>
+                                                  {Number((contract.actualUnits || 0).toFixed(1))} <span className="text-gray-400 font-normal">/ {Number((contract.targetUnitsPerWeek || 0).toFixed(1))} JP</span>
                                               </span>
                                               <span className="text-[10px] text-gray-400 font-medium mt-0.5 block">
                                                   ≈ {getHours(contract.actualUnits || 0, contract.academicYearId)} Hours
@@ -770,7 +770,7 @@ const WorkloadContracts = () => {
                   <div className="flex items-center gap-2 text-sm text-gray-500 pt-2">
                       <div className="flex flex-col">
                           <span className="text-[10px] uppercase font-bold text-gray-400">Target</span>
-                          <span className="font-mono font-bold text-gray-800 dark:text-white">{selectedContract.targetUnitsPerWeek} JP</span>
+                          <span className="font-mono font-bold text-gray-800 dark:text-white">{Number((selectedContract.targetUnitsPerWeek || 0).toFixed(1))} JP</span>
                       </div>
                       <div className="w-px h-8 bg-gray-200 dark:bg-white/10 mx-2" />
                       <div className="flex flex-col">
@@ -791,14 +791,14 @@ const WorkloadContracts = () => {
                        <div className="flex flex-col gap-4">
                            <div className="space-y-2">
                                <div className="flex justify-between items-end">
-                                   <span className="text-3xl font-bold text-gray-900 dark:text-white">{selectedContract.actualUnits || 0}<span className="text-base text-gray-400 font-normal ml-1">/ {selectedContract.targetUnitsPerWeek}</span></span>
+                                   <span className="text-3xl font-bold text-gray-900 dark:text-white">{Number((selectedContract.actualUnits || 0).toFixed(1))}<span className="text-base text-gray-400 font-normal ml-1">/ {Number((selectedContract.targetUnitsPerWeek || 0).toFixed(1))}</span></span>
                                    <span className="text-xs font-medium text-gray-500">JP Allocated</span>
                                </div>
                                <WorkloadBar target={selectedContract.targetUnitsPerWeek} actual={selectedContract.actualUnits || 0} showLabels={false} className="h-3" />
                            </div>
                            
                            <div className="p-3 rounded-xl bg-gray-50 dark:bg-white/5 text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
-                               This teacher is currently <strong>{selectedContract.status}</strong> by <span className={selectedContract.balance && selectedContract.balance > 0 ? "text-error-500 font-bold" : "text-gray-700 font-bold"}>{Math.abs(selectedContract.balance || 0)} JP</span> relative to their target.
+                               This teacher is currently <strong>{selectedContract.status}</strong> by <span className={selectedContract.balance && selectedContract.balance > 0 ? "text-error-500 font-bold" : "text-gray-700 font-bold"}>{Number(Math.abs(selectedContract.balance || 0).toFixed(1))} JP</span> relative to their target.
                            </div>
                        </div>
                    </div>

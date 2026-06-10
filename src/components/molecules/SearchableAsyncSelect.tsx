@@ -130,7 +130,7 @@ export const SearchableAsyncSelect: React.FC<SearchableAsyncSelectProps> = ({
       
       <div
         onClick={handleToggle}
-        className={`flex items-center justify-between rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm transition-all dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-white ${
+        className={`flex items-center justify-between gap-2 overflow-hidden rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm transition-all dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-white ${
             disabled 
                 ? "cursor-not-allowed border-gray-100 bg-gray-50/50 text-gray-400 dark:border-white/5 dark:bg-white/[0.01]" 
                 : "cursor-pointer border-gray-200 bg-white hover:border-brand-300 focus:border-brand-500"
@@ -138,7 +138,7 @@ export const SearchableAsyncSelect: React.FC<SearchableAsyncSelectProps> = ({
           isOpen ? "border-brand-500 ring-4 ring-brand-500/5 shadow-sm" : ""
         }`}
       >
-        <span className={displayLabel ? "text-gray-900 dark:text-white font-medium" : "text-gray-400"}>
+        <span className={`truncate min-w-0 flex-1 ${displayLabel ? "text-gray-900 dark:text-white font-medium" : "text-gray-400"}`}>
           {displayLabel || placeholder}
         </span>
         <div className="flex items-center gap-2">

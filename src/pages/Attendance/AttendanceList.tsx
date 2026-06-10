@@ -7,7 +7,6 @@ import { Class } from "../../api/types/academic";
 import { Event } from "../../api/types/events";
 import { academicService } from "../../api/services/academicService";
 import { eventService } from "../../api/services/eventService";
-import { useDebounce } from "../../hooks/useDebounce";
 import PageMeta from "../../components/atoms/PageMeta";
 import PageBreadcrumb from "../../components/molecules/PageBreadcrumb";
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "../../components/atoms/Table";
@@ -23,6 +22,7 @@ import {
     PlusIcon, 
     VideoIcon, 
     EditIcon as ManualIcon,
+    PencilIcon,
     CalenderIcon,
     TimeIcon,
     UserIcon,
@@ -31,6 +31,7 @@ import {
     ChevronUpIcon,
     LockIcon,
     CheckCircleIcon,
+    SearchIcon,
 } from "../../components/atoms/Icons";
 import NumberInput from "../../components/atoms/NumberInput";
 import { format, parseISO } from "date-fns";
@@ -41,13 +42,68 @@ import { useConfirm } from "../../hooks/useConfirm";
 import ConfirmDialog from "../../components/molecules/ConfirmDialog";
 import SearchableAsyncSelect from "../../components/molecules/SearchableAsyncSelect";
 import { userService } from "../../api/services/userService";
-import { toast } from "react-hot-toast";
+import Label from "../../components/atoms/Label";
+import DataActionsMenu from "../../components/molecules/DataActionsMenu";
+
+import { showSuccess, showError } from "../../utils/toast";
 import { SmoothHeight } from "../../components/atoms/SmoothHeight";
 import QrScanner from "../../components/molecules/QrScanner";
 import QRCode from "react-qr-code";
 import { useAuthStore } from "../../store/authStore";
+import { useIsMobile } from "../../hooks/useIsMobile";
+import AttendanceRecordCard from "./AttendanceRecordCard";
+import Dropdown from "../../components/molecules/Dropdown";
+import DropdownItem from "../../components/atoms/DropdownItem";
 
-const MethodIcon = ({ method }: { method?: string }) => {
+const MoreHorizontalIcon = ({ className }: { className?: string }) => (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
+    </svg>
+);
+
+const RowActionMenu = ({ 
+    onQuickCheckOut, 
+    onViewDetails, 
+    onEdit,
+    onDelete,
+    canCheckOut
+}: { 
+    onQuickCheckOut: () => void, 
+    onViewDetails: () => void, 
+    onEdit: () => void,
+    onDelete: () => void,
+    canCheckOut: boolean 
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <div className="relative flex justify-end">
+      <button onClick={() => setIsOpen(!isOpen)}
+        className="flex size-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-white/[0.05] dark:hover:text-gray-200">
+        <MoreHorizontalIcon className="size-5" />
+      </button>
+      <Dropdown isOpen={isOpen} onClose={() => setIsOpen(false)}
+        className="absolute right-0 top-full z-20 mt-1 w-40 origin-top-right rounded-xl border border-gray-200 bg-white py-1.5 shadow-lg dark:border-white/[0.07] dark:bg-gray-900">
+        {canCheckOut && (
+          <DropdownItem onClick={() => { setIsOpen(false); onQuickCheckOut(); }} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm font-medium text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-500/10">
+            <CheckCircleIcon className="size-3.5" /> Check Out
+          </DropdownItem>
+        )}
+        <DropdownItem onClick={() => { setIsOpen(false); onViewDetails(); }} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/[0.04]">
+          <EyeIcon className="size-3.5" /> View Details
+        </DropdownItem>
+        <DropdownItem onClick={() => { setIsOpen(false); onEdit(); }} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/[0.04]">
+          <PencilIcon className="size-3.5" /> Edit Record
+        </DropdownItem>
+        <div className="my-1 border-t border-gray-100 dark:border-white/[0.05]" />
+        <DropdownItem onClick={() => { setIsOpen(false); onDelete(); }} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/10">
+          <TrashIcon className="size-3.5" /> Delete Record
+        </DropdownItem>
+      </Dropdown>
+    </div>
+  );
+};
+
+export const MethodIcon = ({ method }: { method?: string }) => {
     switch (method?.toUpperCase()) {
         case "FACE": return <VideoIcon className="size-3.5" />;
         case "QR_CODE": return <GridIcon className="size-3.5" />;
@@ -57,6 +113,7 @@ const MethodIcon = ({ method }: { method?: string }) => {
 };
 
 const AttendanceList: React.FC = () => {
+  const isMobile = useIsMobile();
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [search, setSearch] = useState("");
@@ -76,7 +133,7 @@ const AttendanceList: React.FC = () => {
   // Automatically switch tab based on existing state if needed, or just let users toggle
 
 
-  const debouncedSearch = useDebounce(search, 500);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const [selectedRecord, setSelectedRecord] = useState<AttendanceRecord | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -127,7 +184,7 @@ const AttendanceList: React.FC = () => {
   const { data: attendanceResponse, isLoading, deleteMutation, updateMutation, createManualMutation, updateManualMutation, qrScanMutation, checkInMutation, checkOutMutation } = useAttendanceList({
     page,
     limit,
-    userId: debouncedSearch || undefined,
+    userId: searchTerm || undefined,
     statusId: statusId ? Number(statusId) : undefined,
     startDate: startDate || undefined,
     endDate: endDate || undefined,
@@ -163,6 +220,24 @@ const AttendanceList: React.FC = () => {
   const [userOptions, setUserOptions] = useState<{ label: string; value: string }[]>([]);
   const { confirm, confirmState } = useConfirm();
 
+  // Export/Import Stubs
+  const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [isDownloadingTemplate, setIsDownloadingTemplate] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+
+  const handleExportExcel = async (ids?: string[]) => {
+      showError("Export to Excel is not yet implemented on the backend.");
+  };
+
+  const handleExportPdf = async () => {
+      showError("Export to PDF is not yet implemented on the backend.");
+  };
+
+  const handleDownloadTemplate = async (withData: boolean) => {
+      showError("Template download is not yet implemented on the backend.");
+  };
+
   const fetchLocation = React.useCallback(() => {
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
@@ -180,7 +255,7 @@ const AttendanceList: React.FC = () => {
         },
         (error) => {
           console.error("Location fetching error:", error);
-          toast.error("Location access denied. Coordinates set to 0.");
+          showError("Location access denied. Coordinates set to 0.");
         }
       );
     }
@@ -284,7 +359,7 @@ const AttendanceList: React.FC = () => {
 
   const handleCreateManual = async () => {
     // Basic validation
-    if (!manualForm.userId) return toast.error("Please select a user");
+    if (!manualForm.userId) return showError("Please select a user");
     // Removed strict photo validation for manual entry
 
     const formData = new FormData();
@@ -311,13 +386,13 @@ const AttendanceList: React.FC = () => {
 
     try {
       await createManualMutation.mutateAsync(formData);
-      toast.success("Record created/updated manually by admin");
+      showSuccess("Record created/updated manually by admin");
       setIsCreateModalOpen(false);
       resetManualForm();
       setManualForm(prev => ({ ...prev, photo: null })); // Reset photo specifically
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
-      toast.error(err?.response?.data?.message || "Failed to create manual record");
+      showError(err?.response?.data?.message || "Failed to create manual record");
     }
   };
 
@@ -344,11 +419,11 @@ const AttendanceList: React.FC = () => {
             onSuccess: () => {
                 setIsEditModalOpen(false);
                 setSelectedRecord(null);
-                toast.success("Attendance record updated successfully");
+                showSuccess("Attendance record updated successfully");
             },
             onError: (error: unknown) => {
                 const err = error as { response?: { data?: { message?: string } } };
-                toast.error(err.response?.data?.message || "Failed to update record");
+                showError(err.response?.data?.message || "Failed to update record");
             }
         });
     };
@@ -373,18 +448,18 @@ const AttendanceList: React.FC = () => {
                 data: payload
             }, {
                 onSuccess: () => {
-                    toast.success("User checked out successfully");
+                    showSuccess("User checked out successfully");
                 },
                 onError: (error: unknown) => {
                     const err = error as { response?: { data?: { message?: string } } };
-                    toast.error(err.response?.data?.message || "Failed to check out user");
+                    showError(err.response?.data?.message || "Failed to check out user");
                 }
             });
         }
     };
 
   const handleQrScan = async () => {
-    if (!qrForm.qrData) return toast.error("Please enter QR data");
+    if (!qrForm.qrData) return showError("Please enter QR data");
     
     // Automated QR Scan: POST /api/v1/attendance/qr-scan
     // Context-Aware: Decides /check-in or /check-out based on status
@@ -399,12 +474,12 @@ const AttendanceList: React.FC = () => {
 
     try {
       await qrScanMutation.mutateAsync(payload);
-      toast.success("Attendance processed via QR scan (Automated)");
+      showSuccess("Attendance processed via QR scan (Automated)");
       setIsCreateModalOpen(false);
       resetQrForm();
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
-      toast.error(err?.response?.data?.message || "Failed to process QR scan");
+      showError(err?.response?.data?.message || "Failed to process QR scan");
     }
   };
 
@@ -420,10 +495,10 @@ const AttendanceList: React.FC = () => {
     if (shouldDelete) {
       try {
         await deleteMutation.mutateAsync(id);
-        toast.success("Record deleted successfully");
+        showSuccess("Record deleted successfully");
       } catch (error) {
         console.error("Delete failed", error);
-        toast.error("Failed to delete record");
+        showError("Failed to delete record");
       }
     }
   };
@@ -442,11 +517,11 @@ const AttendanceList: React.FC = () => {
       try {
         const promises = Array.from(selectedIds).map(id => deleteMutation.mutateAsync(id));
         await Promise.all(promises);
-        toast.success(`Successfully deleted ${selectedIds.size} records`);
+        showSuccess(`Successfully deleted ${selectedIds.size} records`);
         setSelectedIds(new Set());
       } catch (error) {
         console.error("Bulk delete failed", error);
-        toast.error("Failed to delete some records");
+        showError("Failed to delete some records");
       }
     }
   };
@@ -470,11 +545,11 @@ const AttendanceList: React.FC = () => {
           })
         );
         await Promise.all(promises);
-        toast.success(`Successfully updated ${selectedIds.size} records`);
+        showSuccess(`Successfully updated ${selectedIds.size} records`);
         setSelectedIds(new Set());
       } catch (error) {
         console.error("Bulk update status failed", error);
-        toast.error("Failed to update status for some records");
+        showError("Failed to update status for some records");
       }
     }
   };
@@ -528,93 +603,120 @@ const AttendanceList: React.FC = () => {
       <PageBreadcrumb pageTitle="Attendance Records" />
 
       <div className="space-y-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Attendance Records</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Monitor daily attendance logs.</p>
+        {/* Header Section */}
+        <div className="hidden sm:flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-brand-50 text-brand-500 dark:bg-brand-500/10">
+              <CalenderIcon className="size-5" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">Attendance Records</h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Monitor daily attendance logs.</p>
+            </div>
           </div>
-          {/* Only show Add Record button for admin and staff */}
-          {(() => {
-            const user = useAuthStore.getState().user;
-            // Strict role check
-            if (!user?.roles || user.roles.length === 0) return null;
-            
-            const roleNames = user.roles.map(r => r.name.toLowerCase());
-            
-            // Check for Admin (any kind) or Staff
-            const isAdminOrStaff = roleNames.some(role => 
-              role === 'admin' || role.includes('admin') || role === 'staff' || role.includes('staff')
-            );
-            
-            return isAdminOrStaff ? (
-              <Button 
-                onClick={() => {
-                  resetManualForm();
-                  resetQrForm();
-                  setIsCreateModalOpen(true);
-                }} 
-                startIcon={<PlusIcon className="size-4" />}
-              >
-                Add Record
-              </Button>
-            ) : null;
-          })()}
+          <div className="flex items-center gap-3">
+            <DataActionsMenu
+                isExporting={isExporting || isDownloadingTemplate}
+                isImporting={isImporting}
+                onExportExcel={() => handleExportExcel()}
+                onExportPdf={() => handleExportPdf()}
+                onExportExcelSelected={selectedIds.size > 0 ? () => handleExportExcel(Array.from(selectedIds)) : undefined}
+                selectedCount={selectedIds.size}
+                onImportClick={() => setIsImportModalOpen(true)}
+                onDownloadTemplate={() => handleDownloadTemplate(false)}
+            />
+            {(() => {
+              const user = useAuthStore.getState().user;
+              if (!user?.roles || user.roles.length === 0) return null;
+              const roleNames = user.roles.map(r => r.name.toLowerCase());
+              const isAdminOrStaff = roleNames.some(role => 
+                role === 'admin' || role.includes('admin') || role === 'staff' || role.includes('staff')
+              );
+              return isAdminOrStaff ? (
+                <button 
+                  onClick={() => {
+                    resetManualForm();
+                    resetQrForm();
+                    setIsCreateModalOpen(true);
+                  }}
+                  className="hidden sm:flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-brand-500/25 transition-all hover:bg-brand-600 active:scale-[.98]"
+                >
+                  <PlusIcon className="fill-white size-4" /> Add Record
+                </button>
+              ) : null;
+            })()}
+          </div>
         </div>
 
-        {/* Filters */}
-        <div className="space-y-4">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
-                <div className="flex-1 space-y-1.5">
-                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Search Student</label>
-                    <div className="relative">
-                        <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">
-                            <GridIcon className="size-4" />
-                        </div>
-                        <input
-                            type="text"
-                            placeholder="Student name or ID..."
-                            value={search}
-                            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                            className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none transition-all focus:border-brand-500 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-white"
-                        />
+        {/* Mobile FAB */}
+        <div className="sm:hidden fixed bottom-6 right-6 z-40 flex flex-col gap-3 items-end">
+            <DataActionsMenu
+                isExporting={isExporting || isDownloadingTemplate}
+                isImporting={isImporting}
+                onExportExcel={() => handleExportExcel()}
+                onExportPdf={() => handleExportPdf()}
+                onExportExcelSelected={selectedIds.size > 0 ? () => handleExportExcel(Array.from(selectedIds)) : undefined}
+                selectedCount={selectedIds.size}
+                onImportClick={() => setIsImportModalOpen(true)}
+                onDownloadTemplate={() => handleDownloadTemplate(false)}
+                isMobileFab={true}
+            />
+            {(() => {
+              const user = useAuthStore.getState().user;
+              if (!user?.roles || user.roles.length === 0) return null;
+              const roleNames = user.roles.map(r => r.name.toLowerCase());
+              const isAdminOrStaff = roleNames.some(role => 
+                role === 'admin' || role.includes('admin') || role === 'staff' || role.includes('staff')
+              );
+              return isAdminOrStaff ? (
+                <button
+                    onClick={() => {
+                        resetManualForm();
+                        resetQrForm();
+                        setIsCreateModalOpen(true);
+                    }}
+                    className="flex size-14 items-center justify-center rounded-full bg-brand-500 text-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] shadow-brand-500/30 transition-transform active:scale-95"
+                    aria-label="Add Record"
+                >
+                    <PlusIcon className="size-6 fill-white" />
+                </button>
+              ) : null;
+            })()}
+        </div>
+
+        {/* ── Advanced Filter Card ── */}
+        <div className="mb-4 rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-white/[0.05] dark:bg-white/[0.02] overflow-hidden">
+            <button 
+                onClick={() => setIsFiltersExpanded(!isFiltersExpanded)} 
+                className="w-full flex items-center justify-between p-5 hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors"
+            >
+                <div className="text-left">
+                    <div className="flex items-center gap-2 mb-1">
+                        <FilterIcon className="size-5 text-brand-500" />
+                        <h3 className="text-sm font-bold uppercase tracking-wider text-gray-800 dark:text-gray-200">
+                            Search & Filter Attendance
+                        </h3>
                     </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Use the criteria below to filter attendance logs based on academic year, class, and date.
+                    </p>
                 </div>
-
-                <div className="flex flex-wrap gap-4 items-end">
-                    <CustomSelect
-                        label="Status"
-                        className="w-40"
-                        value={statusId}
-                        onChange={(val) => { setStatusId(String(val)); setPage(1); }}
-                        placeholder="All Statuses"
-                        options={statusOptions}
-                    />
-
-                    <DatePicker
-                        label="Date"
-                        className="w-44"
-                        value={startDate}
-                        onChange={(date) => { setStartDate(date); setPage(1); }}
-                        placeholder="Select date"
-                    />
-
-                    <Button 
-                        variant="outline" 
-                        onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
-                        className={`h-[42px] px-4 transition-all ${isFiltersExpanded ? 'bg-brand-50/50 dark:bg-brand-500/5 border-brand-200 dark:border-brand-500/20 text-brand-500 shadow-sm' : ''}`}
-                    >
-                        <FilterIcon className="mr-2 size-4" />
-                        {isFiltersExpanded ? 'Hide Filters' : 'More Filters'}
-                        {isFiltersExpanded ? <ChevronUpIcon className="ml-2 size-3" /> : <ChevronDownIcon className="ml-2 size-3" />}
-                    </Button>
+                <div className="shrink-0 ml-4">
+                    <ChevronDownIcon className={`size-5 text-gray-400 transition-transform duration-200 ${isFiltersExpanded ? "rotate-180" : ""}`} />
                 </div>
-            </div>
-
-            <SmoothHeight>
-                {isFiltersExpanded && (
-                    <div className="space-y-6 rounded-2xl border border-dashed border-gray-200 p-6 dark:border-white/10 bg-gray-50/30 dark:bg-white/[0.01]">
-                        {/* Segmented Control / Radio Tabs */}
-                        <div className="flex flex-col gap-3">
+            </button>
+            
+            <div 
+                className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${
+                    isFiltersExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                }`}
+            >
+                <div className="overflow-hidden min-h-0">
+                    <div className="px-5 pb-5">
+                        <hr className="mb-5 border-gray-100 dark:border-white/[0.05]" />
+                        
+                        {/* Segmented Control */}
+                        <div className="flex flex-col gap-3 mb-5">
                             <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">Filter Context</label>
                             <div className="inline-flex p-1 bg-gray-100 dark:bg-white/5 rounded-xl w-fit">
                                 {[
@@ -626,7 +728,6 @@ const AttendanceList: React.FC = () => {
                                         key={tab.id}
                                         onClick={() => {
                                             setFilterTab(tab.id as "academic" | "event" | "general");
-                                            // Reset other contexts
                                             if (tab.id === 'event') {
                                                 setClassId("");
                                                 setMajorId("");
@@ -656,101 +757,195 @@ const AttendanceList: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Context-Specific Forms */}
-                        <SmoothHeight>
-                            {filterTab === 'academic' && (
-                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 animate-in fade-in slide-in-from-left-2 duration-300">
-                                    <CustomSelect
-                                        label="Mode"
-                                        value={attendanceType}
-                                        onChange={(val) => { setAttendanceType(String(val)); setPage(1); }}
-                                        options={[
-                                            { label: "Daily & Class", value: "" },
-                                            { label: "Daily Attendance", value: "DAILY" },
-                                            { label: "Class Attendance", value: "CLASS" },
-                                        ]}
-                                    />
-                                    <CustomSelect
-                                        label="Class"
-                                        value={classId}
-                                        onChange={(val) => { setClassId(String(val)); setPage(1); }}
-                                        options={[{ label: "All Classes", value: "" }, ...classes.map(c => ({ label: c.name, value: String(c.id) }))]}
-                                    />
-                                    <CustomSelect
-                                        label="Major"
-                                        value={majorId}
-                                        onChange={(val) => { setMajorId(String(val)); setPage(1); }}
-                                        options={[{ label: "All Majors", value: "" }, ...majors.map(m => ({ label: m.name, value: String(m.id) }))]}
-                                    />
-                                    <CustomSelect
-                                        label="Academic Year"
-                                        value={academicYearId}
-                                        onChange={(val) => { setAcademicYearId(String(val)); setPage(1); }}
-                                        options={[{ label: "All Years", value: "" }, ...academicYears.map(ay => ({ label: ay.code, value: String(ay.id) }))]}
-                                    />
-                                </div>
-                            )}
+                        <div className="mb-5">
+                            <SmoothHeight>
+                                {filterTab === 'academic' && (
+                                    <div className="grid grid-cols-1 gap-5 mb-5 sm:grid-cols-2 lg:grid-cols-4 animate-in fade-in slide-in-from-left-2 duration-300">
+                                        <div className="space-y-1.5">
+                                            <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Academic Year</Label>
+                                            <CustomSelect
+                                                value={academicYearId === "all" || academicYearId === "" ? "" : Number(academicYearId)}
+                                                onChange={(val) => { 
+                                                    setAcademicYearId(val ? String(val) : "all"); 
+                                                    setMajorId("all");
+                                                    setClassId("all");
+                                                    setPage(1); 
+                                                }}
+                                                onClear={() => { 
+                                                    setAcademicYearId("all"); 
+                                                    setMajorId("all");
+                                                    setClassId("all");
+                                                    setPage(1); 
+                                                }}
+                                                placeholder="All Years"
+                                                options={academicYears.map((ay: any) => ({ label: ay.code || ay.name, value: Number(ay.id) }))}
+                                                className="w-full [&>button]:w-full [&>button]:h-11 [&>button]:text-sm [&>button]:rounded-xl"
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Major</Label>
+                                            <CustomSelect
+                                                value={majorId === "all" || majorId === "" ? "" : Number(majorId)}
+                                                onChange={(val) => { 
+                                                    setMajorId(val ? String(val) : "all"); 
+                                                    setClassId("all");
+                                                    setPage(1); 
+                                                }}
+                                                onClear={() => { 
+                                                    setMajorId("all"); 
+                                                    setClassId("all");
+                                                    setPage(1); 
+                                                }}
+                                                placeholder="All Majors"
+                                                options={majors.map((m: any) => ({ label: m.name, value: Number(m.id) }))}
+                                                className="w-full [&>button]:w-full [&>button]:h-11 [&>button]:text-sm [&>button]:rounded-xl"
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Class</Label>
+                                            <CustomSelect
+                                                value={classId === "all" || classId === "" ? "" : Number(classId)}
+                                                onChange={(val) => { setClassId(val ? String(val) : "all"); setPage(1); }}
+                                                onClear={() => { setClassId("all"); setPage(1); }}
+                                                placeholder="All Classes"
+                                                options={classes.map((c: any) => ({ label: c.name, value: Number(c.id) }))}
+                                                className="w-full [&>button]:w-full [&>button]:h-11 [&>button]:text-sm [&>button]:rounded-xl"
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Mode</Label>
+                                            <CustomSelect
+                                                value={attendanceType === "all" || attendanceType === "" ? "" : attendanceType}
+                                                onChange={(val) => { setAttendanceType(val ? String(val) : "all"); setPage(1); }}
+                                                onClear={() => { setAttendanceType("all"); setPage(1); }}
+                                                placeholder="Daily & Class"
+                                                options={[
+                                                    { label: "Daily Attendance", value: "DAILY" },
+                                                    { label: "Class Attendance", value: "CLASS" },
+                                                ]}
+                                                className="w-full [&>button]:w-full [&>button]:h-11 [&>button]:text-sm [&>button]:rounded-xl"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
 
-                            {filterTab === 'event' && (
-                                <div className="grid grid-cols-1 gap-4 lg:grid-cols-4 animate-in fade-in slide-in-from-left-2 duration-300">
-                                    <CustomSelect
-                                        label="Attendance Event"
-                                        className="lg:col-span-2"
-                                        value={eventId}
-                                        onChange={(val) => { setEventId(String(val)); setPage(1); }}
-                                        options={[{ label: "Select Event", value: "" }, ...events.map(e => ({ label: e.name, value: String(e.id) }))]}
-                                    />
-                                </div>
-                            )}
+                                {filterTab === 'event' && (
+                                    <div className="grid grid-cols-1 gap-5 mb-5 sm:grid-cols-2 lg:grid-cols-4 animate-in fade-in slide-in-from-left-2 duration-300">
+                                        <div className="space-y-1.5 lg:col-span-2">
+                                            <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Attendance Event</Label>
+                                            <CustomSelect
+                                                value={eventId === "all" || eventId === "" ? "" : Number(eventId)}
+                                                onChange={(val) => { setEventId(val ? String(val) : "all"); setPage(1); }}
+                                                onClear={() => { setEventId("all"); setPage(1); }}
+                                                placeholder="Select Event"
+                                                options={events.map((e: any) => ({ label: e.name, value: Number(e.id) }))}
+                                                className="w-full [&>button]:w-full [&>button]:h-11 [&>button]:text-sm [&>button]:rounded-xl"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
 
-                            {filterTab === 'general' && (
-                                <div className="p-8 text-center bg-white/50 dark:bg-white/[0.02] rounded-2xl border border-dashed border-gray-200 dark:border-white/10 animate-in fade-in zoom-in-95 duration-300">
-                                    <p className="text-sm text-gray-500">Using global filters (Date, Status, Search). Click a context tab to filter by specific criteria.</p>
-                                </div>
-                            )}
-                        </SmoothHeight>
+                                {filterTab === 'general' && (
+                                    <div className="p-8 mb-5 text-center bg-gray-50/50 dark:bg-white/[0.01] rounded-xl border border-dashed border-gray-200 dark:border-white/5 animate-in fade-in zoom-in-95 duration-300">
+                                        <p className="text-sm text-gray-500">Using global filters (Date, Status, Search). Click a context tab to filter by specific criteria.</p>
+                                    </div>
+                                )}
+                            </SmoothHeight>
+                        </div>
 
-                        {/* Common Filters Bar */}
-                        <div className="pt-4 border-t border-gray-100 dark:border-white/5">
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 items-end">
+                        <div className="grid grid-cols-1 gap-5 mb-5 sm:grid-cols-2 lg:grid-cols-4">
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Status</Label>
+                                <CustomSelect
+                                    value={statusId === "all" ? "" : statusId}
+                                    onChange={(val) => { setStatusId(val ? String(val) : "all"); setPage(1); }}
+                                    onClear={() => { setStatusId("all"); setPage(1); }}
+                                    placeholder="All Statuses"
+                                    options={apiStatuses.map((s: any) => ({ label: s.name, value: String(s.id) }))}
+                                    className="w-full [&>button]:w-full [&>button]:h-11 [&>button]:text-sm [&>button]:rounded-xl"
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Start Date</Label>
                                 <DatePicker
-                                    label="End Date"
+                                    value={startDate}
+                                    onChange={(date) => { setStartDate(date); setPage(1); }}
+                                    placeholder="Start date"
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">End Date</Label>
+                                <DatePicker
                                     value={endDate}
                                     onChange={(date) => { setEndDate(date); setPage(1); }}
-                                    placeholder="Range end date"
+                                    placeholder="End date"
                                 />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Late Minutes Threshold</Label>
                                 <NumberInput
-                                    label="Late Minutes Threshold"
                                     placeholder="Minutes..."
                                     value={lateMinutes}
                                     onChange={(val) => { setLateMinutes(val); setPage(1); }}
                                 />
-                                <div className="lg:col-span-2 flex justify-end">
-                                    <Button 
-                                        variant="secondary" 
-                                        onClick={() => {
-                                            setSearch("");
-                                            setStatusId("");
-                                            setStartDate("");
-                                            setEndDate("");
-                                            setClassId("");
-                                            setMajorId("");
-                                            setAcademicYearId("");
-                                            setAttendanceType("");
-                                            setEventId("");
-                                            setLateMinutes("");
-                                            setPage(1);
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-5 items-end md:grid-cols-3">
+                            <div className="md:col-span-2 space-y-1.5">
+                                <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Student Name / ID</Label>
+                                <div className="relative">
+                                    <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+                                    <input
+                                        type="text"
+                                        value={search}
+                                        onChange={(e) => setSearch(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                setSearchTerm(search);
+                                                setPage(1);
+                                            }
                                         }}
-                                        className="text-gray-500"
-                                    >
-                                        Reset All Filters
-                                    </Button>
+                                        placeholder="Search by Student Name or ID..."
+                                        className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-4 text-sm text-gray-900 transition-colors focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-white/[0.08] dark:bg-white/[0.02] dark:text-white dark:focus:border-brand-400 dark:focus:ring-brand-400"
+                                    />
                                 </div>
+                            </div>
+                            <div className="flex items-center gap-3 md:col-span-1">
+                                <button
+                                    onClick={() => {
+                                        setSearch("");
+                                        setSearchTerm("");
+                                        setStatusId("");
+                                        setStartDate("");
+                                        setEndDate("");
+                                        setClassId("");
+                                        setMajorId("");
+                                        setAcademicYearId("");
+                                        setAttendanceType("");
+                                        setEventId("");
+                                        setLateMinutes("");
+                                        setPage(1);
+                                    }}
+                                    className="flex h-11 flex-1 items-center justify-center rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 dark:border-white/[0.08] dark:bg-transparent dark:text-gray-300 dark:hover:bg-white/[0.05]"
+                                >
+                                    Reset
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setSearchTerm(search);
+                                        setPage(1);
+                                    }}
+                                    className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 text-sm font-semibold text-white transition-all hover:bg-brand-600"
+                                >
+                                    <SearchIcon className="size-4" />
+                                    Search
+                                </button>
                             </div>
                         </div>
                     </div>
-                )}
-            </SmoothHeight>
+                </div>
+            </div>
         </div>
 
         {/* Selection Actions Bar */}
@@ -762,7 +957,7 @@ const AttendanceList: React.FC = () => {
               </div>
               <p className="text-sm font-semibold text-brand-700 dark:text-brand-400">Records Selected</p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <div className="relative group/actions">
                   <Button variant="secondary" size="sm" className="h-[38px]">
                       Change Status <ChevronDownIcon className="ml-2 size-3 px-0.5" />
@@ -795,9 +990,49 @@ const AttendanceList: React.FC = () => {
             </div>
           </div>
         )}
-
-        {/* Table - Mobile Scrollable, Desktop Fixed */}
-        <div className="w-full overflow-x-auto lg:overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-white/[0.05] dark:bg-white/[0.03]">
+{/* Table - Mobile Scrollable, Desktop Fixed */}
+        {isMobile ? (
+          <div className="space-y-3">
+            {isLoading ? (
+              <div className="flex justify-center py-12"><div className="size-6 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" /></div>
+            ) : records.length === 0 ? (
+              <div className="py-12 text-center text-gray-400 text-sm">No records found</div>
+            ) : (
+              <div className="grid grid-cols-1 gap-3">
+                {records.map((record) => (
+                  <AttendanceRecordCard
+                    key={record.public_id}
+                    record={record}
+                    isSelected={selectedIds.has(record.public_id!)}
+                    onToggle={() => toggleSelectRow(record.public_id!)}
+                    getStatusColor={getStatusColor}
+                    onQuickCheckOut={record.clockIn && !record.clockOut ? () => handleQuickCheckOut(record) : undefined}
+                    onViewDetails={() => { setSelectedRecord(record); setIsDetailModalOpen(true); }}
+                    onEdit={() => {
+                        setSelectedRecord(record);
+                        setManualForm({
+                            userId: record.userId,
+                            date: record.date,
+                            clockIn: record.clockIn ? format(parseISO(record.clockIn), "HH:mm:ss") : "",
+                            clockOut: record.clockOut ? format(parseISO(record.clockOut), "HH:mm:ss") : "",
+                            statusLabel: (record.statusLabel?.toLowerCase() || "present") as any,
+                            notes: record.notes || "",
+                            eventId: record.eventId || "",
+                            latitude: record.latitude || 0,
+                            longitude: record.longitude || 0,
+                            classId: record.classId || "",
+                            photo: null
+                        });
+                        setIsEditModalOpen(true);
+                    }}
+                    onDelete={() => handleDelete(record.public_id!)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="w-full overflow-x-auto lg:overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-white/[0.05] dark:bg-white/[0.03]">
           <Table>
             <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
               <TableRow>
@@ -916,54 +1151,29 @@ const AttendanceList: React.FC = () => {
                         </div>
                     </TableCell>
                     <TableCell className="px-5 py-4 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                             {record.clockIn && !record.clockOut && (
-                                <button
-                                    onClick={() => handleQuickCheckOut(record)}
-                                    className="p-2 text-gray-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10 rounded-lg transition-all"
-                                    title="Quick Check Out"
-                                >
-                                    <CheckCircleIcon className="size-4" />
-                                </button>
-                             )}
-                             <button
-                                 onClick={() => { setSelectedRecord(record); setIsDetailModalOpen(true); }}
-                                 className="p-2 text-gray-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10 rounded-lg transition-all"
-                                 title="View Details"
-                             >
-                                 <EyeIcon className="size-4" />
-                             </button>
-                             <button
-                                 onClick={() => { 
-                                     setSelectedRecord(record); 
-                                     setManualForm({
-                                         userId: record.userId,
-                                         date: record.date,
-                                         clockIn: record.clockIn ? format(parseISO(record.clockIn), "HH:mm:ss") : "",
-                                         clockOut: record.clockOut ? format(parseISO(record.clockOut), "HH:mm:ss") : "",
-                                         statusLabel: (record.statusLabel?.toLowerCase() || "present") as "present" | "late" | "absent" | "sick" | "excused",
-                                         notes: record.notes || "",
-                                         eventId: record.eventId || "",
-                                          latitude: record.latitude || 0,
-                                          longitude: record.longitude || 0,
-                                          classId: record.classId || "",
-                                          photo: null
-                                      });
-                                     setIsEditModalOpen(true); 
-                                 }}
-                                 className="p-2 text-gray-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10 rounded-lg transition-all"
-                                 title="Edit"
-                             >
-                                 <EditIcon className="size-4" />
-                             </button>
-                             <button
-                                 onClick={() => handleDelete(record.public_id!)}
-                                 className="p-2 text-gray-400 hover:text-error-500 hover:bg-error-50 dark:hover:bg-error-500/10 rounded-lg transition-all"
-                                 title="Delete"
-                             >
-                                 <TrashIcon className="size-4" />
-                             </button>
-                        </div>
+                        <RowActionMenu
+                            canCheckOut={!!(record.clockIn && !record.clockOut)}
+                            onQuickCheckOut={() => handleQuickCheckOut(record)}
+                            onViewDetails={() => { setSelectedRecord(record); setIsDetailModalOpen(true); }}
+                            onEdit={() => {
+                                setSelectedRecord(record); 
+                                setManualForm({
+                                    userId: record.userId,
+                                    date: record.date,
+                                    clockIn: record.clockIn ? format(parseISO(record.clockIn), "HH:mm:ss") : "",
+                                    clockOut: record.clockOut ? format(parseISO(record.clockOut), "HH:mm:ss") : "",
+                                    statusLabel: (record.statusLabel?.toLowerCase() || "present") as any,
+                                    notes: record.notes || "",
+                                    eventId: record.eventId || "",
+                                    latitude: record.latitude || 0,
+                                    longitude: record.longitude || 0,
+                                    classId: record.classId || "",
+                                    photo: null
+                                });
+                                setIsEditModalOpen(true); 
+                            }}
+                            onDelete={() => handleDelete(record.public_id!)}
+                        />
                     </TableCell>
                   </TableRow>
                 ))
@@ -971,6 +1181,7 @@ const AttendanceList: React.FC = () => {
             </TableBody>
           </Table>
         </div>
+        )}
 
         {/* Pagination - Reuse existing logic */}
         {meta && (meta.totalPages || 0) > 1 && (
@@ -1684,6 +1895,22 @@ const AttendanceList: React.FC = () => {
                                  <Button variant="outline" size="sm" className="bg-white text-gray-900 border-white" onClick={() => setManualForm(prev => ({ ...prev, photo: null }))}>Retake</Button>
                              </div>
                         </div>
+                    ) : selectedRecord && ((selectedRecord as any).photoUrl || (selectedRecord as any).photoEvidenceUrl || (selectedRecord as any).photoEvidence) ? (
+                        <div className="relative w-full h-full group">
+                             <img 
+                                src={
+                                    ((selectedRecord as any).photoUrl || (selectedRecord as any).photoEvidenceUrl || (selectedRecord as any).photoEvidence)?.startsWith('/') 
+                                        ? `http://localhost:3000${(selectedRecord as any).photoUrl || (selectedRecord as any).photoEvidenceUrl || (selectedRecord as any).photoEvidence}`
+                                        : ((selectedRecord as any).photoUrl || (selectedRecord as any).photoEvidenceUrl || (selectedRecord as any).photoEvidence)
+                                } 
+                                alt="Existing Evidence" 
+                                className="w-full h-full object-cover" 
+                             />
+                             <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-2">
+                                 <span className="text-white text-xs font-bold shadow-sm">Existing Evidence</span>
+                                 <Button variant="outline" size="sm" className="bg-white text-gray-900 border-white font-semibold" onClick={() => setIsCameraOpen(true)}>Take New Photo</Button>
+                             </div>
+                        </div>
                     ) : (
                         <div className="text-center p-6">
                             <div className="size-16 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center mx-auto mb-4 text-gray-400">
@@ -1701,7 +1928,7 @@ const AttendanceList: React.FC = () => {
                                 } catch (err) {
                                     console.error("Error accessing camera:", err);
                                     setIsCameraOpen(false);
-                                    toast.error("Failed to access camera");
+                                    showError("Failed to access camera");
                                 }
                             }}>Open Camera</Button>
                         </div>
@@ -1746,7 +1973,7 @@ const AttendanceList: React.FC = () => {
                         if (confirmed && selectedRecord?.public_id) {
                             await deleteMutation.mutateAsync(selectedRecord.public_id);
                             setIsDetailModalOpen(false);
-                            toast.success("Record deleted successfully");
+                            showSuccess("Record deleted successfully");
                         }
                     }}
                 >
@@ -1878,6 +2105,27 @@ const AttendanceList: React.FC = () => {
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest px-1">Officer Notes</label>
                     <div className="p-4 rounded-xl border border-gray-100 bg-gray-50/50 text-sm text-gray-600 dark:border-white/[0.05] dark:bg-white/[0.01] dark:text-gray-400 italic font-medium leading-relaxed">
                         "{selectedRecord.notes}"
+                    </div>
+                </div>
+            )}
+            
+            {/* Display captured photo evidence if the API returns it */}
+            {((selectedRecord as any).photoUrl || (selectedRecord as any).photoEvidenceUrl || (selectedRecord as any).photoEvidence) && (
+                <div className="space-y-2 mt-4">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest px-1 flex items-center gap-2">
+                        <VideoIcon className="size-3.5" /> 
+                        Photo Evidence
+                    </label>
+                    <div className="rounded-2xl border border-gray-100 bg-gray-50/50 p-2 dark:border-white/[0.05] dark:bg-white/[0.02] overflow-hidden shadow-sm">
+                        <img 
+                            src={
+                                ((selectedRecord as any).photoUrl || (selectedRecord as any).photoEvidenceUrl || (selectedRecord as any).photoEvidence)?.startsWith('/') 
+                                    ? `http://localhost:3000${(selectedRecord as any).photoUrl || (selectedRecord as any).photoEvidenceUrl || (selectedRecord as any).photoEvidence}`
+                                    : ((selectedRecord as any).photoUrl || (selectedRecord as any).photoEvidenceUrl || (selectedRecord as any).photoEvidence)
+                            } 
+                            alt="Attendance Capture Evidence" 
+                            className="w-full max-h-[400px] object-cover rounded-xl"
+                        />
                     </div>
                 </div>
             )}

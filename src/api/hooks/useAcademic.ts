@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { academicService } from "../services/academicService";
 import {
   AcademicYear,
@@ -60,7 +60,8 @@ import {
   GroupedTeacherSubjectsResponse,
   GroupedTeachingAssignmentsResponse,
   WorkloadContractsResponse,
-  BulkCreateClassEnrollmentDto
+  BulkCreateClassEnrollmentDto,
+  BulkPromoteStudentsDto
 } from "../types/academic";
 import { PaginatedResponse } from "../types/common";
 
@@ -100,6 +101,28 @@ export const useAcademicYears = (params?: AcademicYearParams) => {
   return { ...query, createMutation, updateMutation, deleteMutation };
 };
 
+export const useAcademicYearsInfinite = (params?: Omit<AcademicYearParams, 'page'>) => {
+  return useInfiniteQuery({
+    queryKey: ["academic", "years", "infinite", params],
+    queryFn: ({ pageParam = 1 }) =>
+      academicService.getAcademicYears({ ...params, page: pageParam as number, limit: 10 }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage: any) => {
+      const meta = lastPage?.meta;
+      if (!meta) return undefined;
+      return meta.page < meta.totalPages ? meta.page + 1 : undefined;
+    },
+  });
+};
+
+export const useImportAcademicYears = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => academicService.importAcademicYears(file),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["academic", "years"] }),
+  });
+};
+
 export const useClasses = (params?: ClassParams) => {
   const queryClient = useQueryClient();
 
@@ -135,6 +158,17 @@ export const useClass = (id: string | number) => {
     queryKey: ["academic", "classes", id],
     queryFn: () => academicService.getClass(id),
     enabled: !!id,
+  });
+};
+
+export const usePromoteStudents = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: BulkPromoteStudentsDto) => academicService.promoteStudents(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["academic", "classes"] });
+      queryClient.invalidateQueries({ queryKey: ["academic", "enrollments"] });
+    },
   });
 };
 

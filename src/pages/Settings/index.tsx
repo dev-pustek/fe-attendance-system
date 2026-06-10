@@ -178,14 +178,21 @@ const Settings: React.FC = () => {
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">System Configurations</h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">Manage global parameters and system-wide keys.</p>
           </div>
-          <button
-            onClick={() => handleOpenModal()}
-            className="flex items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-brand-600 shadow-lg shadow-brand-500/20"
-          >
-            
-           <PlusIcon className="fill-white text-xl text-white" />
-            Add Setting
-          </button>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <button
+              onClick={() => window.location.href = '/settings/location'}
+              className="flex items-center justify-center gap-2 rounded-xl bg-gray-100 dark:bg-gray-800 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 transition-all hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700"
+            >
+              Location Settings
+            </button>
+            <button
+              onClick={() => handleOpenModal()}
+              className="flex items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-brand-600 shadow-lg shadow-brand-500/20"
+            >
+              <PlusIcon className="fill-white text-xl text-white" />
+              Add Setting
+            </button>
+          </div>
         </div>
 
         {/* Bulk Selection Actions Bar */}

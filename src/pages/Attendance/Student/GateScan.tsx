@@ -22,15 +22,19 @@ const GateScan = () => {
     studentName?: string;
     role?: string;
     policy?: UserPolicyResponse;
+    attendanceStatus?: string;
   }>({ status: "idle" });
   
   const [isProcessing, setIsProcessing] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [scanError, setScanError] = useState<string | null>(null);
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [userPolicy, setUserPolicy] = useState<UserPolicyResponse | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [policyError, setPolicyError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"landing" | "scanner">("landing");
+  const [requireSelfie, setRequireSelfie] = useState(false);
+  const [pendingScanCode, setPendingScanCode] = useState<string | null>(null);
   const lastFetchedIdRef = useRef<string | null>(null);
   const lastScannedDataRef = useRef<string | null>(null);
   const lastScanTimeRef = useRef<number>(0);
@@ -59,10 +63,59 @@ const GateScan = () => {
         lastScannedDataRef.current = code;
         lastScanTimeRef.current = now;
 
+        // First, check policy for this specific user code
+        let needsPhoto = false;
+        try {
+            const validLocations = ['SCHOOL_ENTRY', 'GATE_1', 'GATE_2'];
+            let policyTargetId = code;
+            
+            // If scanning a location code (Mode A), use the logged-in student's ID
+            if (validLocations.includes(code)) {
+                policyTargetId = user?.id || user?.public_id || "";
+            }
+
+            if (policyTargetId) {
+                const policyRes = await attendanceService.getAttendancePolicy(policyTargetId);
+                const policyData = (policyRes as any).data || policyRes;
+                needsPhoto = policyData?.rules?.some((r: any) => r.ruleType === "REQUIRE_PHOTO_EVIDENCE" && (r.ruleValue === "true" || r.ruleValue === "1" || r.ruleValue === true));
+            }
+        } catch (e) {
+            console.error("Failed to fetch policy before scan", e);
+        }
+
+        if (needsPhoto) {
+            setPendingScanCode(code);
+            setRequireSelfie(true);
+            setIsProcessing(false);
+            return; // Wait for user to take selfie
+        }
+
+        await submitScan(code, undefined);
+      } catch (error: unknown) {
+        handleScanError(error);
+      }
+    },
+    [isProcessing, isStudent, user, requireSelfie, pendingScanCode] // submitScan and handleScanError don't change
+  );
+
+  const submitScan = async (code: string, explicitPhoto?: string) => {
+      try {
+        const deviceId = isStudent ? `mobile_${user?.id}` : "gate_kiosk_1";
+        let latitude: number | undefined;
+        let longitude: number | undefined;
+
+        if (userLocation) {
+            latitude = userLocation.lat;
+            longitude = userLocation.lng;
+        }
+
         const response = await attendanceService.scanQRCode({
           qrData: code,
           deviceId,
-        });
+          latitude,
+          longitude,
+          photoEvidence: explicitPhoto
+        }) as any;
 
         let policy: UserPolicyResponse | undefined;
         const record = response.data || response;
@@ -93,6 +146,7 @@ const GateScan = () => {
             response.studentName || (isStudent ? user?.name : "Student"),
           role: isStudent ? "self" : "kiosk",
           policy,
+          attendanceStatus: record.status || response.status,
         });
 
         setTimeout(() => {
@@ -102,6 +156,11 @@ const GateScan = () => {
           }
         }, 3000);
       } catch (error: unknown) {
+        handleScanError(error);
+      }
+  };
+
+  const handleScanError = (error: unknown) => {
         const err = error as { response?: { data?: { message?: string } } };
         console.error("Scan Error:", err);
 
@@ -118,10 +177,46 @@ const GateScan = () => {
             setIsProcessing(false);
           }
         }, 2000);
-      }
-    },
-    [isProcessing, isStudent, user]
-  );
+  };
+
+  const handleTakePhoto = async () => {
+        if (!pendingScanCode || isProcessing) return;
+        setIsProcessing(true);
+
+        let photoEvidence: string | undefined;
+        if (renderRef.current) {
+            try {
+                const videoEl = renderRef.current.querySelector("video");
+                if (videoEl) {
+                    const canvas = document.createElement("canvas");
+                    const vidWidth = videoEl.videoWidth || 640;
+                    const vidHeight = videoEl.videoHeight || 480;
+                    const size = Math.min(vidWidth, vidHeight);
+                    const startX = (vidWidth - size) / 2;
+                    const startY = (vidHeight - size) / 2;
+                    
+                    canvas.width = size;
+                    canvas.height = size;
+                    const ctx = canvas.getContext("2d");
+                    if (ctx) {
+                        // Crop center square to match UI cutout
+                        ctx.drawImage(videoEl, startX, startY, size, size, 0, 0, size, size);
+                        // Using WebP for superior compression and smaller payload size compared to JPEG
+                        const dataUrl = canvas.toDataURL("image/webp", 0.5);
+                        if (dataUrl && dataUrl.length > 50) {
+                            photoEvidence = dataUrl;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error("Photo capture failed:", e);
+            }
+        }
+
+        await submitScan(pendingScanCode, photoEvidence);
+        setRequireSelfie(false);
+        setPendingScanCode(null);
+  };
 
   // -- Camera Scanner Setup --
   useEffect(() => {
@@ -169,13 +264,11 @@ const GateScan = () => {
     };
   }, [handleScan, viewMode]);
 
-  // -- Fetch Policy on Mount --
-  useEffect(() => {
+  // -- Fetch Policy on Mount & Manual Refresh --
+  const fetchPolicy = useCallback(() => {
     const targetId = user?.id || user?.public_id || user?.id;
 
-    if (targetId && targetId !== lastFetchedIdRef.current) {
-      lastFetchedIdRef.current = targetId?.toString();
-
+    if (targetId) {
       attendanceService
         .getAttendancePolicy(targetId.toString())
         .then((res) => {
@@ -186,9 +279,27 @@ const GateScan = () => {
         .catch((err) => {
           console.error("Failed to load user policy", err);
           setPolicyError(err.message || "Failed to load policy");
-          lastFetchedIdRef.current = null;
         });
     }
+  }, [user]);
+
+  useEffect(() => {
+    const targetId = user?.id || user?.public_id || user?.id;
+    if (targetId && targetId !== lastFetchedIdRef.current) {
+        lastFetchedIdRef.current = targetId?.toString();
+        fetchPolicy();
+    }
+
+    // Always request location on mount for Gate Scanner and keep tracking it
+    const watchId = navigator.geolocation.watchPosition(
+       (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+       (err) => console.error("Gate Scanner geolocation failed:", err),
+       { enableHighAccuracy: true }
+    );
+
+    return () => {
+        navigator.geolocation.clearWatch(watchId);
+    };
   }, [user]);
 
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -291,7 +402,15 @@ const GateScan = () => {
                   >
                       <ChevronLeftIcon className="size-6" />
                   </button>
-                  <div className="w-10" /> {/* Spacer */}
+                  <button 
+                      onClick={fetchPolicy}
+                      className="p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors backdrop-blur-md border border-white/10 active:scale-95"
+                  >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                          <path d="M3 3v5h5" />
+                      </svg>
+                  </button>
                 </div>
                 
                 <div className="absolute inset-x-0 top-8 flex flex-col items-center pointer-events-none">
@@ -501,24 +620,67 @@ const GateScan = () => {
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] h-[280px] sm:w-[350px] sm:h-[350px] bg-transparent shadow-[0_0_0_9999px_rgba(0,0,0,0.4)] rounded-3xl" />
         </div>
 
-        {/* Custom Green Corner Frames Only */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] h-[280px] sm:w-[350px] sm:h-[350px] z-20 pointer-events-none">
-          <div className="absolute inset-0 overflow-hidden rounded-3xl">
-            <motion.div
-              initial={{ top: "-10%" }}
-              animate={{ top: "110%" }}
-              transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-              className="absolute left-0 right-0 h-0.5 bg-brand-500 shadow-[0_0_20px_rgba(34,197,94,0.8)]"
-            >
-              <div className="absolute inset-x-0 -top-12 h-12 bg-gradient-to-t from-brand-500/30 to-transparent" />
-            </motion.div>
+        {/* Custom Green Corner Frames Only (Hide during selfie) */}
+        {!requireSelfie && (
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] h-[280px] sm:w-[350px] sm:h-[350px] z-20 pointer-events-none">
+            <div className="absolute inset-0 overflow-hidden rounded-3xl">
+                <motion.div
+                initial={{ top: "-10%" }}
+                animate={{ top: "110%" }}
+                transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                className="absolute left-0 right-0 h-0.5 bg-brand-500 shadow-[0_0_20px_rgba(34,197,94,0.8)]"
+                >
+                <div className="absolute inset-x-0 -top-12 h-12 bg-gradient-to-t from-brand-500/30 to-transparent" />
+                </motion.div>
+            </div>
+            {/* Custom Corners */}
+            <div className="absolute top-0 left-0 w-16 h-16 border-l-4 border-t-4 border-brand-500 rounded-tl-3xl" />
+            <div className="absolute top-0 right-0 w-16 h-16 border-r-4 border-t-4 border-brand-500 rounded-tr-3xl" />
+            <div className="absolute bottom-0 left-0 w-16 h-16 border-l-4 border-b-4 border-brand-500 rounded-bl-3xl" />
+            <div className="absolute bottom-0 right-0 w-16 h-16 border-r-4 border-b-4 border-brand-500 rounded-br-3xl" />
+            </div>
+        )}
+
+        {/* Selfie Capture Overlay */}
+        {requireSelfie && (
+            <div className="absolute inset-0 z-40 flex flex-col items-center justify-center pointer-events-auto">
+                <div className="absolute top-24 left-0 right-0 text-center z-50">
+                    <h2 className="text-3xl font-bold text-white mb-2 drop-shadow-lg">Take a Selfie</h2>
+                    <p className="text-white/80">Position your face in the circle</p>
+                </div>
+                
+                {/* Circular cutout */}
+                <div className="w-[280px] h-[280px] sm:w-[320px] sm:h-[320px] rounded-full border-4 border-brand-500 shadow-[0_0_0_9999px_rgba(0,0,0,0.85)] z-40 relative">
+                    {/* inner glow */}
+                    <div className="absolute inset-0 rounded-full shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]" />
+                </div>
+
+                <button 
+                onClick={handleTakePhoto}
+                disabled={isProcessing}
+                className="absolute bottom-24 w-20 h-20 bg-brand-500 rounded-full border-4 border-white/30 flex items-center justify-center shadow-2xl active:scale-95 transition-transform z-50 disabled:opacity-50"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="size-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                        <circle cx="12" cy="13" r="4"></circle>
+                    </svg>
+                </button>
+            </div>
+        )}
+
+        {/* Live Location Display */}
+        {userLocation && (
+          <div className="absolute bottom-8 left-0 right-0 z-20 flex justify-center pointer-events-none">
+            <div className="bg-black/50 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 flex items-center gap-2 shadow-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-brand-500" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+              </svg>
+              <span className="text-white/90 text-xs font-mono font-medium tracking-wide">
+                {userLocation.lat.toFixed(6)}, {userLocation.lng.toFixed(6)}
+              </span>
+            </div>
           </div>
-          {/* Custom Corners */}
-          <div className="absolute top-0 left-0 w-16 h-16 border-l-4 border-t-4 border-brand-500 rounded-tl-3xl" />
-          <div className="absolute top-0 right-0 w-16 h-16 border-r-4 border-t-4 border-brand-500 rounded-tr-3xl" />
-          <div className="absolute bottom-0 left-0 w-16 h-16 border-l-4 border-b-4 border-brand-500 rounded-bl-3xl" />
-          <div className="absolute bottom-0 right-0 w-16 h-16 border-r-4 border-b-4 border-brand-500 rounded-br-3xl" />
-        </div>
+        )}
       </div>
 
       <AnimatePresence>
@@ -527,10 +689,22 @@ const GateScan = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className={`absolute inset-0 flex items-center justify-center p-8 backdrop-blur-xl z-50 ${scanResult.status === "success" ? "bg-green-500/90" : "bg-red-500/90"}`}
+            className={`absolute inset-0 flex items-center justify-center p-8 backdrop-blur-xl z-50 ${
+              scanResult.status === "success" && scanResult.attendanceStatus === "LATE"
+                ? "bg-amber-500/90"
+                : scanResult.status === "success"
+                ? "bg-green-500/90"
+                : "bg-red-500/90"
+            }`}
           >
             <div className="text-center text-white">
-              <h2 className="text-4xl font-extrabold mb-4">{scanResult.status === "success" ? "SUCCESS" : "ERROR"}</h2>
+              <h2 className="text-4xl font-extrabold mb-4">
+                {scanResult.status === "success" && scanResult.attendanceStatus === "LATE"
+                  ? "LATE RECORDED"
+                  : scanResult.status === "success"
+                  ? "SUCCESS"
+                  : "ERROR"}
+              </h2>
               <p className="text-xl font-medium">{scanResult.message}</p>
             </div>
           </motion.div>

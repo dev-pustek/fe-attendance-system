@@ -58,6 +58,41 @@ export const profilesService = {
     await apiClient.delete(`/profiles/students/${userId}`);
   },
 
+  exportStudentsExcel: async (params?: any) => {
+    const response = await apiClient.get("/profiles/students/export/excel", {
+      params,
+      responseType: "blob",
+    });
+    return response.data as Blob;
+  },
+
+  exportStudentsPdf: async (params?: any) => {
+    const response = await apiClient.get("/profiles/students/export/pdf", {
+      params,
+      responseType: "blob",
+    });
+    return response.data as Blob;
+  },
+
+  downloadStudentsTemplate: async (withData?: boolean, academicYearId?: string) => {
+    const response = await apiClient.get("/profiles/students/template", {
+      params: { withData, academicYearId },
+      responseType: "blob",
+    });
+    return response.data as Blob;
+  },
+
+  importStudents: async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await apiClient.post<{ created: number; updated: number; errors: string[] }>(
+      "/profiles/students/import",
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    );
+    return response.data;
+  },
+
   // Employees
   getEmployees: async (params?: PaginationParams): Promise<PaginatedResponse<EmployeeProfile>> => {
     const response = await apiClient.get<PaginatedResponse<EmployeeProfile>>("/profiles/employees", { params });
@@ -152,6 +187,41 @@ export const profilesService = {
 
   deleteParent: async (userId: string): Promise<void> => {
     await apiClient.delete(`/parent-profiles/${userId}`);
+  },
+
+  exportParentsExcel: async (params?: any) => {
+    const response = await apiClient.get("/parent-profiles/export/excel", {
+      params,
+      responseType: "blob",
+    });
+    return response.data as Blob;
+  },
+
+  exportParentsPdf: async (params?: any) => {
+    const response = await apiClient.get("/parent-profiles/export/pdf", {
+      params,
+      responseType: "blob",
+    });
+    return response.data as Blob;
+  },
+
+  downloadParentsTemplate: async (withData?: boolean) => {
+    const response = await apiClient.get("/parent-profiles/template", {
+      params: { withData },
+      responseType: "blob",
+    });
+    return response.data as Blob;
+  },
+
+  importParents: async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await apiClient.post<{ created: number; updated: number; errors: string[] }>(
+      "/parent-profiles/import",
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    );
+    return response.data;
   },
 
   // Parent-Student Relation

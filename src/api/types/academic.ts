@@ -110,6 +110,17 @@ export interface BulkCreateClassEnrollmentDto {
   status: 'active' | 'withdrawn' | 'graduated' | 'transferred';
 }
 
+export interface StudentPromotionDto {
+  userId: string;
+  action: 'promote' | 'retain' | 'graduate';
+  targetClassId?: number | string;
+}
+
+export interface BulkPromoteStudentsDto {
+  fromClassId: number | string;
+  students: StudentPromotionDto[];
+}
+
 export interface ClassSchedule {
   id: number | string;
   classId: number | string;

@@ -50,10 +50,10 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ contextId, globalContextId, s
     const newSchedules: Record<string, { startTime: string; endTime: string; isActive: boolean; lateTolerance: number; breaks: ScheduleBreak[] }> = {};
     DAYS.forEach(day => {
       // 1. Try Local
-      const existing = schedules.find(s => s.dayOfWeek === day);
+      const existing = schedules.find(s => s.dayOfWeek.toUpperCase() === day);
       
       // 2. Try Global (Fall back if no local)
-      const globalRule = globalSchedules.find(s => s.dayOfWeek === day);
+      const globalRule = globalSchedules.find(s => s.dayOfWeek.toUpperCase() === day);
 
       if (existing) {
         newSchedules[day] = {
@@ -118,7 +118,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ contextId, globalContextId, s
 
       const promises = DAYS.map(async (day) => {
         const schedule = daySchedules[day];
-        const existingRule = schedules.find(s => s.dayOfWeek === day);
+        const existingRule = schedules.find(s => s.dayOfWeek.toUpperCase() === day);
 
         // Format times to HH:mm to match Regex
         const formattedStart = schedule.startTime.slice(0, 5);

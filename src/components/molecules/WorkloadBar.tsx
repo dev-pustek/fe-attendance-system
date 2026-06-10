@@ -46,7 +46,7 @@ const WorkloadBar: React.FC<WorkloadBarProps> = ({
         {showLabels && (
             <div className="flex justify-between text-xs mb-1">
                 <span className="text-gray-500 dark:text-gray-400 font-medium">
-                    {actual} JP <span className="text-gray-400 font-normal">/ {target} JP</span>
+                    {Number(actual.toFixed(1))} JP <span className="text-gray-400 font-normal">/ {Number(target.toFixed(1))} JP</span>
                 </span>
                 <span className={`${
                     actual > target ? "text-error-500" : 
