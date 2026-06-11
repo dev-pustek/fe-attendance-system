@@ -1,5 +1,22 @@
 export type LeaveStatus = "pending" | "partially_approved" | "approved" | "rejected";
 
+export interface LeaveTypeApproverDto {
+  level: number;
+  approverId: string;
+}
+
+export interface LeaveTypeApprover {
+  id: number;
+  leaveTypeId: number;
+  approvalLevel: number;
+  approverId: string;
+  approver?: {
+    public_id: string;
+    name: string;
+    email: string;
+  };
+}
+
 export interface LeaveType {
   id: number | string;
   public_id: string;
@@ -11,6 +28,7 @@ export interface LeaveType {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  approvers?: LeaveTypeApprover[];
 }
 
 export interface LeaveTypeParams {
@@ -27,6 +45,7 @@ export interface CreateLeaveTypeDto {
   maxDaysPerYear?: number;
   approvalLevelsRequired: number;
   isActive?: boolean;
+  approvers?: LeaveTypeApproverDto[];
 }
 
 export interface UpdateLeaveTypeDto {
@@ -36,6 +55,7 @@ export interface UpdateLeaveTypeDto {
   maxDaysPerYear?: number;
   approvalLevelsRequired?: number;
   isActive?: boolean;
+  approvers?: LeaveTypeApproverDto[];
 }
 
 export interface LeaveSubmission {

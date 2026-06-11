@@ -79,6 +79,8 @@ export interface ClassEnrollment {
 export interface AcademicYearParams {
   search?: string;
   isActive?: boolean | string;
+  teacherId?: string;
+
   page?: number | string;
   limit?: number | string;
 }
@@ -88,6 +90,8 @@ export interface ClassParams {
   grade?: number | string;
   major?: string;
   isActive?: boolean | string;
+  teacherId?: string;
+
   page?: number | string;
   limit?: number | string;
 }
@@ -177,6 +181,8 @@ export interface EducationLevel {
 export interface EducationLevelParams {
   search?: string;
   isActive?: boolean | string;
+  teacherId?: string;
+
   withMetrics?: boolean;
   page?: number | string;
   limit?: number | string;
@@ -212,6 +218,8 @@ export interface MajorParams {
   educationLevelId?: number | string;
   programStudyId?: number | string;
   isActive?: boolean | string;
+  teacherId?: string;
+
   page?: number | string;
   limit?: number | string;
   withMetrics?: boolean;
@@ -309,6 +317,8 @@ export interface ProgramStudyParams {
   page?: number | string;
   limit?: number | string;
   isActive?: boolean | string;
+  teacherId?: string;
+
   withMetrics?: boolean;
 }
 
@@ -348,6 +358,8 @@ export interface SubjectParams {
   page?: number | string;
   limit?: number | string;
   isActive?: boolean | string;
+  teacherId?: string;
+
 }
 
 export interface CreateSubjectDto {
@@ -375,6 +387,8 @@ export interface TeacherSubjectParams {
   teacherId?: string;
   subjectId?: number | string;
   isActive?: boolean | string;
+  teacherId?: string;
+
   page?: number | string;
   limit?: number | string;
 }
@@ -414,6 +428,8 @@ export interface ClassSubjectParams {
   subjectId?: number | string;
   academicYearId?: number | string;
   isActive?: boolean | string;
+  teacherId?: string;
+
   page?: number | string;
   limit?: number | string;
 }
@@ -467,6 +483,8 @@ export interface TeachingAssignmentParams {
   teacherId?: string;
   role?: string;
   isActive?: boolean | string;
+  teacherId?: string;
+
   page?: number | string;
   limit?: number | string;
 }
@@ -502,6 +520,8 @@ export interface TeachingUnitPolicy {
 export interface TeachingUnitPolicyParams {
   academicYearId?: number | string;
   isActive?: boolean | string;
+  teacherId?: string;
+
   page?: number | string;
   limit?: number | string;
 }
@@ -540,6 +560,8 @@ export interface WorkloadContractParams {
   withMetrics?: boolean;
   search?: string;
   isActive?: boolean | string;
+  teacherId?: string;
+
   page?: number | string;
   limit?: number | string;
   educationLevelId?: number | string;
@@ -597,6 +619,8 @@ export interface TeachingScheduleTemplateParams {
   teacherId?: string;
   dayOfWeek?: string;
   isActive?: boolean | string;
+  teacherId?: string;
+
   page?: number | string;
   limit?: number | string;
 }

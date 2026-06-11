@@ -111,6 +111,41 @@ export const academicService = {
     await apiClient.delete(`/classes/${id}`);
   },
 
+  exportClassesExcel: async (params?: ClassParams) => {
+    const response = await apiClient.get<Blob>("/classes/export/excel", {
+      params,
+      responseType: 'blob'
+    });
+    return response.data as unknown as Blob;
+  },
+
+  exportClassesPdf: async (params?: ClassParams) => {
+    const response = await apiClient.get<Blob>("/classes/export/pdf", {
+      params,
+      responseType: 'blob'
+    });
+    return response.data as unknown as Blob;
+  },
+
+  downloadClassesTemplate: async (withData: boolean = false) => {
+    const response = await apiClient.get<Blob>("/classes/template", {
+      params: { withData },
+      responseType: 'blob'
+    });
+    return response.data as unknown as Blob;
+  },
+
+  importClasses: async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await apiClient.post<{ created: number; updated: number; errors: string[] }>(
+      "/classes/import",
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    );
+    return response.data;
+  },
+
   getClass: async (id: number | string): Promise<Class> => {
     const response = await apiClient.get<BaseResponse<Class>>(`/classes/${id}`);
     // The interceptor unwraps .data, so we just return response.data which IS the Class object
@@ -140,6 +175,11 @@ export const academicService = {
 
   createClassEnrollment: async (data: Partial<ClassEnrollment>) => {
     const response = await apiClient.post<BaseResponse<ClassEnrollment>>("/class-enrollments", data);
+    return response.data;
+  },
+
+  createBulkClassEnrollment: async (data: BulkCreateClassEnrollmentDto) => {
+    const response = await apiClient.post<BaseResponse<any>>("/class-enrollments/bulk", data);
     return response.data;
   },
 
@@ -399,6 +439,41 @@ export const academicService = {
 
   deleteTeachingUnitPolicy: async (id: number | string) => {
     await apiClient.delete(`/academic/teaching-unit-policies/${id}`);
+  },
+
+  exportTeachingUnitPoliciesExcel: async (params?: TeachingUnitPolicyParams) => {
+    const response = await apiClient.get("/academic/teaching-unit-policies/export/excel", {
+      params,
+      responseType: "blob",
+    });
+    return response.data as Blob;
+  },
+
+  exportTeachingUnitPoliciesPdf: async (params?: TeachingUnitPolicyParams) => {
+    const response = await apiClient.get("/academic/teaching-unit-policies/export/pdf", {
+      params,
+      responseType: "blob",
+    });
+    return response.data as Blob;
+  },
+
+  downloadTeachingUnitPoliciesTemplate: async (withData?: boolean) => {
+    const response = await apiClient.get("/academic/teaching-unit-policies/template", {
+      params: { withData },
+      responseType: "blob",
+    });
+    return response.data as Blob;
+  },
+
+  importTeachingUnitPolicies: async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await apiClient.post<{ created: number; updated: number; errors: string[] }>(
+      "/academic/teaching-unit-policies/import",
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    );
+    return response.data;
   },
 
   getActiveTeachingUnitPolicy: async () => {

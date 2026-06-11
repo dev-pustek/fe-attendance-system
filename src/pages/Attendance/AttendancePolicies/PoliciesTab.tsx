@@ -6,6 +6,7 @@ import { AttendanceRuleType, RuleContextType, CreateAttendanceRuleDto } from "..
 import Switch from "../../../components/atoms/Switch";
 import { showSuccess, showError } from "../../../utils/toast";
 import GeoFencingSettings from "./GeoFencingSettings";
+import NetworkIpSettings from "./NetworkIpSettings";
 
 interface PoliciesTabProps {
   contextId?: number;
@@ -28,6 +29,8 @@ const PoliciesTab: React.FC<PoliciesTabProps> = ({ contextId, selectedContext, o
     [AttendanceRuleType.CHECKIN_WINDOW_START]: "60", // Minutes before start
     [AttendanceRuleType.REQUIRE_PHOTO_EVIDENCE]: "false",
     [AttendanceRuleType.REQUIRE_GEO_LOCATION]: "false",
+    [AttendanceRuleType.REQUIRE_QR_CODE]: "false",
+    [AttendanceRuleType.DYNAMIC_TEACHER_SCHEDULE]: "false",
   });
 
   // Load initial values from API if rules exist
@@ -260,13 +263,40 @@ const PoliciesTab: React.FC<PoliciesTabProps> = ({ contextId, selectedContext, o
                         disabled={isInherited}
                     />
                  </div>
+
+                 <div className="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 shadow-sm">
+                    <div>
+                        <span className="font-bold text-gray-800 dark:text-gray-200 text-sm block">Require QR Code</span>
+                        <span className="text-xs text-gray-500">Users must use QR code scanning to check in at the gate.</span>
+                    </div>
+                    <Switch 
+                        checked={formValues[AttendanceRuleType.REQUIRE_QR_CODE] === "true"}
+                        onChange={checked => handleChange(AttendanceRuleType.REQUIRE_QR_CODE, String(checked))}
+                        disabled={isInherited}
+                    />
+                 </div>
+
+                 <div className="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 shadow-sm">
+                    <div>
+                        <span className="font-bold text-gray-800 dark:text-gray-200 text-sm block">Dynamic Teacher Schedule</span>
+                        <span className="text-xs text-gray-500">Teachers' check-in time depends on their first class schedule.</span>
+                    </div>
+                    <Switch 
+                        checked={formValues[AttendanceRuleType.DYNAMIC_TEACHER_SCHEDULE] === "true"}
+                        onChange={checked => handleChange(AttendanceRuleType.DYNAMIC_TEACHER_SCHEDULE, String(checked))}
+                        disabled={isInherited}
+                    />
+                 </div>
              </div>
         </div>
 
       </div>
 
       {selectedContext.type === RuleContextType.GLOBAL && (
-        <GeoFencingSettings />
+          <>
+            <GeoFencingSettings />
+            <NetworkIpSettings />
+          </>
       )}
     </div>
   );

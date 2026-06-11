@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, useInfiniteQuery, keepPreviousData } from "@tanstack/react-query";
 import { 
   guestService, 
   CreateGuestDto, 
@@ -76,6 +76,20 @@ export const useGuestVisits = (params?: VisitParams) => {
   });
 };
 
+export const useGuestVisitsInfinite = (params?: Omit<VisitParams, 'page'>) => {
+  return useInfiniteQuery({
+    queryKey: ["guest-visits", "infinite", params],
+    queryFn: ({ pageParam = 1 }) =>
+      guestService.getVisits({ ...params, page: pageParam as number, limit: 10 }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage: any) => {
+      const meta = lastPage?.meta;
+      if (!meta) return undefined;
+      return meta.page < meta.totalPages ? meta.page + 1 : undefined;
+    },
+  });
+};
+
 export const useGuestVisitsByGuest = (public_id: string, params?: VisitParams) => {
   return useQuery({
     queryKey: ["guest-visits", public_id, params],
@@ -114,6 +128,30 @@ export const useDeleteGuestVisit = () => {
     mutationFn: (visitId: number) => guestService.deleteVisit(visitId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["guest-visits"] });
+    },
+  });
+};
+
+export const useGuestsInfinite = (params?: Omit<GuestParams, 'page'>) => {
+  return useInfiniteQuery({
+    queryKey: ["guests", "infinite", params],
+    queryFn: ({ pageParam = 1 }) =>
+      guestService.getGuests({ ...params, page: pageParam as number, limit: 10 }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage: any) => {
+      const meta = lastPage?.meta;
+      if (!meta) return undefined;
+      return meta.page < meta.totalPages ? meta.page + 1 : undefined;
+    },
+  });
+};
+
+export const useImportGuests = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => guestService.importGuests(file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["guests"] });
     },
   });
 };

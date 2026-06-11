@@ -1,29 +1,29 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useAuthStore } from "../store/authStore";
-import { profilesService } from "../api/services/profilesService";
-import { useUpdateStudent } from "../api/hooks/useProfiles";
+import { useAuthStore } from "../../store/authStore";
+import { profilesService } from "../../api/services/profilesService";
+import { useUpdateStudent } from "../../api/hooks/useProfiles";
 import {
   StudentProfile,
   CreateStudentDto,
   UpdateStudentDto,
-} from "../api/types/profiles";
-import PageMeta from "../components/atoms/PageMeta";
-import PageBreadcrumb from "../components/molecules/PageBreadcrumb";
-import Input from "../components/atoms/InputField";
-import Label from "../components/atoms/Label";
-import Switch from "../components/atoms/Switch";
-import NumberInput from "../components/atoms/NumberInput";
-import PhoneNumberInput from "../components/atoms/PhoneNumberInput";
-import DatePicker from "../components/molecules/DatePicker";
-import CustomSelect from "../components/molecules/CustomSelect";
+} from "../../api/types/profiles";
+import PageMeta from "../../components/atoms/PageMeta";
+import PageBreadcrumb from "../../components/molecules/PageBreadcrumb";
+import Input from "../../components/atoms/InputField";
+import Label from "../../components/atoms/Label";
+import Switch from "../../components/atoms/Switch";
+import NumberInput from "../../components/atoms/NumberInput";
+import PhoneNumberInput from "../../components/atoms/PhoneNumberInput";
+import DatePicker from "../../components/molecules/DatePicker";
+import CustomSelect from "../../components/molecules/CustomSelect";
 import {
   UserCircleIcon,
   PlusIcon,
   TrashBinIcon,
-} from "../components/atoms/Icons";
-import { showSuccess, showError } from "../utils/toast";
+} from "../../components/atoms/Icons";
+import { showSuccess, showError } from "../../utils/toast";
 
-export default function MyProfile() {
+export default function StudentProfileForm() {
   const { user } = useAuthStore();
   const updateMutation = useUpdateStudent();
 
@@ -58,10 +58,7 @@ export default function MyProfile() {
         // Assuming we can get self profile or by user ID.
         // The profilesService.getStudent takes userId (public_id)
         // We need to check if this user IS a student.
-        if (!user.userTypes?.includes("student")) {
-          showError("You are not logged in as a student.");
-          return;
-        }
+        // Removed student check, handled by wrapper
 
         setIsLoading(true);
         // Note: getStudent expects userId as per service definition: `getStudent: async (userId: string)`
@@ -160,29 +157,10 @@ export default function MyProfile() {
     );
   }
 
-  if (!user?.userTypes?.includes("student")) {
-    return (
-      <div className="p-8 text-center text-red-500">
-        Access Restricted: Student profile only.
-      </div>
-    );
-  }
+  // Removed access restricted render
 
   return (
     <>
-      <PageMeta title="My Profile" description="Manage your student profile." />
-      <PageBreadcrumb pageTitle="My Profile" />
-
-      <div className="bg-white dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-2xl p-6 lg:p-10 shadow-sm max-w-7xl mx-auto">
-        <div className="mb-8 border-b border-gray-100 dark:border-white/5 pb-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            My Profile
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Manage your personal information and student records.
-          </p>
-        </div>
-
         <form
           id="my-profile-form"
           onSubmit={handleSubmit}
@@ -594,7 +572,6 @@ export default function MyProfile() {
             </div>
           </div>
         </form>
-      </div>
     </>
   );
 }

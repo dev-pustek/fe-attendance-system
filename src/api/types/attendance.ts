@@ -252,6 +252,7 @@ export interface TeachingSession {
   startTime: string;
   endTime: string;
   teachingUnits: number;
+  periodInfo?: string;
   isSubstitution: boolean;
   isCancelled: boolean;
   notes: string | null;
@@ -284,6 +285,11 @@ export interface TeachingSession {
   };
   actualTeacher?: User;
   substituteForTeacher?: User | null;
+  // Piket validation fields
+  validationStatus?: 'pending' | 'valid' | 'invalid' | string;
+  validatedById?: string | null;
+  validationNotes?: string | null;
+  validatedBy?: User | null;
 }
 
 export interface TeachingSessionParams extends PaginationParams {
@@ -300,6 +306,7 @@ export interface CreateTeachingSessionDto {
   startTime: string;
   endTime: string;
   teachingUnits?: number;
+  periodInfo?: string;
   isSubstitution?: boolean;
   substituteForTeacherId?: string | null;
   isCancelled?: boolean;
@@ -323,6 +330,13 @@ export interface SubjectAttendance {
 }
 
 export interface SubjectAttendanceParams extends PaginationParams {
+  academicYearId?: number | string;
+  classId?: number | string;
+  subjectId?: number | string;
+  teacherId?: string;
+  startDate?: string;
+  endDate?: string;
+
   teachingSessionId?: string | number;
   studentId?: string;
   status?: string;

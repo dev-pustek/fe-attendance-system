@@ -21,6 +21,7 @@ export interface GuestParams {
   page?: number;
   limit?: number;
   search?: string;
+  ids?: string;
 }
 
 export interface VisitParams {
@@ -104,7 +105,58 @@ export const guestService = {
     await apiClient.delete(`/guests/${id}`);
   },
 
+  exportGuestsExcel: async (params?: GuestParams) => {
+    const response = await apiClient.get("/guests/export/excel", {
+      params,
+      responseType: "blob",
+    });
+    return response.data as Blob;
+  },
+
+  exportGuestsPdf: async (params?: GuestParams) => {
+    const response = await apiClient.get("/guests/export/pdf", {
+      params,
+      responseType: "blob",
+    });
+    return response.data as Blob;
+  },
+
+  downloadGuestsTemplate: async (withData?: boolean) => {
+    const response = await apiClient.get("/guests/template", {
+      params: { withData },
+      responseType: "blob",
+    });
+    return response.data as Blob;
+  },
+
+  importGuests: async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await apiClient.post<{ created: number; updated: number; errors: string[] }>(
+      "/guests/import",
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    );
+    return response.data;
+  },
+
   // Visits
+  exportVisitsExcel: async (params?: VisitParams) => {
+    const response = await apiClient.get("/guests/visits/export/excel", {
+      params,
+      responseType: "blob",
+    });
+    return response.data as Blob;
+  },
+
+  exportVisitsPdf: async (params?: VisitParams) => {
+    const response = await apiClient.get("/guests/visits/export/pdf", {
+      params,
+      responseType: "blob",
+    });
+    return response.data as Blob;
+  },
+
   getVisits: async (params?: VisitParams): Promise<PaginatedResponse<GuestVisit>> => {
     const response = await apiClient.get<PaginatedResponse<GuestVisit>>("/guests/visits", { params });
     return response.data;

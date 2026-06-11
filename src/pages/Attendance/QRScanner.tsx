@@ -44,6 +44,21 @@ const QRScanner = () => {
   const lastScannedDataRef = useRef<string | null>(null);
   const lastScanTimeRef = useRef<number>(0);
 
+  const { data: globalRulesResponse } = useAttendanceRules();
+
+  // Determine if QR code is required globally or from user policy
+  const requireQrCode = useMemo(() => {
+    // If user policy has it, use that
+    const userRule = userPolicy?.rules?.find(r => r.ruleType === "REQUIRE_QR_CODE");
+    if (userRule) {
+      return userRule.ruleValue === "true" || userRule.ruleValue === "1" || userRule.ruleValue === true;
+    }
+    // Otherwise fallback to global rule
+    return globalRulesResponse?.data?.some(
+      (r) => r.ruleType === "REQUIRE_QR_CODE" && (r.ruleValue === "true" || r.ruleValue === "1" || r.ruleValue === true)
+    ) ?? false;
+  }, [userPolicy?.rules, globalRulesResponse?.data]);
+
   // USB Scanner Buffer
   const bufferRef = useRef<string>("");
   const lastKeyTimeRef = useRef<number>(0);
@@ -185,6 +200,76 @@ const QRScanner = () => {
       }
   };
 
+  const submitDirectCheckIn = async (explicitPhoto?: string) => {
+      try {
+        const deviceId = isStudent ? `mobile_${user?.id}` : "gate_kiosk_1";
+        let latitude: number | undefined;
+        let longitude: number | undefined;
+
+        if (userLocation) {
+            latitude = userLocation.lat;
+            longitude = userLocation.lng;
+        }
+
+        // We use checkIn endpoint instead of scanQRCode
+        // We need to pass FormData
+        let photoBlob: Blob | undefined;
+        if (explicitPhoto) {
+            const res = await fetch(explicitPhoto);
+            photoBlob = await res.blob();
+        }
+
+        const response = await attendanceService.checkIn({
+            deviceId,
+            latitude,
+            longitude,
+            method: "MANUAL",
+            photo: photoBlob
+        });
+
+        let policy: UserPolicyResponse | undefined;
+        const record = response.data || response;
+        const userId =
+          record.userId ||
+          record.user_id ||
+          record.id ||
+          record.user?.id ||
+          record.student?.id;
+
+        if (userId) {
+          try {
+            const policyRes = await attendanceService.getAttendancePolicy(userId);
+            policy = (policyRes as any).data || policyRes;
+          } catch (e) {
+            console.error("Failed to fetch policy", e);
+          }
+        }
+
+        // Success Handling
+        setScanResult({
+          status: "success",
+          message: isStudent
+            ? "You have checked in successfully."
+            : "Attendance Recorded",
+          studentName:
+            (record as any).studentName || (isStudent ? user?.name : "Student"),
+          role: isStudent ? "self" : "kiosk",
+          policy,
+          attendanceStatus: record.status || (response as any).status,
+        });
+
+        // Reset after 3 seconds
+        setTimeout(() => {
+          if (isMountedRef.current) {
+            setScanResult({ status: "idle" });
+            setIsProcessing(false);
+          }
+        }, 3000);
+      } catch (error) {
+        handleScanError(error);
+      }
+  };
+
   const handleScanError = (error: unknown) => {
         const err = error as any;
         console.error("Scan Error:", err);
@@ -216,16 +301,12 @@ const QRScanner = () => {
                     const canvas = document.createElement("canvas");
                     const vidWidth = videoEl.videoWidth || 640;
                     const vidHeight = videoEl.videoHeight || 480;
-                    const size = Math.min(vidWidth, vidHeight);
-                    const startX = (vidWidth - size) / 2;
-                    const startY = (vidHeight - size) / 2;
                     
-                    canvas.width = size;
-                    canvas.height = size;
+                    canvas.width = vidWidth;
+                    canvas.height = vidHeight;
                     const ctx = canvas.getContext("2d");
                     if (ctx) {
-                        // Crop center square to match UI cutout
-                        ctx.drawImage(videoEl, startX, startY, size, size, 0, 0, size, size);
+                        ctx.drawImage(videoEl, 0, 0, vidWidth, vidHeight);
                         // Using WebP for superior compression and smaller payload size compared to JPEG
                         const dataUrl = canvas.toDataURL("image/webp", 0.5);
                         if (dataUrl && dataUrl.length > 50) {
@@ -238,7 +319,11 @@ const QRScanner = () => {
             }
         }
 
-        await submitScan(pendingScanCode, photoEvidence);
+        if (pendingScanCode === "MANUAL_CHECKIN") {
+            await submitDirectCheckIn(photoEvidence);
+        } else {
+            await submitScan(pendingScanCode, photoEvidence);
+        }
         setRequireSelfie(false);
         setPendingScanCode(null);
   };
@@ -280,6 +365,10 @@ const QRScanner = () => {
     // Only run camera in Scanner Mode
     if (viewMode !== "scanner") return;
 
+    // Do not initialize the camera if QR Code is explicitly disabled and we don't need a selfie
+    // (This allows the Kiosk to still work with USB scanners without opening the webcam)
+    if (!requireQrCode && !requireSelfie) return;
+
     isMountedRef.current = true;
     let scanner: Html5Qrcode | null = null;
     // Small delay to ensure DOM is ready
@@ -296,7 +385,6 @@ const QRScanner = () => {
           {
             fps: 10,
             qrbox: { width: 300, height: 300 },
-            aspectRatio: 1.0,
           },
           (decodedText) => {
             handleScan(decodedText);
@@ -465,10 +553,14 @@ const QRScanner = () => {
     };
 
     // Determine State
-        const isHoliday = userPolicy?.holiday?.isHoliday ?? false;
+    const isHoliday = userPolicy?.holiday?.isHoliday ?? false;
 
-        // Determine State
-        const attendanceState: 'complete' | 'restricted' | 'checkedIn' | 'none' | 'holiday' = 
+    // Extract common rules
+    const requireGeo = userPolicy?.rules?.some(r => r.ruleType === "REQUIRE_GEO_LOCATION" && (r.ruleValue === "true" || r.ruleValue === "1" || r.ruleValue === true));
+    const requirePhoto = userPolicy?.rules?.some(r => r.ruleType === "REQUIRE_PHOTO_EVIDENCE" && (r.ruleValue === "true" || r.ruleValue === "1" || r.ruleValue === true));
+
+    // Determine State
+    const attendanceState: 'complete' | 'restricted' | 'checkedIn' | 'none' | 'holiday' = 
             isHoliday ? 'holiday' :
             todayStatus?.clockIn && todayStatus?.clockOut ? 'complete' :
             (todayStatus?.clockIn ? 'checkedIn' :
@@ -504,7 +596,7 @@ const QRScanner = () => {
           <div className="w-full max-w-md space-y-8 mt-12 sm:mt-0">
             <div className="text-center">
               <h1 className="text-3xl font-bold tracking-tight mb-2">
-                Student Scanner
+                Absen Kehadiran
               </h1>
               <p className="text-white/50">Select your policy to begin scanning</p>
             </div>
@@ -534,7 +626,22 @@ const QRScanner = () => {
                       attendanceState === "holiday"
                     )
                       return;
-                    setViewMode("scanner");
+                    
+                    if (!isStudent) {
+                        setViewMode("scanner");
+                        return;
+                    }
+
+                    if (requireQrCode) {
+                        setViewMode("scanner");
+                    } else if (requirePhoto) {
+                        setPendingScanCode("MANUAL_CHECKIN");
+                        setRequireSelfie(true);
+                        setViewMode("scanner");
+                    } else {
+                        // Directly check in without scanner
+                        submitDirectCheckIn();
+                    }
                   }}
                   className={`border rounded-2xl p-6 transition-all group relative overflow-hidden shadow-2xl ${
                     attendanceState === "complete"
@@ -894,12 +1001,12 @@ const QRScanner = () => {
                     {!["complete", "restricted", "holiday"].includes(attendanceState) && (
                          attendanceState === "checkedIn" ? (
                           <span className="text-yellow-400 group-hover:translate-x-1 transition-transform flex items-center gap-1 font-medium text-sm">
-                            Scan to Clock Out{" "}
+                            {(!isStudent || requireQrCode) ? "Scan to Clock Out" : requirePhoto ? "Take Selfie to Clock Out" : "Tap to Clock Out"}
                             <ChevronLeftIcon className="w-4 h-4 rotate-180" />
                           </span>
                         ) : (
                           <span className="text-brand-400 group-hover:translate-x-1 transition-transform flex items-center gap-1 font-medium text-sm">
-                            Start Scanning{" "}
+                            {(!isStudent || requireQrCode) ? "Start Scanning" : requirePhoto ? "Take Selfie" : "Check In Now"}
                             <ChevronLeftIcon className="w-4 h-4 rotate-180" />
                           </span>
                         )
@@ -1019,8 +1126,8 @@ const QRScanner = () => {
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] h-[280px] sm:w-[350px] sm:h-[350px] bg-transparent shadow-[0_0_0_9999px_rgba(0,0,0,0.4)] rounded-3xl" />
         </div>
 
-        {/* Custom Green Corner Frames Only (Hide during selfie) */}
-        {!requireSelfie && (
+        {/* Custom Green Corner Frames Only (Hide during selfie or if QR is disabled) */}
+        {!requireSelfie && requireQrCode && (
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] h-[280px] sm:w-[350px] sm:h-[350px] z-20 pointer-events-none">
             <div className="absolute inset-0 overflow-hidden rounded-3xl">
                 <motion.div
@@ -1040,18 +1147,36 @@ const QRScanner = () => {
             </div>
         )}
 
+        {/* Message for RFID Scanner when QR is disabled */}
+        {!requireSelfie && !requireQrCode && !isStudent && (
+            <div className="absolute inset-0 z-40 flex flex-col items-center justify-center pointer-events-none">
+                <div className="bg-black/60 backdrop-blur-md p-6 rounded-2xl border border-white/10 text-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-16 h-16 text-brand-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v1m6 11h2m-6 0h-8v4h8v-4zM6 16H4m14-8v8a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2h12a2 2 0 012 2z" />
+                    </svg>
+                    <h2 className="text-xl font-bold text-white mb-2">Ready to Scan</h2>
+                    <p className="text-white/60 text-sm">Please use the USB Card Reader</p>
+                </div>
+            </div>
+        )}
+
         {/* Selfie Capture Overlay */}
         {requireSelfie && (
             <div className="absolute inset-0 z-40 flex flex-col items-center justify-center pointer-events-auto">
                 <div className="absolute top-24 left-0 right-0 text-center z-50">
                     <h2 className="text-3xl font-bold text-white mb-2 drop-shadow-lg">Take a Selfie</h2>
-                    <p className="text-white/80">Position your face in the circle</p>
+                    <p className="text-white/80">Position your face in the frame</p>
                 </div>
                 
-                {/* Circular cutout */}
-                <div className="w-[280px] h-[280px] sm:w-[320px] sm:h-[320px] rounded-full border-4 border-brand-500 shadow-[0_0_0_9999px_rgba(0,0,0,0.85)] z-40 relative">
+                {/* Rectangular portrait cutout */}
+                <div className="w-[80%] max-w-[320px] aspect-[3/4] rounded-2xl border-2 border-brand-500 shadow-[0_0_0_9999px_rgba(0,0,0,0.85)] z-40 relative">
                     {/* inner glow */}
-                    <div className="absolute inset-0 rounded-full shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]" />
+                    <div className="absolute inset-0 rounded-2xl shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]" />
+                    {/* Corner accents */}
+                    <div className="absolute top-0 left-0 w-8 h-8 border-l-4 border-t-4 border-brand-500 rounded-tl-2xl" />
+                    <div className="absolute top-0 right-0 w-8 h-8 border-r-4 border-t-4 border-brand-500 rounded-tr-2xl" />
+                    <div className="absolute bottom-0 left-0 w-8 h-8 border-l-4 border-b-4 border-brand-500 rounded-bl-2xl" />
+                    <div className="absolute bottom-0 right-0 w-8 h-8 border-r-4 border-b-4 border-brand-500 rounded-br-2xl" />
                 </div>
 
                 <button 

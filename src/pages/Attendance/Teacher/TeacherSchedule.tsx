@@ -4,7 +4,7 @@ import { attendanceService } from "../../../api/services/attendanceService";
 import { academicService } from "../../../api/services/academicService";
 import { TodayScheduleItem, CreateTeachingSessionDto, SubjectAttendance } from "../../../api/types/attendance";
 import { ClassEnrollment } from "../../../api/types/academic";
-import { useTodaySchedule, useAttendanceStatuses } from "../../../api/hooks/useAttendance";
+import { useTodaySchedule, useAttendanceStatuses, useSubjectAttendances, useValidateSession } from "../../../api/hooks/useAttendance";
 import PageMeta from "../../../components/atoms/PageMeta";
 import PageBreadcrumb from "../../../components/molecules/PageBreadcrumb";
 import { 
@@ -28,6 +28,32 @@ const TeacherSchedule: React.FC = () => {
   const { user } = useAuthStore();
   const { data: scheduleRes, isLoading, refetch } = useTodaySchedule(user?.public_id);
   const { data: statusesRes } = useAttendanceStatuses();
+  const { createMutation: createSubjectAttendance } = useSubjectAttendances();
+  const { mutateAsync: validateSession } = useValidateSession();
+
+  const handleRestartSession = async (item: TodayScheduleItem) => {
+      if (!item.session || !user?.public_id) return;
+      try {
+          await createSubjectAttendance.mutateAsync({
+              teachingSessionId: item.session.id,
+              studentId: user.public_id,
+              status: 'present',
+              remarks: 'Teacher re-started session',
+              method: 'manual'
+          });
+          
+          await validateSession({
+              id: item.session.id,
+              status: 'pending' as any,
+              notes: 'Teacher re-started session'
+          }).catch(() => {});
+          
+          showSuccess("Session successfully re-started!");
+          refetch();
+      } catch (error: any) {
+          showError(error.response?.data?.message || "Failed to re-start session");
+      }
+  };
 
   const statusOptions = React.useMemo(() => {
     const apiOptions = (statusesRes?.data || []).map((s) => ({
@@ -859,42 +885,60 @@ const TeacherSchedule: React.FC = () => {
                                      </div>
                                  </div>
 
-                                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 mt-4 lg:mt-0 w-full lg:w-auto">
-                                     {item.type === 'template' ? (
-                                         <button 
-                                            onClick={() => handleStartClass(item)}
-                                            disabled={status !== 'now'}
-                                            className={`flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold transition-all active:scale-95 shadow-lg w-full sm:w-auto ${
-                                                status === 'now' 
-                                                    ? 'bg-brand-600 hover:bg-brand-700 text-white shadow-brand-500/30 hover:shadow-brand-500/40 ring-2 ring-brand-500/20 ring-offset-2 dark:ring-offset-[#0f1115]' 
-                                                    : 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-white/5 dark:text-gray-500 shadow-none'
-                                            }`}
-                                         >
-                                             {status === 'passed' ? (
-                                                  <>Class Ended</>
-                                             ) : status === 'upcoming' ? (
-                                                  <>
-                                                      <ClockIcon className="size-5" />
-                                                      Upcoming
-                                                  </>
-                                             ) : (
-                                                  <>
-                                                      <PlusIcon className="size-5" />
-                                                      Start Class
-                                                  </>
-                                             )}
-                                         </button>
-                                     ) : (
-                                         <button 
-                                            onClick={() => handleOpenAttendance(item)}
-                                            className="flex items-center justify-center gap-2 px-6 py-3 bg-brand-500 hover:bg-brand-600 text-white rounded-xl font-bold transition-all active:scale-95 shadow-lg shadow-brand-500/20 w-full sm:w-auto"
-                                         >
-                                              <CheckCircleIcon className="size-5" />
-                                              Attendance
-                                         </button>
-                                     )}
+                                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 mt-4 lg:mt-0 w-full lg:w-auto">
+                                         {item.type === 'template' ? (
+                                             <button 
+                                                onClick={() => handleStartClass(item)}
+                                                disabled={status !== 'now'}
+                                                className={`flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold transition-all active:scale-95 shadow-lg w-full sm:w-auto ${
+                                                    status === 'now' 
+                                                        ? 'bg-brand-600 hover:bg-brand-700 text-white shadow-brand-500/30 hover:shadow-brand-500/40 ring-2 ring-brand-500/20 ring-offset-2 dark:ring-offset-[#0f1115]' 
+                                                        : 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-white/5 dark:text-gray-500 shadow-none'
+                                                }`}
+                                             >
+                                                 {status === 'passed' ? (
+                                                      <>Class Ended</>
+                                                 ) : status === 'upcoming' ? (
+                                                      <>
+                                                          <ClockIcon className="size-5" />
+                                                          Upcoming
+                                                      </>
+                                                 ) : (
+                                                      <>
+                                                          <PlusIcon className="size-5" />
+                                                          Start Class
+                                                      </>
+                                                 )}
+                                             </button>
+                                         ) : (
+                                            <div className="flex flex-col items-end gap-2 w-full sm:w-auto">
+                                                {item.session?.validationStatus === 'invalid' ? (
+                                                    <button 
+                                                        onClick={() => handleRestartSession(item)}
+                                                        disabled={createSubjectAttendance.isPending}
+                                                        className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold transition-all active:scale-95 shadow-lg w-full sm:w-auto bg-brand-500 hover:bg-brand-600 text-white shadow-brand-500/20"
+                                                    >
+                                                         <ArrowPathIcon className="size-5" />
+                                                         Re-start Session
+                                                    </button>
+                                                ) : (
+                                                    <button 
+                                                        onClick={() => handleOpenAttendance(item)}
+                                                        className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold transition-all active:scale-95 shadow-lg w-full sm:w-auto bg-brand-500 hover:bg-brand-600 text-white shadow-brand-500/20"
+                                                    >
+                                                         <CheckCircleIcon className="size-5" />
+                                                         Attendance
+                                                    </button>
+                                                )}
+                                                {item.session?.validationStatus === 'invalid' && (
+                                                    <span className="text-xs text-red-500 font-semibold bg-red-50 px-2 py-1 rounded-md border border-red-100">
+                                                        Session Invalidated by Piket
+                                                    </span>
+                                                )}
+                                            </div>
+                                         )}
+                                     </div>
                                  </div>
-                             </div>
                          </div>
                      );
                  })}

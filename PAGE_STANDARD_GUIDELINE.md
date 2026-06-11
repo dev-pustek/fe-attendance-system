@@ -66,23 +66,23 @@ graph TD
     A --> C[PageBreadcrumb]
     A --> D["Page Header (desktop only)"]
     A --> E[Mobile FAB Button]
-    A --> F[TableToolbar]
-    A --> G{isMobile?}
-    G -->|Yes| H[Card Grid + Infinite Scroll]
-    G -->|No| I[Data Table + Pagination]
-    A --> J[Modal - Create/Edit Form]
-    A --> K[ConfirmDialog]
-    A --> L[ImportModal]
+    A --> F["Advanced Filter Card"]
+    A --> G[TableToolbar]
+    A --> H{isMobile?}
+    H -->|Yes| I[Card Grid + Infinite Scroll]
+    H -->|No| J[Data Table + Pagination]
+    A --> K[Modal - Create/Edit Form]
+    A --> L[ConfirmDialog]
+    A --> M[ImportModal]
     
-    F --> F1[Search Input]
-    F --> F2[Filter Dropdowns]
-    F --> F3["Mobile: Combined More Actions Menu"]
-    F --> F4["Desktop: Export Dropdown"]
-    F --> F5["Desktop: Import Dropdown"]
-    F --> F6[Bulk Action Bar]
+    D --> D1[DataActionsMenu]
+    E --> E1[DataActionsMenu]
+    F --> F1[Filter Dropdowns]
+    F --> F2[Search Input & Reset/Search Buttons]
+    G --> G1[Bulk Action Bar]
     
-    H --> H1["EntityCard × N"]
-    H --> H2[Sentinel div for IntersectionObserver]
+    I --> I1["EntityCard × N"]
+    I --> I2[Sentinel div for IntersectionObserver]
 ```
 
 ### Reusable Components Registry
@@ -362,7 +362,7 @@ return (
     <PageMeta title="Entity Name | Management" description="..." />
     <PageBreadcrumb pageTitle="Entity Name" />
 
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* 2. Page Header — HIDDEN on mobile */}
       <div className="hidden sm:flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -374,24 +374,53 @@ return (
             <p className="text-sm text-gray-500 dark:text-gray-400">Description.</p>
           </div>
         </div>
-        {/* Desktop Add Button */}
-        <button onClick={() => handleOpenModal()}
-          className="hidden sm:flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-brand-500/25 transition-all hover:bg-brand-600 active:scale-[.98]">
-          <PlusIcon className="fill-white size-4" /> Add New Entity
-        </button>
+        <div className="flex items-center gap-3">
+          <DataActionsMenu
+             isExporting={isExporting}
+             isImporting={isImporting}
+             onExportExcel={() => handleExportExcel()}
+             onExportPdf={handleExportPdf}
+             onImportClick={() => setIsImportModalOpen(true)}
+             onDownloadTemplate={handleDownloadTemplate}
+          />
+          {/* Desktop Add Button */}
+          <button onClick={() => handleOpenModal()}
+            className="hidden sm:flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-brand-500/25 transition-all hover:bg-brand-600 active:scale-[.98]">
+            <PlusIcon className="fill-white size-4" /> Add New Entity
+          </button>
+        </div>
       </div>
 
       {/* 3. Mobile FAB */}
-      {isMobile && ( <FloatingActionButton /> )}
+      {isMobile && (
+        <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-3 items-end">
+          <DataActionsMenu isMobileFab={true} ... />
+          <button onClick={() => handleOpenModal()} className="flex size-14 items-center justify-center rounded-full bg-brand-500 text-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] shadow-brand-500/30 transition-transform active:scale-95">
+             <PlusIcon className="size-6 fill-white" />
+          </button>
+        </div>
+      )}
 
-      {/* 4. Toolbar */}
-      <TableToolbar ... />
+      {/* 4. Advanced Filter Card */}
+      <div className="mb-4 rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden dark:border-white/[0.05] dark:bg-white/[0.02]">
+        <button onClick={() => setIsFilterOpen(!isFilterOpen)} className="w-full flex items-center justify-between p-5 hover:bg-gray-50 transition-colors">
+            {/* Filter Toggle Content */}
+        </button>
+        <div className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${isFilterOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
+            <div className="overflow-hidden min-h-0">
+                 {/* Filters Dropdowns & Search Input */}
+            </div>
+        </div>
+      </div>
 
-      {/* 5. Content — Responsive switch */}
+      {/* 5. Toolbar (Bulk Actions ONLY) */}
+      <TableToolbar selectedCount={selectedIds.size} onClearSelection={() => setSelectedIds(new Set())} bulkActions={[{ label: "Delete Selected", icon: <TrashBinIcon />, onClick: handleBulkDelete, variant: "danger" }]} />
+
+      {/* 6. Content — Responsive switch */}
       {isMobile ? ( <MobileCardGrid /> ) : ( <DesktopTable /> )}
     </div>
 
-    {/* 6. Modals & Dialogs */}
+    {/* 7. Modals & Dialogs */}
     <Modal ... />
     <ConfirmDialog {...confirmState} />
     <ImportModal ... />
@@ -657,33 +686,105 @@ Every mobile card MUST have exactly **3 sections**:
 
 ---
 
-## 11. Toolbar Configuration
+## 11. Search & Filter (Advanced Filter Card)
 
-The `TableToolbar` component handles **all** filtering, searching, exporting, importing, and bulk actions.
+Use an expandable "Advanced Filter Card" instead of putting filters directly inside the toolbar. This keeps the UI clean when there are many filters (like in Student or Employee pages).
+
+```tsx
+const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+<div className="mb-4 rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-white/[0.05] dark:bg-white/[0.02] overflow-hidden">
+  <button 
+      onClick={() => setIsFilterOpen(!isFilterOpen)} 
+      className="w-full flex items-center justify-between p-5 hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors"
+  >
+      <div className="text-left">
+          <div className="flex items-center gap-2 mb-1">
+              <FilterIcon className="size-5 text-brand-500" />
+              <h3 className="text-sm font-bold uppercase tracking-wider text-gray-800 dark:text-gray-200">
+                  Search & Filter
+              </h3>
+          </div>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+              Use the criteria below to filter data based on status, type, etc.
+          </p>
+      </div>
+      <div className="shrink-0 ml-4">
+          <ChevronDownIcon className={`size-5 text-gray-400 transition-transform duration-200 ${isFilterOpen ? "rotate-180" : ""}`} />
+      </div>
+  </button>
+  
+  <div className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${
+          isFilterOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+      }`}>
+      <div className="overflow-hidden min-h-0">
+          <div className="px-5 pb-5">
+              <hr className="mb-5 border-gray-100 dark:border-white/[0.05]" />
+              
+              <div className="grid grid-cols-1 gap-5 mb-5 sm:grid-cols-3 lg:grid-cols-5">
+                  <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Status</Label>
+                      <CustomSelect
+                          value={statusFilter === "all" ? "" : statusFilter}
+                          onChange={(val) => { setStatusFilter(val ? String(val) : "all"); setPage(1); }}
+                          onClear={() => { setStatusFilter("all"); setPage(1); }}
+                          placeholder="All Status"
+                          options={[
+                              { label: "Active", value: "ACTIVE" },
+                              { label: "Inactive", value: "INACTIVE" },
+                          ]}
+                          className="w-full [&>button]:w-full [&>button]:h-11 [&>button]:text-sm [&>button]:rounded-xl"
+                      />
+                  </div>
+                  {/* ... other dropdowns ... */}
+              </div>
+
+              <div className="grid grid-cols-1 gap-5 items-end md:grid-cols-3">
+                  <div className="md:col-span-2 space-y-1.5">
+                      <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Search</Label>
+                      <div className="relative">
+                          <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+                          <input
+                              type="text"
+                              value={searchQuery}
+                              onChange={(e) => setSearchQuery(e.target.value)}
+                              onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                      setSearchTerm(searchQuery);
+                                      setPage(1);
+                                  }
+                              }}
+                              placeholder="Search by Code, Name..."
+                              className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-4 text-sm text-gray-900 transition-colors focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-white/[0.08] dark:bg-white/[0.02] dark:text-white"
+                          />
+                      </div>
+                  </div>
+                  <div className="flex items-center gap-3 md:col-span-1">
+                      <button onClick={handleResetFilter} className="flex h-11 flex-1 items-center justify-center rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 dark:border-white/[0.08] dark:bg-transparent dark:text-gray-300">
+                          Reset
+                      </button>
+                      <button onClick={handleApplySearch} className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 text-sm font-semibold text-white transition-all hover:bg-brand-600">
+                          <SearchIcon className="size-4" />
+                          Search
+                      </button>
+                  </div>
+              </div>
+          </div>
+      </div>
+  </div>
+</div>
+```
+
+---
+
+## 11.5. Toolbar Configuration (Bulk Actions Only)
+
+The `TableToolbar` component now purely serves as a bulk-action floating bar when items are selected. It no longer contains filters, search bars, export, or import logic.
 
 ```tsx
 <TableToolbar
-  // Search
-  searchValue={searchQuery}
-  onSearchChange={(v) => { setSearchQuery(v); setPage(1); }}
-  searchPlaceholder="Search by code or name..."
-
-  // Selection
   selectedCount={selectedIds.size}
   onClearSelection={() => setSelectedIds(new Set())}
-
-  // Export
-  isExporting={isExporting}
-  onExportExcel={() => handleExportExcel()}
-  onExportPdf={handleExportPdf}
-  onExportExcelSelected={selectedIds.size > 0 ? () => handleExportExcel(Array.from(selectedIds)) : undefined}
-
-  // Import
-  isImporting={importMutation.isPending}
-  onImportClick={() => setIsImportModalOpen(true)}
-  onDownloadTemplate={handleDownloadTemplate}
-
-  // Bulk Actions
   bulkActions={[
     {
       label: "Delete Selected",
@@ -692,36 +793,8 @@ The `TableToolbar` component handles **all** filtering, searching, exporting, im
       variant: "danger",
     },
   ]}
-
-  // Filters (passed as ReactNode)
-  filters={
-    <CustomSelect
-      value={statusFilter}
-      onChange={(val) => { setStatusFilter(String(val)); setPage(1); }}
-      options={[
-        { label: "All Status", value: "" },
-        { label: "Active", value: "true" },
-        { label: "Inactive", value: "false" },
-      ]}
-      className="w-full sm:w-auto flex-1 sm:flex-none [&>button]:w-full [&>button]:h-9 [&>button]:text-sm [&>button]:min-w-[130px] [&>button]:rounded-xl [&>button]:bg-gray-50 [&>button]:border-gray-100 dark:[&>button]:bg-gray-800/60 dark:[&>button]:border-white/[0.06]"
-    />
-  }
 />
 ```
-
-### Mobile Toolbar Behavior
-
-The `TableToolbar` handles mobile internally:
-
-| Desktop | Mobile |
-|---------|--------|
-| Search bar (fixed width `sm:w-72`) | Search bar (full width) |
-| Filter dropdown + Export button + Import button side by side | Filter dropdown (full width) + **single MoreDot icon button** (highlighted, brand-colored, `size-11`) |
-| Export/Import each have their own dropdown | MoreDot opens a **combined menu** with "Export" and "Import" sections separated by headers |
-
-> [!TIP]
-> The `CustomSelect` filter MUST expand to full width on mobile using:
-> `className="w-full sm:w-auto flex-1 sm:flex-none [&>button]:w-full ..."`
 
 ---
 

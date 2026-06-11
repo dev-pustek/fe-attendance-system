@@ -38,6 +38,7 @@ import { useDebounce } from "../../../hooks/useDebounce";
 import { showSuccess, showError } from "../../../utils/toast";
 import ConfirmDialog from "../../../components/molecules/ConfirmDialog";
 import { useConfirm } from "../../../hooks/useConfirm";
+import TableActionMenu from "../../../components/molecules/TableActionMenu";
 
 // ─── Blob download helper ────────────────────────────────────────────────────
 function downloadBlob(blob: Blob, filename: string) {

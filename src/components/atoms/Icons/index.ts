@@ -57,6 +57,7 @@ import { ReactComponent as ErrorHexaIcon } from "./info-hexa.svg?react";
 import { ReactComponent as SearchIcon } from "./search.svg?react";
 import { ReactComponent as FilterIcon } from "./filter.svg?react";
 import { ReactComponent as SortIcon } from "./sort.svg?react";
+import { ReactComponent as MapPinIcon } from "./map-pin.svg?react";
 
 export {
   ErrorHexaIcon,
@@ -120,4 +121,5 @@ export {
   FilterIcon,
   PencilIcon as EditIcon,
   SortIcon,
+  MapPinIcon,
 };

@@ -33,6 +33,7 @@ import {
 } from "../../components/atoms/Table";
 import CustomSelect from "../../components/molecules/CustomSelect";
 import { useClasses, useMajors } from "../../api/hooks/useAcademic";
+import { useAttendanceRules } from "../../api/hooks/useRules";
 import { useDebounce } from "../../hooks/useDebounce";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
@@ -293,6 +294,13 @@ const PiketMonitor: React.FC = () => {
     [records]
   );
 
+  const { data: globalRulesResponse } = useAttendanceRules();
+  const requireQrCode = useMemo(() => {
+    return globalRulesResponse?.data?.some(
+      (r) => r.ruleType === "REQUIRE_QR_CODE" && (r.ruleValue === "true" || r.ruleValue === "1" || r.ruleValue === true)
+    ) ?? false;
+  }, [globalRulesResponse?.data]);
+
   const handleFilterChange = (setter: React.Dispatch<React.SetStateAction<string>>) =>
     (val: string | number) => {
       setter(String(val));
@@ -507,15 +515,17 @@ const PiketMonitor: React.FC = () => {
                 Live · 10s
               </div>
 
-              <Button
-                size="sm"
-                variant="primary"
-                startIcon={<GridIcon className="size-3.5" />}
-                onClick={() => setShowQrModal(true)}
-                className="text-xs font-bold"
-              >
-                Entry QR
-              </Button>
+              {requireQrCode && (
+                <Button
+                  size="sm"
+                  variant="primary"
+                  startIcon={<GridIcon className="size-3.5" />}
+                  onClick={() => setShowQrModal(true)}
+                  className="text-xs font-bold"
+                >
+                  Entry QR
+                </Button>
+              )}
 
               <button
                 onClick={() => refetch()}

@@ -8,6 +8,7 @@ import {
   UpdateTeachingSessionDto
 } from "../../../api/types/attendance";
 import { profilesService } from "../../../api/services/profilesService";
+import { useAuthStore } from "../../../store/authStore";
 import PageMeta from "../../../components/atoms/PageMeta";
 import PageBreadcrumb from "../../../components/molecules/PageBreadcrumb";
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "../../../components/atoms/Table";
@@ -40,6 +41,19 @@ import Label from "../../../components/atoms/Label";
 import NumberInput from "../../../components/molecules/NumberInput";
 
 const TeachingSessions: React.FC = () => {
+  const { user } = useAuthStore();
+  const isGlobalView = (() => {
+    if (!user) return false;
+    const roles = [
+      ...(user.roles?.map((r) => r.name.toLowerCase()) || []),
+      ...(user.userTypes?.map((t) => t.toLowerCase()) || []),
+      ...(user.typeAssignments?.map((t) => t.userType?.name.toLowerCase() || "") || []),
+    ].filter(Boolean);
+    return roles.some((r) => 
+      ["admin", "super admin", "piket", "kurikulum", "kepala sekolah"].some(globalRole => r.includes(globalRole))
+    );
+  })();
+
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [classSubjectIdFilter, setClassSubjectIdFilter] = useState("");
@@ -58,7 +72,7 @@ const TeachingSessions: React.FC = () => {
 
   const { data: response, isLoading, createMutation, updateMutation, deleteMutation } = useTeachingSessions({
     classSubjectId: classSubjectIdFilter ? Number(classSubjectIdFilter) : undefined,
-    actualTeacherId: teacherIdFilter || undefined,
+    actualTeacherId: !isGlobalView ? (user?.public_id || String(user?.id)) : (teacherIdFilter || undefined),
     sessionDate: dateFilter || undefined,
     isCancelled: cancelledFilter === "" ? undefined : cancelledFilter === "true",
     page,
@@ -83,6 +97,7 @@ const TeachingSessions: React.FC = () => {
     startTime: "",
     endTime: "",
     teachingUnits: 1,
+    periodInfo: "",
     isSubstitution: false,
     substituteForTeacherId: null,
     isCancelled: false,
@@ -222,9 +237,10 @@ const TeachingSessions: React.FC = () => {
         classSubjectId: session.classSubjectId,
         actualTeacherId: session.actualTeacherId,
         sessionDate: session.sessionDate,
-        startTime: session.startTime.substring(0, 5), // HH:mm
-        endTime: session.endTime.substring(0, 5), // HH:mm
+        startTime: session.startTime.substring(0, 5),
+        endTime: session.endTime.substring(0, 5),
         teachingUnits: session.teachingUnits,
+        periodInfo: session.periodInfo || "",
         isSubstitution: session.isSubstitution,
         substituteForTeacherId: session.substituteForTeacherId,
         isCancelled: session.isCancelled,
@@ -252,9 +268,10 @@ const TeachingSessions: React.FC = () => {
         classSubjectId: (classSubjectsRes?.data?.[0]?.id as number) || 0,
         actualTeacherId: "",
         sessionDate: new Date().toISOString().split("T")[0],
-        startTime: "08:00",
-        endTime: "09:00",
+        startTime: "",
+        endTime: "",
         teachingUnits: 1,
+        periodInfo: "",
         isSubstitution: false,
         substituteForTeacherId: null,
         isCancelled: false,
@@ -351,15 +368,17 @@ const TeachingSessions: React.FC = () => {
               options={[{ label: "All Class Subjects", value: "" }, ...classSubjectOptions]}
             />
 
-            <SearchableAsyncSelect
-                label="Teacher Filter"
-                placeholder="Search teacher..."
-                value={teacherIdFilter}
-                onChange={(val) => { setTeacherIdFilter(String(val)); setPage(1); }}
-                onSearch={searchTeachersFilter}
-                options={[{ label: "All Teachers", value: "" }, ...teacherOptionsFilter]}
-                isLoading={isSearchingTeachersFilter}
-            />
+            {isGlobalView && (
+              <SearchableAsyncSelect
+                  label="Teacher Filter"
+                  placeholder="Search teacher..."
+                  value={teacherIdFilter}
+                  onChange={(val) => { setTeacherIdFilter(String(val)); setPage(1); }}
+                  onSearch={searchTeachersFilter}
+                  options={[{ label: "All Teachers", value: "" }, ...teacherOptionsFilter]}
+                  isLoading={isSearchingTeachersFilter}
+              />
+            )}
 
             <DatePicker
                 label="Session Date"
@@ -643,6 +662,17 @@ const TeachingSessions: React.FC = () => {
                     label="Teaching Units"
                     value={formData.teachingUnits}
                     onChange={(val) => setFormData({ ...formData, teachingUnits: val })}
+                />
+            </div>
+
+            <div className="space-y-1.5">
+                <Label>Subject Period (Mapel Ke)</Label>
+                <input
+                    type="text"
+                    placeholder="e.g. 1, 1-2, 3-4"
+                    value={formData.periodInfo || ""}
+                    onChange={(e) => setFormData({ ...formData, periodInfo: e.target.value })}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none transition-all focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-white"
                 />
             </div>
 

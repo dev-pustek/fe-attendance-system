@@ -153,11 +153,66 @@ export const useClasses = (params?: ClassParams) => {
   return { ...query, createMutation, updateMutation, deleteMutation };
 };
 
+export const useCreateClass = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateClassDto) => academicService.createClass(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["academic", "classes"] });
+    },
+  });
+};
+
+export const useUpdateClass = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number | string; data: UpdateClassDto }) =>
+      academicService.updateClass(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["academic", "classes"] });
+    },
+  });
+};
+
+export const useDeleteClass = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number | string) => academicService.deleteClass(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["academic", "classes"] });
+    },
+  });
+};
+
 export const useClass = (id: string | number) => {
   return useQuery({
     queryKey: ["academic", "classes", id],
     queryFn: () => academicService.getClass(id),
     enabled: !!id,
+  });
+};
+
+export const useClassesInfinite = (params?: Omit<ClassParams, 'page'>) => {
+  return useInfiniteQuery({
+    queryKey: ["academic", "classes", "infinite", params],
+    queryFn: ({ pageParam = 1 }) =>
+      academicService.getClasses({ ...params, page: pageParam as number, limit: 10 }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage: any) => {
+      const meta = lastPage?.meta;
+      if (!meta) return undefined;
+      return meta.page < meta.totalPages ? meta.page + 1 : undefined;
+    },
+  });
+};
+
+export const useImportClasses = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => academicService.importClasses(file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["academic", "classes"] });
+    },
   });
 };
 
@@ -207,7 +262,7 @@ export const useClassEnrollments = (params?: ClassEnrollmentParams) => {
   });
 
   const bulkCreateMutation = useMutation({
-    mutationFn: (data: BulkCreateClassEnrollmentDto) => academicService.createClassEnrollment(data),
+    mutationFn: (data: BulkCreateClassEnrollmentDto) => academicService.createBulkClassEnrollment(data),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["academic", "class-enrollments"] }),
   });
@@ -716,6 +771,30 @@ export const useTeachingUnitPolicies = (params?: TeachingUnitPolicyParams) => {
   });
 
   return { ...query, createMutation, updateMutation, deleteMutation };
+};
+
+export const useTeachingUnitPoliciesInfinite = (params?: Omit<TeachingUnitPolicyParams, 'page'>) => {
+  return useInfiniteQuery({
+    queryKey: ["academic", "teaching-unit-policies", "infinite", params],
+    queryFn: ({ pageParam = 1 }) =>
+      academicService.getTeachingUnitPolicies({ ...params, page: pageParam as number, limit: 10 }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage: any) => {
+      const meta = lastPage?.meta;
+      if (!meta) return undefined;
+      return meta.page < meta.totalPages ? meta.page + 1 : undefined;
+    },
+  });
+};
+
+export const useImportTeachingUnitPolicies = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => academicService.importTeachingUnitPolicies(file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["academic", "teaching-unit-policies"] });
+    },
+  });
 };
 
 export const useWorkloadContracts = (params?: WorkloadContractParams) => {

@@ -26,6 +26,42 @@ export const leaveService = {
     return response.data;
   },
 
+  // Export & Import Leave Types
+  exportTypesExcel: async (params?: LeaveTypeParams) => {
+    const { data } = await apiClient.get<Blob>("/leaves/types/export/excel", {
+      params,
+      responseType: "blob",
+    });
+    return data;
+  },
+
+  exportTypesPdf: async (params?: LeaveTypeParams) => {
+    const { data } = await apiClient.get<Blob>("/leaves/types/export/pdf", {
+      params,
+      responseType: "blob",
+    });
+    return data;
+  },
+
+  downloadTypesTemplate: async (withData: boolean = false) => {
+    const { data } = await apiClient.get<Blob>("/leaves/types/template", {
+      params: { withData },
+      responseType: "blob",
+    });
+    return data;
+  },
+
+  importTypes: async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const { data } = await apiClient.post<ApiResponse<{ created: number; updated: number; errors: string[] }>>(
+      "/leaves/types/import",
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    );
+    return data;
+  },
+
   // Submissions
   getSubmissions: async (params?: LeaveSubmissionParams) => {
     const { data } = await apiClient.get<PaginatedResponse<LeaveSubmission>>("/leaves", { params });
@@ -90,6 +126,42 @@ export const leaveService = {
 
   getLeaveApprovals: async (params?: LeaveApprovalParams) => {
     const { data } = await apiClient.get<PaginatedResponse<LeaveApproval>>("/leaves/approvals", { params });
+    return data;
+  },
+
+  // Export & Import
+  exportExcel: async (params?: LeaveSubmissionParams) => {
+    const { data } = await apiClient.get<Blob>("/leaves/export/excel", {
+      params,
+      responseType: "blob",
+    });
+    return data;
+  },
+
+  exportPdf: async (params?: LeaveSubmissionParams) => {
+    const { data } = await apiClient.get<Blob>("/leaves/export/pdf", {
+      params,
+      responseType: "blob",
+    });
+    return data;
+  },
+
+  downloadTemplate: async (withData: boolean = false) => {
+    const { data } = await apiClient.get<Blob>("/leaves/template", {
+      params: { withData },
+      responseType: "blob",
+    });
+    return data;
+  },
+
+  importSubmissions: async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const { data } = await apiClient.post<ApiResponse<{ created: number; updated: number; errors: string[] }>>(
+      "/leaves/import",
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    );
     return data;
   },
 };

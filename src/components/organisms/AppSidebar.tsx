@@ -18,6 +18,7 @@ import {
   PieChartIcon,
   MailIcon,
   VideoIcon,
+  ListIcon,
 } from "../atoms/Icons";
 import { useSidebar } from "../../context/SidebarContext";
 import SidebarWidget from "../molecules/SidebarWidget";
@@ -121,7 +122,7 @@ const useNavGroups = (): NavGroup[] => {
     // Student personal
     if (isStudent && !isAdmin && !isStaff) {
       attendanceItems.push(
-        { icon: <VideoIcon />, name: "Gate Scan", path: "/attendance/gate-scan" },
+        { icon: <VideoIcon />, name: "Absen Kehadiran", path: "/attendance/gate-scan" },
         {
           icon: <TimeIcon />,
           name: "My Attendance",
@@ -133,12 +134,14 @@ const useNavGroups = (): NavGroup[] => {
     }
 
     // Teacher personal
-    if (isTeacher && !isAdmin && !isStaff) {
-      attendanceItems.push({
-        icon: <CalenderIcon />,
-        name: "My Schedule",
-        path: "/attendance/my-schedule",
-      });
+    if (isTeacher) {
+      attendanceItems.push(
+        {
+          icon: <CalenderIcon />,
+          name: "My Schedule",
+          path: "/attendance/my-schedule",
+        }
+      );
     }
 
     // Admin / Staff / Teacher operational
@@ -146,7 +149,7 @@ const useNavGroups = (): NavGroup[] => {
       if (isAdmin || isStaff) {
         attendanceItems.push({
           icon: <VideoIcon />,
-          name: "Gate Monitor",
+          name: "Absen Kehadiran",
           path: "/attendance/gate-scan",
         });
         attendanceItems.push({

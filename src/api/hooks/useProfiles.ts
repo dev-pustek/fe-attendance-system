@@ -91,6 +91,28 @@ export const useEmployees = (params?: PaginationParams) => {
   });
 };
 
+export const useEmployeesInfinite = (params?: Omit<PaginationParams, 'page'>) => {
+  return useInfiniteQuery({
+    queryKey: ["profiles", "employees", "infinite", params],
+    queryFn: ({ pageParam = 1 }) =>
+      profilesService.getEmployees({ ...params, page: pageParam as number, limit: 10 }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage: any) => {
+      const meta = lastPage?.meta;
+      if (!meta) return undefined;
+      return meta.page < meta.totalPages ? meta.page + 1 : undefined;
+    },
+  });
+};
+
+export const useImportEmployees = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => profilesService.importEmployees(file),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["profiles", "employees"] }),
+  });
+};
+
 export const useEmployee = (userId: string) => {
   return useQuery({
     queryKey: ["profiles", "employees", userId],

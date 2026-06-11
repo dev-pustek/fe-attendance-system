@@ -1114,7 +1114,22 @@ const TeachingScheduleTemplates: React.FC = () => {
           }),
         );
       } catch (error) {
-        console.error("Failed to search teachers", error);
+        console.error("Failed to fetch teacher workloads, falling back to basic employee search", error);
+        try {
+          const employees = await profilesService.getEmployees({
+            search: term,
+            limit: 20,
+          });
+          setTeacherOptions(
+            (employees.data || []).map((e) => ({
+              label: e.user?.name || "Unknown Teacher",
+              value: e.user?.public_id || String(e.id),
+              subLabel: e.employeeId || e.nip || undefined,
+            })),
+          );
+        } catch (fallbackError) {
+          console.error("Fallback search also failed", fallbackError);
+        }
       } finally {
         setIsSearchingTeachers(false);
       }
@@ -1517,59 +1532,7 @@ const TeachingScheduleTemplates: React.FC = () => {
                         )}
                       </div>
 
-                      {/* Effective Schedule Rules Info Banner */}
-                      {viewMode === "subject" && selectedViewClass && (
-                        <div className="flex-1 min-w-0">
-                          {effectiveRules && Object.keys(effectiveRules).length > 0 ? (
-                            <div className="rounded-xl border border-brand-100 bg-brand-50/60 dark:border-brand-500/20 dark:bg-brand-500/5 p-3">
-                              <div className="flex items-start justify-between gap-3">
-                                <div>
-                                  <div className="flex items-center gap-2 mb-1.5">
-                                    <span className="text-[10px] font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">Active Schedule Rules</span>
-                                    {selectedClassInfo?.grade?.name && (
-                                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-300 border border-brand-200 dark:border-brand-500/30">
-                                        {selectedClassInfo.grade.name}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="flex flex-wrap gap-2">
-                                    {["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY"].map(day => {
-                                      const rule = effectiveRules[day];
-                                      if (!rule) return null;
-                                      const dayShort = day.slice(0, 3);
-                                      return (
-                                        <div key={day} className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold border ${
-                                          rule.isActive
-                                            ? "bg-white dark:bg-black/20 border-brand-200 dark:border-brand-500/20 text-gray-700 dark:text-gray-300"
-                                            : "bg-gray-100 dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-400 line-through"
-                                        }`}>
-                                          <span className="font-bold text-brand-600 dark:text-brand-400">{dayShort}</span>
-                                          {rule.isActive ? (
-                                            <span>{rule.startTime.slice(0,5)} – {rule.endTime.slice(0,5)}</span>
-                                          ) : (
-                                            <span>Off</span>
-                                          )}
-                                          {/* Scope badge */}
-                                          {rule.context?.contextType && rule.context.contextType !== "GLOBAL" && (
-                                            <span className="ml-0.5 px-1 py-0.5 rounded text-[8px] font-bold bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20">
-                                              {rule.context.contextType}
-                                            </span>
-                                          )}
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          ) : effectiveClassId ? (
-                            <div className="rounded-xl border border-amber-200 bg-amber-50/60 dark:border-amber-500/20 dark:bg-amber-500/5 p-3">
-                              <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">⚠ No schedule rules configured for this class.</p>
-                              <p className="text-[11px] text-amber-600/80 dark:text-amber-400/70 mt-0.5">Go to Attendance Policies → select Grade or Global → Weekly Schedule to configure.</p>
-                            </div>
-                          ) : null}
-                        </div>
-                      )}
+
                       <div className="flex flex-wrap items-center gap-3">
                         {((viewMode === "subject" && selectedViewClass) ||
                           (viewMode === "teacher" && selectedTeacher)) && (

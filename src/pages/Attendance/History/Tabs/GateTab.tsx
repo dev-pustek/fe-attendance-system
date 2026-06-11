@@ -30,6 +30,7 @@ import {
 } from "../../../../components/atoms/Icons";
 
 import GateCard from "../Cards/GateCard";
+import TableActionMenu from "../../../../components/molecules/TableActionMenu";
 
 const MetricCard = ({ label, value, icon }: { label: string, value: number | string, icon: React.ReactNode }) => (
   <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-white/5 shadow-sm flex items-center gap-3">

@@ -1,23 +1,27 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
+import { useSearchParams } from "react-router";
 import PageMeta from "../../components/atoms/PageMeta";
 import PageBreadcrumb from "../../components/molecules/PageBreadcrumb";
 import {
   useGuests,
-  useCreateGuest,
-  useUpdateGuest,
+  useGuestsInfinite,
   useDeleteGuest,
-  useCheckInGuest,
+  useImportGuests,
 } from "../../api/hooks/useGuests";
+import { guestService } from "../../api/services/guestService";
 import { Guest } from "../../api/types/system";
 import {
-  GridIcon,
   ChevronLeftIcon,
   AngleRightIcon,
   UserIcon,
-  PencilIcon,
   TrashBinIcon,
   PlusIcon,
   CheckCircleIcon,
+  MoreDotIcon,
+  EditIcon,
+  FilterIcon,
+  ChevronDownIcon,
+  SearchIcon
 } from "../../components/atoms/Icons";
 import {
   Table,
@@ -27,72 +31,171 @@ import {
   TableRow,
 } from "../../components/atoms/Table";
 import { useDebounce } from "../../hooks/useDebounce";
-import Button from "../../components/atoms/Button";
-import Modal from "../../components/molecules/Modal";
 import { showSuccess, showError } from "../../utils/toast";
 import { useConfirm } from "../../hooks/useConfirm";
 import ConfirmDialog from "../../components/molecules/ConfirmDialog";
+import { useIsMobile } from "../../hooks/useIsMobile";
+import Dropdown from "../../components/molecules/Dropdown";
+import DropdownItem from "../../components/atoms/DropdownItem";
+import { SkeletonTable } from "../../components/molecules/SkeletonRow";
+import Checkbox from "../../components/atoms/Checkbox";
+import DataActionsMenu from "../../components/molecules/DataActionsMenu";
+import TableToolbar from "../../components/molecules/TableToolbar";
+import ImportModal from "../../components/molecules/ImportModal";
+
+import GuestCard from "./GuestCard";
+import GuestFormModal from "./GuestFormModal";
+import GuestCheckInModal from "./GuestCheckInModal";
+
+function downloadBlob(blob: Blob, filename: string) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+const RowActionMenu = ({ onEdit, onDelete, onCheckIn }: { onEdit: () => void; onDelete: () => void; onCheckIn: () => void; }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    return (
+        <div className="relative flex justify-center">
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="flex size-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-white/[0.05] dark:hover:text-gray-200"
+            >
+                <MoreDotIcon className="size-5" />
+            </button>
+            <Dropdown
+                isOpen={isOpen}
+                onClose={() => setIsOpen(false)}
+                className="absolute right-0 top-full z-20 mt-1 w-32 origin-top-right rounded-xl border border-gray-200 bg-white py-1.5 shadow-lg dark:border-white/[0.07] dark:bg-gray-900"
+            >
+                <DropdownItem
+                    onClick={() => {
+                        setIsOpen(false);
+                        onCheckIn();
+                    }}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-500/10"
+                >
+                    <CheckCircleIcon className="size-3.5" /> Check In
+                </DropdownItem>
+                <DropdownItem
+                    onClick={() => {
+                        setIsOpen(false);
+                        onEdit();
+                    }}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/[0.04]"
+                >
+                    <EditIcon className="size-3.5" /> Edit
+                </DropdownItem>
+                <DropdownItem
+                    onClick={() => {
+                        setIsOpen(false);
+                        onDelete();
+                    }}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/10"
+                >
+                    <TrashBinIcon className="size-3.5" /> Delete
+                </DropdownItem>
+            </Dropdown>
+        </div>
+    );
+};
 
 const Guests: React.FC = () => {
+  const isMobile = useIsMobile();
+  
   // State
+  const [searchParams, setSearchParams] = useSearchParams();
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
+  const searchTerm = searchParams.get("search") || "";
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isDownloadingTemplate, setIsDownloadingTemplate] = useState(false);
 
   // Modal State
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [selectedGuest, setSelectedGuest] = useState<Guest | null>(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-  });
 
   // Check In Modal State
   const [isCheckInModalOpen, setIsCheckInModalOpen] = useState(false);
-  const [checkInGuest, setCheckInGuest] = useState<Guest | null>(null);
-  const [checkInForm, setCheckInForm] = useState({ purpose: "" });
 
-  const debouncedSearch = useDebounce(searchQuery, 500);
   const { confirm, confirmState } = useConfirm();
 
-  // Hooks
-  const { data: guestsResponse, isLoading } = useGuests({
-    page,
-    limit,
-    search: debouncedSearch || undefined,
+  const queryParams = useMemo(() => ({
+      page,
+      limit,
+      search: searchTerm || undefined,
+  }), [page, limit, searchTerm]);
+
+  // Desktop Hooks
+  const { data: guestsResponse, isLoading: isLoadingDesktop } = useGuests(queryParams);
+
+  // Mobile Infinite Query Hooks
+  const {
+      data: infiniteData,
+      fetchNextPage,
+      hasNextPage,
+      isFetchingNextPage,
+      isLoading: isLoadingMobile
+  } = useGuestsInfinite({
+      search: searchTerm || undefined,
   });
 
-  const createMutation = useCreateGuest();
-  const updateMutation = useUpdateGuest();
   const deleteMutation = useDeleteGuest();
-  const checkInMutation = useCheckInGuest();
+  const importMutation = useImportGuests();
 
-  const guests = Array.isArray(guestsResponse)
-    ? guestsResponse
-    : guestsResponse?.data || [];
+
+  useEffect(() => { setSelectedIds(new Set()); }, [page, searchTerm, isMobile]);
+
+  // Data selection based on view
+  const guests = useMemo(() => {
+      if (isMobile) {
+          return infiniteData?.pages.flatMap((p) => p.data || []) || [];
+      }
+      return Array.isArray(guestsResponse) ? guestsResponse : guestsResponse?.data || [];
+  }, [isMobile, infiniteData, guestsResponse]);
+
+  const allSelected = guests.length > 0 && guests.every((guest: Guest) => selectedIds.has(String(guest.id || guest.public_id)));
+
   const meta = guestsResponse?.meta;
   const total = Number(meta?.total || 0);
-  const totalPages = Number(
-    meta?.totalPages || meta?.lastPage || Math.ceil(total / limit)
-  );
+  const totalPages = Number(meta?.totalPages || meta?.lastPage || Math.ceil(total / limit));
+  const isLoading = isMobile ? isLoadingMobile : isLoadingDesktop;
+  
+  // Mobile Infinite Scroll Observer
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+      if (!isMobile) return;
+      const el = sentinelRef.current;
+      if (!el) return;
+
+      const observer = new IntersectionObserver(
+          ([entry]) => {
+              if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) {
+                  fetchNextPage();
+              }
+          },
+          { threshold: 0.1 }
+      );
+      observer.observe(el);
+      return () => observer.disconnect();
+  }, [isMobile, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   // Handlers
-  const handleCreate = () => {
-    setSelectedGuest(null);
-    setFormData({ name: "", email: "", phone: "" });
-    setIsModalOpen(true);
+  const handleOpenFormModal = (guest?: Guest) => {
+    setSelectedGuest(guest || null);
+    setIsFormModalOpen(true);
   };
 
-  const handleEdit = (guest: Guest) => {
+  const handleOpenCheckInModal = (guest: Guest) => {
     setSelectedGuest(guest);
-    setFormData({
-      name: guest.name,
-      email: guest.email || "",
-      phone: guest.phone || "",
-    });
-    setIsModalOpen(true);
+    setIsCheckInModalOpen(true);
   };
 
   const handleDelete = async (guest: Guest) => {
@@ -104,8 +207,13 @@ const Guests: React.FC = () => {
 
     if (confirmed) {
       try {
-        await deleteMutation.mutateAsync(guest.id);
+        await deleteMutation.mutateAsync(Number(guest.id || guest.public_id));
         showSuccess("Guest deleted successfully");
+        setSelectedIds(prev => {
+            const next = new Set(prev);
+            next.delete(String(guest.id || guest.public_id));
+            return next;
+        });
       } catch (error) {
         showError(error, "Failed to delete guest");
       }
@@ -114,490 +222,454 @@ const Guests: React.FC = () => {
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
-      setSelectedIds(guests.map((g: Guest) => String(g.id || g.public_id)));
+      setSelectedIds(new Set(guests.map((g: Guest) => String(g.id || g.public_id))));
     } else {
-      setSelectedIds([]);
+      setSelectedIds(new Set());
     }
   };
 
   const handleSelectRow = (id: string) => {
-    if (selectedIds.includes(id)) {
-      setSelectedIds(selectedIds.filter(selectedId => selectedId !== id));
-    } else {
-      setSelectedIds([...selectedIds, id]);
-    }
+    setSelectedIds(prev => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        return next;
+    });
   };
 
   const handleBulkDelete = async () => {
-    if (selectedIds.length === 0) return;
+    if (selectedIds.size === 0) return;
 
     const confirmed = await confirm({
       variant: "delete",
       title: "Bulk Delete Guests",
-      message: `Are you sure you want to permanently delete ${selectedIds.length} selected guests? This action cannot be undone.`,
-      confirmText: `Delete ${selectedIds.length} Guests`
+      message: `Are you sure you want to permanently delete ${selectedIds.size} selected guests? This action cannot be undone.`,
+      confirmText: `Delete ${selectedIds.size} Guests`
     });
 
     if (confirmed) {
       try {
-        const promises = selectedIds.map(id => deleteMutation.mutateAsync(Number(id)));
+        const promises = Array.from(selectedIds).map(id => deleteMutation.mutateAsync(Number(id)));
         await Promise.all(promises);
-        showSuccess(`Successfully removed ${selectedIds.length} guests.`);
-        setSelectedIds([]);
+        showSuccess(`Successfully removed ${selectedIds.size} guests.`);
+        setSelectedIds(new Set());
       } catch (error) {
         showError(error, "Failed to remove some guests");
       }
     }
   };
 
-  const handleSubmit = async () => {
-    if (!formData.name) {
-      showSuccess("Name is required");
-      return;
-    }
-
-    try {
-      if (selectedGuest) {
-        await updateMutation.mutateAsync({
-          id: selectedGuest.id,
-          data: formData,
-        });
-        showSuccess("Guest updated successfully");
-      } else {
-        await createMutation.mutateAsync(formData);
-        showSuccess("Guest created successfully");
+  // Export & Import Handlers
+  const handleExportExcel = async (ids?: string[]) => {
+      setIsExporting(true);
+      try {
+          const params = ids && ids.length > 0 ? { ids: ids.join(',') } : queryParams;
+          const blob = await guestService.exportGuestsExcel(params);
+          downloadBlob(blob, "guests_export.xlsx");
+          showSuccess("Exported successfully");
+      } catch (err) {
+          showError(err, "Failed to export to Excel");
+      } finally {
+          setIsExporting(false);
       }
-      setIsModalOpen(false);
-    } catch (error) {
-      showError(
-        error,
-        selectedGuest ? "Failed to update guest" : "Failed to create guest"
-      );
-    }
   };
 
-  const handleCheckIn = (guest: Guest) => {
-    setCheckInGuest(guest);
-    setCheckInForm({ purpose: "" });
-    setIsCheckInModalOpen(true);
+  const handleExportPdf = async () => {
+      setIsExporting(true);
+      try {
+          const params = selectedIds.size > 0 ? { ids: Array.from(selectedIds).join(',') } : queryParams;
+          const blob = await guestService.exportGuestsPdf(params);
+          downloadBlob(blob, "guests_export.pdf");
+      } catch (err) {
+          showError(err, "Failed to export to PDF");
+      } finally {
+          setIsExporting(false);
+      }
   };
 
-  const handleCheckInSubmit = async () => {
-    if (!checkInGuest || !checkInForm.purpose) {
-      showSuccess("Purpose is required");
-      return;
-    }
+  const handleDownloadTemplate = async (withData: boolean) => {
+      setIsDownloadingTemplate(true);
+      try {
+          const blob = await guestService.downloadGuestsTemplate(withData);
+          downloadBlob(blob, "guests_template.xlsx");
+          showSuccess("Template downloaded successfully!");
+      } catch (err) {
+          showError(err, "Failed to download template");
+      } finally {
+          setIsDownloadingTemplate(false);
+      }
+  };
 
-    try {
-      await checkInMutation.mutateAsync({
-        public_id: checkInGuest.public_id,
-        data: { purpose: checkInForm.purpose },
-      });
-      showSuccess("Guest checked in successfully");
-      setIsCheckInModalOpen(false);
-    } catch (error) {
-      showError(error, "Failed to check in guest");
-    }
+  const handleImportSubmit = async (file: File) => {
+      try {
+          const result = await importMutation.mutateAsync(file);
+          showSuccess(`Successfully imported ${result.created} new guests, updated ${result.updated}.`);
+          setIsImportModalOpen(false);
+      } catch (err) {
+          showError(err, "Failed to import guests");
+      }
   };
 
   return (
     <>
-      <PageMeta
-        title="Manage Guests | Visia"
-        description="Manage visitor list."
-      />
-      <PageBreadcrumb pageTitle="Guests" />
+      <PageMeta title="Guest Visitors | Visia" description="Manage visitor list." />
+      <PageBreadcrumb pageTitle="Guest Visitors" />
 
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Guest Visitors
-            </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              View and manage registered guests.
-            </p>
+        {/* Header - Hidden on Mobile */}
+        <div className="hidden sm:flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-xl bg-brand-50 text-brand-500 dark:bg-brand-500/10">
+                  <UserIcon className="size-5" />
+              </div>
+              <div>
+                  <h1 className="text-xl font-bold text-gray-900 dark:text-white">Guest Visitors</h1>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">View and manage registered guests.</p>
+              </div>
           </div>
-          <Button onClick={handleCreate} className="w-full sm:w-auto">
-            <PlusIcon className="mr-2 size-4" />
-            Add New Guest
-          </Button>
+          <div className="flex items-center gap-3">
+            <DataActionsMenu
+                isExporting={isExporting || isDownloadingTemplate}
+                isImporting={importMutation.isPending}
+                onExportExcel={() => handleExportExcel()}
+                onExportPdf={handleExportPdf}
+                onExportExcelSelected={selectedIds.size > 0 ? () => handleExportExcel(Array.from(selectedIds)) : undefined}
+                selectedCount={selectedIds.size}
+                onImportClick={() => setIsImportModalOpen(true)}
+                onDownloadTemplate={() => handleDownloadTemplate(false)}
+            />
+            <button
+                onClick={() => handleOpenFormModal()}
+                className="hidden sm:flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-brand-500/25 transition-all hover:bg-brand-600 active:scale-[.98]"
+            >
+                <PlusIcon className="fill-white size-4" /> Add New Guest
+            </button>
+          </div>
         </div>
 
-        {/* Bulk Selection Actions Bar */}
-        {selectedIds.length > 0 && (
-          <div className="flex items-center justify-between p-4 bg-brand-50 border border-brand-100 rounded-2xl dark:bg-brand-500/10 dark:border-brand-500/20 animate-in slide-in-from-top-2 duration-300">
-            <div className="flex items-center gap-3">
-              <div className="size-8 rounded-full bg-brand-500 text-white flex items-center justify-center text-sm font-bold shadow-sm font-mono">
-                {selectedIds.length}
-              </div>
-              <p className="text-sm font-semibold text-brand-700 dark:text-brand-400">Guests Selected</p>
+        {/* Mobile FAB */}
+        {isMobile && (
+            <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-3 items-end">
+                <DataActionsMenu
+                    isExporting={isExporting || isDownloadingTemplate}
+                    isImporting={importMutation.isPending}
+                    onExportExcel={() => handleExportExcel()}
+                    onExportPdf={handleExportPdf}
+                    onExportExcelSelected={selectedIds.size > 0 ? () => handleExportExcel(Array.from(selectedIds)) : undefined}
+                    selectedCount={selectedIds.size}
+                    isMobileFab={true}
+                    onImportClick={() => setIsImportModalOpen(true)}
+                    onDownloadTemplate={() => handleDownloadTemplate(false)}
+                />
+                <button
+                    onClick={() => handleOpenFormModal()}
+                    className="flex size-14 items-center justify-center rounded-full bg-brand-500 text-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] shadow-brand-500/30 transition-transform active:scale-95"
+                    aria-label="Add New Guest"
+                >
+                    <PlusIcon className="size-6 fill-white" />
+                </button>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleBulkDelete}
-                className="flex items-center gap-2 px-4 py-2 bg-error-50 dark:bg-error-500/10 border border-error-100 dark:border-error-500/20 rounded-xl text-sm font-bold text-error-600 dark:text-error-400 hover:bg-error-100 transition-all shadow-sm"
-              >
-                <TrashBinIcon className="size-4" />
-                Delete Selected
-              </button>
-              <button
-                onClick={() => setSelectedIds([])}
-                className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-700 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
         )}
 
-        {/* Filters */}
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div className="flex flex-1 flex-col gap-4 sm:flex-row sm:items-end">
-            <div className="flex-1 space-y-1.5 max-w-md">
-              <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest pl-1">
-                Search Guests
-              </label>
-              <div className="relative">
-                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">
-                  <GridIcon className="size-4" />
-                </div>
-                <input
-                  type="text"
-                  placeholder="Search by name, email, phone..."
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    setPage(1);
-                  }}
-                  className="w-full rounded-xl border border-gray-100 bg-white py-2.5 pl-10 pr-4 text-sm font-medium outline-none transition-all focus:border-brand-500 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-white shadow-sm"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Table */}
-        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-white/[0.05] dark:bg-white/[0.03]">
-          <Table>
-            <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
-              <TableRow>
-                <TableCell isHeader className="w-10 px-5 py-4">
-                  <div className="flex items-center">
-                    <input 
-                      type="checkbox" 
-                      className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
-                      checked={guests.length > 0 && selectedIds.length === guests.length}
-                      onChange={handleSelectAll}
-                    />
-                  </div>
-                </TableCell>
-                <TableCell
-                  isHeader
-                  className="px-5 py-4 font-medium text-gray-500 dark:text-gray-400 uppercase text-xs tracking-wider"
-                >
-                  Name
-                </TableCell>
-                <TableCell
-                  isHeader
-                  className="px-5 py-4 font-medium text-gray-500 dark:text-gray-400 uppercase text-xs tracking-wider"
-                >
-                  Contact Info
-                </TableCell>
-                <TableCell
-                  isHeader
-                  className="px-5 py-4 font-medium text-gray-500 dark:text-gray-400 uppercase text-xs tracking-wider"
-                >
-                  Public ID
-                </TableCell>
-                <TableCell
-                  isHeader
-                  className="px-5 py-4 font-medium text-gray-500 dark:text-gray-400 uppercase text-xs tracking-wider text-right"
-                >
-                  Action
-                </TableCell>
-              </TableRow>
-            </TableHeader>
-            <TableBody className="divide-y divide-gray-50 dark:divide-white/[0.05]">
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="py-20 text-center">
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="size-8 animate-spin rounded-full border-2 border-brand-500 border-t-transparent"></div>
-                      <span className="text-sm font-bold text-gray-400 italic">
-                        Loading guests...
-                      </span>
+        {/* Advanced Filter Card */}
+        <div className="mb-4 rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden dark:border-white/[0.05] dark:bg-white/[0.02]">
+            <button 
+                onClick={() => setIsFilterOpen(!isFilterOpen)} 
+                className="w-full flex items-center justify-between p-5 hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors"
+            >
+                <div className="text-left">
+                    <div className="flex items-center gap-2 mb-1">
+                        <FilterIcon className="size-5 text-brand-500" />
+                        <h3 className="text-sm font-bold uppercase tracking-wider text-gray-800 dark:text-gray-200">
+                            Search & Filter
+                        </h3>
                     </div>
-                  </TableCell>
-                </TableRow>
-              ) : guests.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="py-20 text-center">
-                    <p className="text-sm font-medium text-gray-400">
-                      No guests found.
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Find guests quickly
                     </p>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                guests.map((guest: Guest) => (
-                  <TableRow
-                    key={guest.id || guest.public_id}
-                    className={`group hover:bg-gray-50/50 dark:hover:bg-white/[0.01] transition-colors ${selectedIds.includes(String(guest.id || guest.public_id)) ? 'bg-brand-50/30 dark:bg-brand-500/5' : ''}`}
-                  >
-                    <TableCell className="px-5 py-4">
-                      <div className="flex items-center">
-                        <input 
-                          type="checkbox" 
-                          className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
-                          checked={selectedIds.includes(String(guest.id || guest.public_id))}
-                          onChange={() => handleSelectRow(String(guest.id || guest.public_id))}
-                        />
-                      </div>
-                    </TableCell>
-                    <TableCell className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-50 text-brand-600 font-bold dark:bg-brand-500/10 text-sm">
-                          <UserIcon className="size-4" />
-                        </div>
-                        <div>
-                          <p className="font-bold text-gray-900 dark:text-white text-sm">
-                            {guest.name}
-                          </p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="px-5 py-4">
-                      <div className="flex flex-col gap-0.5">
-                        {guest.email && (
-                          <span className="text-sm text-gray-600 dark:text-gray-300">
-                            {guest.email}
-                          </span>
-                        )}
-                        {guest.phone && (
-                          <span className="text-xs text-gray-500">
-                            {guest.phone}
-                          </span>
-                        )}
-                        {!guest.email && !guest.phone && (
-                          <span className="text-xs text-gray-400 italic">
-                            No contact info
-                          </span>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="px-5 py-4 font-mono text-xs text-gray-500">
-                      {guest.public_id}
-                    </TableCell>
-                    <TableCell className="px-5 py-4 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => handleCheckIn(guest)}
-                          className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-500/10"
-                          title="Check In Guest"
-                        >
-                          <CheckCircleIcon className="size-4" />
-                        </button>
-                        <button
-                          onClick={() => handleEdit(guest)}
-                          className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-brand-50 hover:text-brand-500 dark:hover:bg-brand-500/10"
-                          title="Edit Guest"
-                        >
-                          <PencilIcon className="size-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(guest)}
-                          className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/10"
-                          title="Delete Guest"
-                        >
-                          <TrashBinIcon className="size-4" />
-                        </button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-
-          {/* Pagination */}
-          {!isLoading && total > 0 && (
-            <div className="flex flex-col gap-4 px-6 py-4 border-t border-gray-100 dark:border-white/[0.05] sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Showing{" "}
-                <span className="font-medium text-gray-700 dark:text-white">
-                  {(page - 1) * limit + 1}
-                </span>{" "}
-                to{" "}
-                <span className="font-medium text-gray-700 dark:text-white">
-                  {Math.min(page * limit, total)}
-                </span>{" "}
-                of{" "}
-                <span className="font-medium text-gray-700 dark:text-white">
-                  {total}
-                </span>{" "}
-                guests
-              </p>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400 dark:hover:bg-white/[0.05]"
-                >
-                  <ChevronLeftIcon className="size-4" />
-                  Previous
-                </button>
-                <div className="flex items-center gap-1.5 px-2">
-                  <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                    {page}
-                  </span>
-                  <span className="text-sm text-gray-400">/</span>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
-                    {totalPages || 1}
-                  </span>
                 </div>
-                <button
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages || totalPages === 0}
-                  className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400 dark:hover:bg-white/[0.05]"
-                >
-                  Next
-                  <AngleRightIcon className="size-4" />
-                </button>
-              </div>
+                <div className="shrink-0 ml-4">
+                    <ChevronDownIcon className={`size-5 text-gray-400 transition-transform duration-200 ${isFilterOpen ? "rotate-180" : ""}`} />
+                </div>
+            </button>
+            
+            <div className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${
+                    isFilterOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                }`}>
+                <div className="overflow-hidden min-h-0">
+                    <div className="px-5 pb-5">
+                        <hr className="mb-5 border-gray-100 dark:border-white/[0.05]" />
+                        
+                        <div className="grid grid-cols-1 gap-5 items-end md:grid-cols-3">
+                            <div className="md:col-span-2 space-y-1.5">
+                                <div className="relative">
+                                    <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+                                    <input
+                                        type="text"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                setSearchParams((prev) => {
+                                                    const newParams = new URLSearchParams(prev);
+                                                    if (searchQuery) newParams.set("search", searchQuery);
+                                                    else newParams.delete("search");
+                                                    return newParams;
+                                                });
+                                                setPage(1);
+                                            }
+                                        }}
+                                        placeholder="Search by Name, Email or Phone..."
+                                        className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-4 text-sm text-gray-900 transition-colors focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-white/[0.08] dark:bg-white/[0.02] dark:text-white"
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3 md:col-span-1">
+                                <button
+                                    onClick={() => {
+                                        setSearchQuery("");
+                                        setSearchParams((prev) => {
+                                            const newParams = new URLSearchParams(prev);
+                                            newParams.delete("search");
+                                            return newParams;
+                                        });
+                                        setPage(1);
+                                    }}
+                                    className="flex h-11 flex-1 items-center justify-center rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 dark:border-white/[0.08] dark:bg-transparent dark:text-gray-300"
+                                >
+                                    Reset
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setSearchParams((prev) => {
+                                            const newParams = new URLSearchParams(prev);
+                                            if (searchQuery) newParams.set("search", searchQuery);
+                                            else newParams.delete("search");
+                                            return newParams;
+                                        });
+                                        setPage(1);
+                                    }}
+                                    className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 text-sm font-semibold text-white transition-all hover:bg-brand-600"
+                                >
+                                    <SearchIcon className="size-4" />
+                                    Search
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-          )}
         </div>
+
+        {/* Toolbar (Only for Bulk Actions) */}
+        <TableToolbar
+            selectedCount={selectedIds.size}
+            onClearSelection={() => setSelectedIds(new Set())}
+            bulkActions={[
+                {
+                    label: "Delete Selected",
+                    icon: <TrashBinIcon className="size-3.5" />,
+                    onClick: handleBulkDelete,
+                    variant: "danger",
+                },
+            ]}
+        />
+
+        {/* Content Area */}
+        {isLoading ? (
+            isMobile ? (
+                <div className="grid grid-cols-1 gap-3">
+                    {[...Array(4)].map((_, i) => (
+                        <div key={i} className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-white/[0.06] dark:bg-white/[0.02] animate-pulse space-y-3">
+                            <div className="flex justify-between items-center">
+                                <div className="flex items-center gap-3">
+                                    <div className="size-10 rounded-full bg-gray-200 dark:bg-white/[0.06]" />
+                                    <div className="space-y-1.5">
+                                        <div className="h-4 w-24 rounded-md bg-gray-200 dark:bg-white/[0.06]" />
+                                        <div className="h-3 w-16 rounded-md bg-gray-200 dark:bg-white/[0.06]" />
+                                    </div>
+                                </div>
+                                <div className="size-5 rounded bg-gray-200 dark:bg-white/[0.06]" />
+                            </div>
+                            <div className="h-4 w-3/4 rounded-md bg-gray-200 dark:bg-white/[0.06] mt-4" />
+                            <div className="h-3 w-1/2 rounded-md bg-gray-200 dark:bg-white/[0.06]" />
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <SkeletonTable cols={6} hasCheckbox rows={limit} />
+            )
+        ) : guests.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 px-4 text-center bg-white rounded-3xl border border-gray-200 dark:bg-white/[0.02] dark:border-white/[0.05]">
+                <div className="flex size-20 items-center justify-center rounded-full bg-brand-50 dark:bg-brand-500/10 mb-6">
+                    <UserIcon className="size-10 text-brand-500 opacity-50" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No guests found</h3>
+                <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-md">
+                    {searchQuery ? "No guests match your search criteria. Try adjusting your filters." : "Get started by adding your first guest to the system."}
+                </p>
+                {!searchQuery && (
+                    <button
+                        onClick={() => handleOpenFormModal()}
+                        className="hidden sm:flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-brand-500/25 transition-all hover:bg-brand-600 active:scale-[.98]"
+                    >
+                        <PlusIcon className="fill-white size-4" /> Add First Guest
+                    </button>
+                )}
+            </div>
+        ) : isMobile ? (
+            <div className="space-y-3">
+                {guests.length > 0 && (
+                    <div className="flex items-center gap-3 px-1">
+                        <Checkbox checked={allSelected} onChange={handleSelectAll} />
+                        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+                            {selectedIds.size > 0 ? `${selectedIds.size} selected` : "Select all"}
+                        </span>
+                    </div>
+                )}
+                <div className="grid grid-cols-1 gap-3">
+                    {guests.map((guest: Guest) => (
+                        <GuestCard
+                            key={guest.public_id || guest.id}
+                            guest={guest}
+                            isSelected={selectedIds.has(String(guest.id || guest.public_id))}
+                            onSelect={() => handleSelectRow(String(guest.id || guest.public_id))}
+                            onEdit={() => handleOpenFormModal(guest)}
+                            onDelete={() => handleDelete(guest)}
+                            onCheckIn={() => handleOpenCheckInModal(guest)}
+                        />
+                    ))}
+                    {/* Sentinel for infinite scroll */}
+                    <div ref={sentinelRef} className="h-4 w-full flex items-center justify-center">
+                        {isFetchingNextPage && <div className="size-5 animate-spin rounded-full border-2 border-gray-300 border-t-brand-500" />}
+                    </div>
+                </div>
+            </div>
+        ) : (
+            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-white/[0.05] dark:bg-white/[0.03] [&_table_thead_th:first-child]:rounded-tl-xl [&_table_thead_th:last-child]:rounded-tr-xl">
+                <div className="overflow-x-auto">
+                    <Table>
+                        <TableHeader className="border-b border-gray-100 bg-gray-50/60 dark:border-white/[0.05] dark:bg-white/[0.01]">
+                            <TableRow>
+                                <TableCell isHeader className="w-10 px-4 py-3.5">
+                                    <Checkbox
+                                        checked={allSelected}
+                                        onChange={handleSelectAll}
+                                    />
+                                </TableCell>
+                                <TableCell isHeader className="px-4 py-3.5 min-w-[200px] text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    Guest Name
+                                </TableCell>
+                                <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    Company
+                                </TableCell>
+                                <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    Email
+                                </TableCell>
+                                <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    Phone
+                                </TableCell>
+                                <TableCell isHeader className="px-4 py-3.5 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    Actions
+                                </TableCell>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {guests.map((guest: Guest) => (
+                                <TableRow key={guest.public_id || guest.id} className={`group transition-colors ${selectedIds.has(String(guest.id || guest.public_id)) ? 'bg-brand-50/60 dark:bg-brand-500/5' : 'hover:bg-gray-50/60 dark:hover:bg-white/[0.015]'}`}>
+                                    <TableCell className="w-10 px-4 py-4">
+                                        <Checkbox
+                                            checked={selectedIds.has(String(guest.id || guest.public_id))}
+                                            onChange={() => handleSelectRow(String(guest.id || guest.public_id))}
+                                        />
+                                    </TableCell>
+                                    <TableCell className="px-4 py-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
+                                                {guest.photoUrl ? (
+                                                    <img src={guest.photoUrl} alt={guest.name} className="size-full rounded-xl object-cover" />
+                                                ) : (
+                                                    <span className="text-sm font-bold">{guest.name.charAt(0).toUpperCase()}</span>
+                                                )}
+                                            </div>
+                                            <div className="font-medium text-gray-900 dark:text-white">
+                                                {guest.name}
+                                            </div>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="px-4 py-4 text-gray-500 dark:text-gray-400">
+                                        {guest.company || "-"}
+                                    </TableCell>
+                                    <TableCell className="px-4 py-4 text-gray-500 dark:text-gray-400">
+                                        {guest.email || "-"}
+                                    </TableCell>
+                                    <TableCell className="px-4 py-4">
+                                        <div className="inline-flex items-center gap-1.5 rounded-lg bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 dark:bg-white/[0.05] dark:text-gray-300">
+                                            {guest.phone || "-"}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="px-4 py-4 text-center">
+                                        <RowActionMenu 
+                                            onCheckIn={() => handleOpenCheckInModal(guest)}
+                                            onEdit={() => handleOpenFormModal(guest)}
+                                            onDelete={() => handleDelete(guest)}
+                                        />
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+
+                {/* Desktop Pagination */}
+                {!isLoadingDesktop && (guests.length > 0 || total > 0) && (
+                    <div className="flex flex-col gap-4 border-t border-gray-100 p-4 dark:border-white/[0.05] sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Showing <span className="font-medium text-gray-700 dark:text-white">{(page - 1) * limit + 1}</span> to{" "}
+                            <span className="font-medium text-gray-700 dark:text-white">{Math.min(page * limit, total)}</span> of{" "}
+                            <span className="font-medium text-gray-700 dark:text-white">{total}</span> requests
+                        </p>
+                        <div className="flex items-center gap-2">
+                            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400">
+                                <ChevronLeftIcon className="size-4" /> Previous
+                            </button>
+                            <div className="flex items-center gap-1.5 px-2">
+                                <span className="text-sm font-semibold text-gray-900 dark:text-white">{page}</span>
+                                <span className="text-sm text-gray-400">/</span>
+                                <span className="text-sm text-gray-500 dark:text-gray-400">{totalPages || 1}</span>
+                            </div>
+                            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages || totalPages === 0} className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400">
+                                Next <AngleRightIcon className="size-4" />
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
+        )}
       </div>
 
-      {/* Create/Edit Modal */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        className="max-w-lg"
-        title={selectedGuest ? "Edit Guest" : "Add New Guest"}
-        description="Enter guest details and contact information."
-        footer={
-          <div className="flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={() => setIsModalOpen(false)}
-              className="rounded-xl px-4 py-2 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.05]"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSubmit}
-              disabled={createMutation.isPending || updateMutation.isPending}
-              className="rounded-xl bg-brand-500 px-6 py-2 text-sm font-medium text-white transition-all hover:bg-brand-600 shadow-lg shadow-brand-500/20"
-            >
-              {createMutation.isPending || updateMutation.isPending
-                ? "Saving..."
-                : "Save Guest"}
-            </button>
-          </div>
-        }
-      >
-        <div>
-          <div className="space-y-4 py-2">
-            <div>
-              <label className="mb-1.5 block text-xs font-medium uppercase text-gray-500 tracking-wider">
-                Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, name: e.target.value }))
-                }
-                placeholder="Guest Name"
-                className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-900 outline-none transition-all focus:border-brand-500 dark:border-gray-800 dark:bg-gray-900 dark:text-white"
-              />
-            </div>
+      <ImportModal
+          isOpen={isImportModalOpen}
+          onClose={() => setIsImportModalOpen(false)}
+          onImport={handleImportSubmit}
+          onDownloadTemplate={() => handleDownloadTemplate(false)}
+          title="Import Guests"
+          description="Upload an Excel file containing guest information."
+          isImporting={importMutation.isPending}
+          isDownloadingTemplate={isDownloadingTemplate}
+      />
 
-            <div>
-              <label className="mb-1.5 block text-xs font-medium uppercase text-gray-500 tracking-wider">
-                Email
-              </label>
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, email: e.target.value }))
-                }
-                placeholder="guest@example.com"
-                className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-900 outline-none transition-all focus:border-brand-500 dark:border-gray-800 dark:bg-gray-900 dark:text-white"
-              />
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-xs font-medium uppercase text-gray-500 tracking-wider">
-                Phone
-              </label>
-              <input
-                type="tel"
-                value={formData.phone}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, phone: e.target.value }))
-                }
-                placeholder="08123456789"
-                className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-900 outline-none transition-all focus:border-brand-500 dark:border-gray-800 dark:bg-gray-900 dark:text-white"
-              />
-            </div>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Check In Modal */}
-      <Modal
-        isOpen={isCheckInModalOpen}
-        onClose={() => setIsCheckInModalOpen(false)}
-        className="max-w-lg"
-        title="Check In Guest"
-        description="Record the purpose of this visit."
-        footer={
-          <div className="flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={() => setIsCheckInModalOpen(false)}
-              className="rounded-xl px-4 py-2 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.05]"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleCheckInSubmit}
-              disabled={checkInMutation.isPending}
-              className="rounded-xl bg-brand-500 px-6 py-2 text-sm font-medium text-white transition-all hover:bg-brand-600 shadow-lg shadow-brand-500/20"
-            >
-              {checkInMutation.isPending ? "Checking In..." : "Check In"}
-            </button>
-          </div>
-        }
-      >
-        <div>
-          <div className="space-y-4 py-2">
-            <div className="rounded-lg bg-gray-50 p-4 dark:bg-white/[0.03]">
-              <p className="text-sm text-gray-500 dark:text-gray-400">Guest</p>
-              <p className="font-bold text-gray-900 dark:text-white">
-                {checkInGuest?.name}
-              </p>
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-xs font-medium uppercase text-gray-500 tracking-wider">
-                Purpose <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                value={checkInForm.purpose}
-                onChange={(e) => setCheckInForm({ purpose: e.target.value })}
-                placeholder="e.g. Meeting with Principal"
-                rows={3}
-                className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-900 outline-none transition-all focus:border-brand-500 dark:border-gray-800 dark:bg-gray-900 dark:text-white"
-              />
-            </div>
-          </div>
-        </div>
-      </Modal>
+      <GuestFormModal
+          isOpen={isFormModalOpen}
+          onClose={() => setIsFormModalOpen(false)}
+          selectedEntity={selectedGuest}
+      />
+      
+      <GuestCheckInModal
+          isOpen={isCheckInModalOpen}
+          onClose={() => setIsCheckInModalOpen(false)}
+          selectedGuest={selectedGuest}
+      />
 
       <ConfirmDialog {...confirmState} />
     </>

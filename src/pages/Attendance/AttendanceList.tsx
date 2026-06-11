@@ -69,6 +69,7 @@ import { useIsMobile } from "../../hooks/useIsMobile";
 import AttendanceRecordCard from "./AttendanceRecordCard";
 import Dropdown from "../../components/molecules/Dropdown";
 import DropdownItem from "../../components/atoms/DropdownItem";
+import TableActionMenu from "../../components/molecules/TableActionMenu";
 
 const MoreHorizontalIcon = ({ className }: { className?: string }) => (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -1109,7 +1110,21 @@ const AttendanceList: React.FC = () => {
                         <div className="flex flex-col min-w-0">
                           <span className="font-bold text-gray-900 dark:text-white text-sm truncate">{record.user?.name || "Unknown User"}</span>
                           <div className="flex items-center gap-1.5 min-w-0">
-                            <span className="text-[10px] text-gray-500 font-medium truncate tracking-tight">{record.user?.public_id?.split('-')[0]}</span>
+                            {(() => {
+                                const user = record.user as any;
+                                if (!user) return <span className="text-[10px] text-gray-500 font-medium truncate tracking-tight">—</span>;
+                                const isStudent = user.roles?.some((r: any) => r.name?.toLowerCase() === 'student' || r.name?.toLowerCase() === 'siswa');
+                                const nis = user.studentProfile?.nis || user.profile?.nis || user.studentProfile?.nisn || user.profile?.nisn;
+                                const eid = user.employeeProfile?.employeeId || user.profile?.employeeId || user.employeeProfile?.nip || user.profile?.nip;
+                                
+                                let idText = "—";
+                                if (isStudent && nis) idText = `NIS: ${nis}`;
+                                else if (!isStudent && eid) idText = `EID: ${eid}`;
+                                else if (nis) idText = `NIS: ${nis}`;
+                                else if (eid) idText = `EID: ${eid}`;
+
+                                return <span className="text-[10px] text-gray-500 font-medium truncate tracking-tight">{idText}</span>;
+                            })()}
                             <span className="size-0.5 rounded-full bg-gray-300"></span>
                             {(() => {
                                 const type = getAttendanceType(record);

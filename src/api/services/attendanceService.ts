@@ -239,6 +239,16 @@ export const attendanceService = {
     await apiClient.delete(`/attendance/teaching-sessions/${id}`);
   },
 
+  getClassroomCommand: async (): Promise<TodayScheduleItem[]> => {
+    const response = await apiClient.get<TodayScheduleItem[]>("/attendance/teaching-sessions/classroom-command");
+    return response.data;
+  },
+
+  validateSession: async (id: number | string, status: 'valid' | 'invalid', notes?: string): Promise<TeachingSession> => {
+    const response = await apiClient.patch<TeachingSession>(`/attendance/teaching-sessions/${id}/validate`, { status, notes });
+    return response.data;
+  },
+
   getGroupedTeachingSessions: async (params?: TeachingSessionParams): Promise<ApiResponse<GroupedTeachingSessionResponse>> => {
     const response = await apiClient.get<ApiResponse<GroupedTeachingSessionResponse>>("/attendance/teaching-sessions/grouped", { params });
     return response.data;

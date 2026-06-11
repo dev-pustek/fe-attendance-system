@@ -148,6 +148,41 @@ export const profilesService = {
     await apiClient.delete(`/profiles/employees/${userId}`);
   },
 
+  exportEmployeesExcel: async (params?: any) => {
+    const response = await apiClient.get("/profiles/employees/export/excel", {
+      params,
+      responseType: "blob",
+    });
+    return response.data as Blob;
+  },
+
+  exportEmployeesPdf: async (params?: any) => {
+    const response = await apiClient.get("/profiles/employees/export/pdf", {
+      params,
+      responseType: "blob",
+    });
+    return response.data as Blob;
+  },
+
+  downloadEmployeesTemplate: async (withData?: boolean) => {
+    const response = await apiClient.get("/profiles/employees/template", {
+      params: { withData },
+      responseType: "blob",
+    });
+    return response.data as Blob;
+  },
+
+  importEmployees: async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await apiClient.post<{ created: number; updated: number; errors: string[] }>(
+      "/profiles/employees/import",
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    );
+    return response.data;
+  },
+
   // Parents
   getParents: async (params?: PaginationParams): Promise<PaginatedResponse<ParentProfile>> => {
     const response = await apiClient.get<PaginatedResponse<ParentProfile>>("/parent-profiles", { params });

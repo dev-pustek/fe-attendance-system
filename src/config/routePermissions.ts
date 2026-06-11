@@ -30,6 +30,8 @@ export const routePermissions: RoutePermission[] = [
   { path: '/attendance/history', allowedRoles: ['admin', 'teacher', 'staff', 'student'] },
   { path: '/attendance/gate-scan', allowedRoles: ['admin', 'student', 'staff'] }, // Students can scan for attendance
   { path: '/attendance/piket', allowedRoles: ['admin', 'staff'] },
+  { path: '/attendance/classroom-command', allowedRoles: ['admin', 'staff'] },
+  { path: '/attendance/history', allowedRoles: ['admin', 'staff', 'student'] },
   { path: '/attendance/teaching-sessions', allowedRoles: ['admin', 'teacher', 'staff'] },
   { path: '/attendance/subject-attendances', allowedRoles: ['admin', 'teacher', 'staff'] },
   { path: '/attendance/events', allowedRoles: ['admin', 'staff'] },

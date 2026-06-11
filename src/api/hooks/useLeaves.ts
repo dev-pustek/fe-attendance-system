@@ -1,4 +1,4 @@
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { leaveService } from "../services/leaveService";
 import { CreateLeaveTypeDto, LeaveTypeParams, UpdateLeaveTypeDto, LeaveSubmissionParams, CreateLeaveSubmissionDto, UpdateLeaveSubmissionDto, ReviewLeaveDto, LeaveApprovalParams } from "../types/leave";
 
@@ -50,6 +50,19 @@ export const useLeaveSubmissions = (params?: LeaveSubmissionParams, options?: Re
     placeholderData: keepPreviousData as any,
     ...options
   } as any);
+};
+
+export const useLeaveSubmissionsInfinite = (params?: LeaveSubmissionParams) => {
+  return useInfiniteQuery({
+    queryKey: ["leave-submissions", "infinite", params],
+    queryFn: ({ pageParam = 1 }) => leaveService.getSubmissions({ ...params, page: pageParam as number, limit: 10 }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage: any) => {
+      const meta = lastPage?.meta;
+      const totalPages = meta?.totalPages || meta?.last_page || Math.ceil((meta?.total || 0) / (meta?.limit || 10));
+      return meta?.page < totalPages ? meta.page + 1 : undefined;
+    },
+  });
 };
 
 export const useMyLeaveSubmissions = (params?: LeaveSubmissionParams, options?: Record<string, unknown>) => {

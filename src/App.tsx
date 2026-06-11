@@ -39,7 +39,7 @@ const CurriculumExplorer = lazy(() => import("./pages/Academic/CurriculumExplore
 const CurriculumWizard = lazy(() => import("./pages/Academic/CurriculumConfigurator"));
 const ClassroomCommand = lazy(() => import("./pages/Teacher/Classroom"));
 const StudentProfile = lazy(() => import("./pages/Student/StudentProfile"));
-const MyProfile = lazy(() => import("./pages/MyProfile"));
+const MyProfile = lazy(() => import("./pages/MyProfile/index"));
 const ClassScheduleOverrides = lazy(() => import("./pages/Academic/ClassSchedules/Overrides"));
 const StudentManagement = lazy(() => import("./pages/Profiles/Students"));
 const ClassPromotion = lazy(() => import("./pages/Academic/ClassPromotion"));
@@ -70,6 +70,7 @@ const StudentLeaveRequest = lazy(() => import("./pages/Student/LeaveRequest"));
 const GateScan = lazy(() => import("./pages/Attendance/Student/GateScan"));
 const AttendancePolicies = lazy(() => import("./pages/Attendance/AttendancePolicies"));
 const PiketMonitor = lazy(() => import("./pages/Attendance/PiketMonitor"));
+
 const AttendanceHistory = lazy(() => import("./pages/Attendance/History"));
 const NotificationTemplateList = lazy(() => import("./pages/Notifications/Templates/NotificationTemplateList"));
 const NotificationSettings = lazy(() => import("./pages/Settings/NotificationSettings"));
@@ -106,12 +107,12 @@ export default function App() {
   return (
     <>
       <Toaster 
-        position="top-right"
+        position="bottom-right"
         reverseOrder={false}
         gutter={8}
         containerClassName=""
         containerStyle={{
-          top: 80,
+          bottom: 40,
           right: 20,
           zIndex: 999999,
         }}
@@ -200,6 +201,7 @@ export default function App() {
               <Route path="/attendance/rules" element={<AttendancePolicies />} />
               <Route path="/attendance/policies" element={<AttendancePolicies />} />
               <Route path="/attendance/piket" element={<PiketMonitor />} />
+              <Route path="/attendance/classroom-command" element={<ClassroomCommand />} />
               <Route path="/attendance/history" element={<AttendanceHistory />} />
               
               {/* Notification System */}

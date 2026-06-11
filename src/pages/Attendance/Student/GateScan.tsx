@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 import { useNavigate } from "react-router";
 import { attendanceService } from "../../../api/services/attendanceService";
@@ -10,6 +10,8 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../../../store/authStore";
+import { useAttendanceRules } from "../../../api/hooks/useRules";
+import { useQuery } from "@tanstack/react-query";
 import { createPortal } from "react-dom";
 
 const GateScan = () => {
@@ -47,6 +49,32 @@ const GateScan = () => {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const renderRef = useRef<HTMLDivElement>(null);
   const isMountedRef = useRef(false);
+
+  const { data: globalRulesResponse } = useAttendanceRules();
+
+  const requireQrCode = useMemo(() => {
+    const userRule = userPolicy?.rules?.find((r: any) => r.ruleType === "REQUIRE_QR_CODE");
+    if (userRule) {
+      return userRule.ruleValue === "true" || userRule.ruleValue === "1" || userRule.ruleValue === true;
+    }
+    return globalRulesResponse?.data?.some(
+      (r) => r.ruleType === "REQUIRE_QR_CODE" && (r.ruleValue === "true" || r.ruleValue === "1" || r.ruleValue === true)
+    ) ?? false;
+  }, [userPolicy?.rules, globalRulesResponse?.data]);
+
+  const { data: userIp } = useQuery({
+    queryKey: ["user-ip"],
+    queryFn: async () => {
+      try {
+        const res = await fetch("https://api.ipify.org?format=json");
+        const data = await res.json();
+        return data.ip as string;
+      } catch (e) {
+        return "Unknown IP";
+      }
+    },
+    staleTime: 60000,
+  });
 
   // -- API Handler --
   const handleScan = useCallback(
@@ -150,7 +178,73 @@ const GateScan = () => {
             response.studentName || (isStudent ? user?.name : "Student"),
           role: isStudent ? "self" : "kiosk",
           policy,
-          attendanceStatus: record.status || response.status,
+          attendanceStatus: (record.statusLabel || response.statusLabel)?.toUpperCase(),
+        });
+
+        setTimeout(() => {
+          if (isMountedRef.current) {
+            setScanResult({ status: "idle" });
+            setIsProcessing(false);
+          }
+        }, 3000);
+      } catch (error: unknown) {
+        handleScanError(error);
+      }
+  };
+
+  const submitDirectCheckIn = async (explicitPhoto?: string) => {
+      try {
+        const deviceId = isStudent ? `mobile_${user?.id}` : "gate_kiosk_1";
+        let latitude: number | undefined;
+        let longitude: number | undefined;
+
+        if (userLocation) {
+            latitude = userLocation.lat;
+            longitude = userLocation.lng;
+        }
+
+        let photoBlob: Blob | undefined;
+        if (explicitPhoto) {
+            const res = await fetch(explicitPhoto);
+            photoBlob = await res.blob();
+        }
+
+        const response = await attendanceService.checkIn({
+            deviceId,
+            latitude,
+            longitude,
+            method: "MANUAL",
+            photo: photoBlob
+        });
+
+        let policy: UserPolicyResponse | undefined;
+        const record = (response as any).data || response;
+        const userId =
+          record.userId ||
+          record.user_id ||
+          record.id ||
+          record.user?.id ||
+          record.student?.id;
+
+        if (userId) {
+          try {
+            const policyRes = await attendanceService.getAttendancePolicy(userId);
+            policy = (policyRes as { data?: UserPolicyResponse }).data || (policyRes as unknown as UserPolicyResponse);
+          } catch (e) {
+            console.error("Failed to fetch policy", e);
+          }
+        }
+
+        setScanResult({
+          status: "success",
+          message: isStudent
+            ? "You have checked in successfully."
+            : "Attendance Recorded",
+          studentName:
+            (response as any).studentName || (isStudent ? user?.name : "Student"),
+          role: isStudent ? "self" : "kiosk",
+          policy,
+          attendanceStatus: (record.statusLabel || (response as any).statusLabel)?.toUpperCase(),
         });
 
         setTimeout(() => {
@@ -195,16 +289,12 @@ const GateScan = () => {
                     const canvas = document.createElement("canvas");
                     const vidWidth = videoEl.videoWidth || 640;
                     const vidHeight = videoEl.videoHeight || 480;
-                    const size = Math.min(vidWidth, vidHeight);
-                    const startX = (vidWidth - size) / 2;
-                    const startY = (vidHeight - size) / 2;
                     
-                    canvas.width = size;
-                    canvas.height = size;
+                    canvas.width = vidWidth;
+                    canvas.height = vidHeight;
                     const ctx = canvas.getContext("2d");
                     if (ctx) {
-                        // Crop center square to match UI cutout
-                        ctx.drawImage(videoEl, startX, startY, size, size, 0, 0, size, size);
+                        ctx.drawImage(videoEl, 0, 0, vidWidth, vidHeight);
                         // Using WebP for superior compression and smaller payload size compared to JPEG
                         const dataUrl = canvas.toDataURL("image/webp", 0.5);
                         if (dataUrl && dataUrl.length > 50) {
@@ -217,7 +307,11 @@ const GateScan = () => {
             }
         }
 
-        await submitScan(pendingScanCode, photoEvidence);
+        if (pendingScanCode === "MANUAL_CHECKIN") {
+            await submitDirectCheckIn(photoEvidence);
+        } else {
+            await submitScan(pendingScanCode, photoEvidence);
+        }
         setRequireSelfie(false);
         setPendingScanCode(null);
   };
@@ -225,6 +319,8 @@ const GateScan = () => {
   // -- Camera Scanner Setup --
   useEffect(() => {
     if (viewMode !== "scanner") return;
+
+    if (!requireQrCode && !requireSelfie) return;
 
     isMountedRef.current = true;
     let scanner: Html5Qrcode | null = null;
@@ -242,7 +338,6 @@ const GateScan = () => {
           {
             fps: 10,
             qrbox: { width: 300, height: 300 },
-            aspectRatio: 1.0,
           },
           (decodedText) => {
             handleScan(decodedText);
@@ -491,7 +586,7 @@ const GateScan = () => {
                 
                 <div className="absolute inset-x-0 top-8 flex flex-col items-center pointer-events-none">
                   <h1 className="text-3xl font-bold tracking-tight mb-1">
-                    Gate Scanner
+                    Absen Kehadiran
                   </h1>
                   <p className="text-white/50 text-sm">Select a policy to begin scanning</p>
                 </div>
@@ -516,7 +611,18 @@ const GateScan = () => {
                   }
                   onClick={() => {
                     if (["complete", "restricted", "holiday"].includes(attendanceState)) return;
-                    setViewMode("scanner");
+                    
+                    const requirePhoto = userPolicy?.rules?.some((r: any) => r.ruleType === "REQUIRE_PHOTO_EVIDENCE" && (r.ruleValue === "true" || r.ruleValue === "1" || r.ruleValue === true));
+
+                    if (requireQrCode) {
+                        setViewMode("scanner");
+                    } else if (requirePhoto) {
+                        setPendingScanCode("MANUAL_CHECKIN");
+                        setRequireSelfie(true);
+                        setViewMode("scanner");
+                    } else {
+                        submitDirectCheckIn();
+                    }
                   }}
                   className={`border rounded-2xl p-6 transition-all group relative overflow-hidden shadow-2xl ${
                     attendanceState === "complete"
@@ -634,6 +740,20 @@ const GateScan = () => {
                     )}
                   </div>
 
+                  {/* Add IP & Location row */}
+                  <div className="grid grid-cols-2 gap-3 mt-3 bg-black/20 rounded-xl p-4 border border-white/5">
+                      <div>
+                          <span className="block text-[10px] text-white/40 uppercase tracking-wide mb-1">IP Address</span>
+                          <span className="text-xs font-mono font-medium text-brand-300">{userIp || 'Loading...'}</span>
+                      </div>
+                      <div>
+                          <span className="block text-[10px] text-white/40 uppercase tracking-wide mb-1">Location</span>
+                          <span className="text-xs font-mono font-medium text-brand-300">
+                              {userLocation ? `${userLocation.lat.toFixed(5)}, ${userLocation.lng.toFixed(5)}` : 'Detecting...'}
+                          </span>
+                      </div>
+                  </div>
+
                   <div className={`mt-6 flex items-center pt-4 border-t border-white/5 ${["complete", "restricted", "holiday"].includes(attendanceState) ? "justify-center" : "justify-between"}`}>
                     <span className="text-white/60 flex items-center gap-2 text-xs uppercase tracking-wide">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-brand-400">
@@ -642,11 +762,19 @@ const GateScan = () => {
                         {new Date().toLocaleDateString("en-GB", { weekday: "long" })}
                     </span>
 
-                    {!["complete", "restricted", "holiday"].includes(attendanceState) && (
+                    {!["complete", "restricted", "holiday"].includes(attendanceState) && (() => {
+                        const requirePhoto = userPolicy?.rules?.some((r: any) => r.ruleType === "REQUIRE_PHOTO_EVIDENCE" && (r.ruleValue === "true" || r.ruleValue === "1" || r.ruleValue === true));
+                        return (
                         <span className={`text-${attendanceState === 'checkedIn' ? 'yellow' : 'brand'}-400 group-hover:translate-x-1 transition-transform flex items-center gap-1 font-medium text-sm`}>
-                            {attendanceState === "checkedIn" ? "Scan to Clock Out" : "Start Scanning"} <ChevronLeftIcon className="w-4 h-4 rotate-180" />
+                            {requireQrCode 
+                              ? (attendanceState === "checkedIn" ? "Scan to Clock Out" : "Start Scanning")
+                              : requirePhoto 
+                                ? (attendanceState === "checkedIn" ? "Take Selfie to Clock Out" : "Take Selfie")
+                                : (attendanceState === "checkedIn" ? "Tap to Clock Out" : "Check In Now")
+                            } <ChevronLeftIcon className="w-4 h-4 rotate-180" />
                         </span>
-                    )}
+                        );
+                    })()}
                   </div>
                 </motion.div>
               ) : (
@@ -677,7 +805,7 @@ const GateScan = () => {
           <ChevronLeftIcon className="size-6" />
         </button>
         <div className="text-center">
-          <h1 className="text-xl sm:text-2xl font-bold text-white mb-1 tracking-tight">Gate Scanner</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-white mb-1 tracking-tight">Absen Kehadiran</h1>
           <p className="text-white/70 text-sm font-medium">Scan QR Code</p>
         </div>
         <div className="w-10" />
@@ -696,8 +824,8 @@ const GateScan = () => {
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] h-[280px] sm:w-[350px] sm:h-[350px] bg-transparent shadow-[0_0_0_9999px_rgba(0,0,0,0.4)] rounded-3xl" />
         </div>
 
-        {/* Custom Green Corner Frames Only (Hide during selfie) */}
-        {!requireSelfie && (
+        {/* Custom Green Corner Frames Only (Hide during selfie or if QR is disabled) */}
+        {!requireSelfie && requireQrCode && (
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] h-[280px] sm:w-[350px] sm:h-[350px] z-20 pointer-events-none">
             <div className="absolute inset-0 overflow-hidden rounded-3xl">
                 <motion.div
@@ -717,18 +845,36 @@ const GateScan = () => {
             </div>
         )}
 
+        {/* Message for RFID Scanner when QR is disabled */}
+        {!requireSelfie && !requireQrCode && !isStudent && (
+            <div className="absolute inset-0 z-40 flex flex-col items-center justify-center pointer-events-none">
+                <div className="bg-black/60 backdrop-blur-md p-6 rounded-2xl border border-white/10 text-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-16 h-16 text-brand-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v1m6 11h2m-6 0h-8v4h8v-4zM6 16H4m14-8v8a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2h12a2 2 0 012 2z" />
+                    </svg>
+                    <h2 className="text-xl font-bold text-white mb-2">Ready to Scan</h2>
+                    <p className="text-white/60 text-sm">Please use the USB Card Reader</p>
+                </div>
+            </div>
+        )}
+
         {/* Selfie Capture Overlay */}
         {requireSelfie && (
             <div className="absolute inset-0 z-40 flex flex-col items-center justify-center pointer-events-auto">
                 <div className="absolute top-24 left-0 right-0 text-center z-50">
                     <h2 className="text-3xl font-bold text-white mb-2 drop-shadow-lg">Take a Selfie</h2>
-                    <p className="text-white/80">Position your face in the circle</p>
+                    <p className="text-white/80">Position your face in the frame</p>
                 </div>
                 
-                {/* Circular cutout */}
-                <div className="w-[280px] h-[280px] sm:w-[320px] sm:h-[320px] rounded-full border-4 border-brand-500 shadow-[0_0_0_9999px_rgba(0,0,0,0.85)] z-40 relative">
+                {/* Rectangular portrait cutout */}
+                <div className="w-[80%] max-w-[320px] aspect-[3/4] rounded-2xl border-2 border-brand-500 shadow-[0_0_0_9999px_rgba(0,0,0,0.85)] z-40 relative">
                     {/* inner glow */}
-                    <div className="absolute inset-0 rounded-full shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]" />
+                    <div className="absolute inset-0 rounded-2xl shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]" />
+                    {/* Corner accents */}
+                    <div className="absolute top-0 left-0 w-8 h-8 border-l-4 border-t-4 border-brand-500 rounded-tl-2xl" />
+                    <div className="absolute top-0 right-0 w-8 h-8 border-r-4 border-t-4 border-brand-500 rounded-tr-2xl" />
+                    <div className="absolute bottom-0 left-0 w-8 h-8 border-l-4 border-b-4 border-brand-500 rounded-bl-2xl" />
+                    <div className="absolute bottom-0 right-0 w-8 h-8 border-r-4 border-b-4 border-brand-500 rounded-br-2xl" />
                 </div>
 
                 <button 
