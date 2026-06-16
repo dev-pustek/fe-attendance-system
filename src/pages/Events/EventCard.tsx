@@ -15,6 +15,7 @@ import {
     MapPinIcon,
     QrScanIcon
 } from "../../components/atoms/Icons";
+import { useAuthStore } from "../../store/authStore";
 
 interface EventCardProps {
   event: Event;
@@ -44,6 +45,11 @@ const EventCard: React.FC<EventCardProps> = ({
   onManageInvites,
   onScan
 }) => {
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === "admin";
+  const isOrganizer = (event as any).organizerId === user?.id || (event as any).creator?.id === user?.id;
+  const hasManageAccess = isAdmin || isOrganizer;
+  const isScanner = hasManageAccess || ((event as any).invitations && (event as any).invitations.length > 0 && (event as any).invitations[0].isScanner);
 
   const getEventIcon = () => {
       switch(event.eventType) {
@@ -78,7 +84,7 @@ const EventCard: React.FC<EventCardProps> = ({
           </span>
           {getEventBadge()}
         </div>
-        <Checkbox checked={isSelected} onChange={onToggle} />
+        {hasManageAccess && <Checkbox checked={isSelected} onChange={onToggle} />}
       </div>
 
       {/* Card Body */}
@@ -131,44 +137,49 @@ const EventCard: React.FC<EventCardProps> = ({
 
       {/* Card Footer */}
       <div className="flex items-center justify-between border-t border-gray-100 bg-gray-50/30 px-4 py-3 sm:px-5 dark:border-white/[0.05] dark:bg-white/[0.01]">
-        <button
-          onClick={(e) => { e.stopPropagation(); onManageInvites(); }}
-          disabled={event.isCancelled || new Date(event.endTime) < new Date()}
-          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-brand-600 hover:bg-brand-50 disabled:opacity-50 dark:text-brand-400 dark:hover:bg-brand-500/10 transition-colors"
-        >
-          <GroupIcon className="size-3.5" /> Undangan
-        </button>
-        <div className="relative flex justify-end">
-            <TableActionMenu>
-                <DropdownItem
-                onClick={(e) => {
-                    e.stopPropagation();
-                    onEdit();
-                }}
-                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/[0.04]"
-                >
-                <PencilIcon className="size-3.5" /> Edit
-                </DropdownItem>
-                <DropdownItem
-                onClick={(e) => {
-                    e.stopPropagation();
-                    onScan();
-                }}
-                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-500/10"
-                >
-                <QrScanIcon className="size-3.5" /> Scan Kehadiran
-                </DropdownItem>
-                <DropdownItem
-                onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete();
-                }}
-                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/10"
-                >
-                <TrashBinIcon className="size-3.5" /> Hapus
-                </DropdownItem>
-            </TableActionMenu>
+        <div className="flex items-center gap-2">
+            {hasManageAccess && (
+              <button
+              onClick={(e) => { e.stopPropagation(); onManageInvites(); }}
+              disabled={event.isCancelled || new Date(event.endTime) < new Date()}
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-brand-600 hover:bg-brand-50 disabled:opacity-50 dark:text-brand-400 dark:hover:bg-brand-500/10 transition-colors"
+              >
+              <GroupIcon className="size-3.5" /> Undangan
+              </button>
+            )}
+            {isScanner && (
+              <button
+              onClick={(e) => { e.stopPropagation(); onScan(); }}
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-white bg-brand-500 hover:bg-brand-600 transition-colors shadow-[0_2px_8px_rgba(236,72,153,0.4)] active:scale-95"
+              >
+              <QrScanIcon className="size-3.5" /> Scan Kehadiran
+              </button>
+            )}
         </div>
+        {hasManageAccess && (
+          <div className="relative flex justify-end">
+              <TableActionMenu>
+                  <DropdownItem
+                  onClick={(e) => {
+                      e.stopPropagation();
+                      onEdit();
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/[0.04]"
+                  >
+                  <PencilIcon className="size-3.5" /> Edit
+                  </DropdownItem>
+                  <DropdownItem
+                  onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete();
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/10"
+                  >
+                  <TrashBinIcon className="size-3.5" /> Hapus
+                  </DropdownItem>
+              </TableActionMenu>
+          </div>
+        )}
       </div>
     </div>
   );

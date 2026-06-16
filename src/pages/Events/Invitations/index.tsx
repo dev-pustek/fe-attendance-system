@@ -45,6 +45,19 @@ const EventInvitations: React.FC = () => {
 
   const { deleteInvitationMutation } = useEventMutation();
 
+  const toggleScannerMutation = useMutation({
+    mutationFn: async ({ eventId, invitationId, isScanner }: { eventId: string, invitationId: string, isScanner: boolean }) => {
+      await eventService.setScannerAccess(eventId, invitationId, isScanner);
+    },
+    onSuccess: () => {
+      refetch();
+      showSuccess("Scanner access updated successfully");
+    },
+    onError: (error: any) => {
+      showError(error, "Failed to update scanner access");
+    }
+  });
+
   const invitations = React.useMemo(() => response?.data || [], [response?.data]);
   const [sortConfig, setSortConfig] = useState<{ key: keyof EventInvitation; direction: "asc" | "desc" } | null>(null);
 
@@ -170,13 +183,14 @@ const EventInvitations: React.FC = () => {
                   </button>
                 </TableCell>
                 <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Response Notes</TableCell>
+                <TableCell isHeader className="px-5 py-4 text-center text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Panitia</TableCell>
                 <TableCell isHeader className="px-5 py-4 text-right text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</TableCell>
               </TableRow>
             </TableHeader>
             <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="py-12 text-center text-gray-400">
+                  <TableCell colSpan={6} className="py-12 text-center text-gray-400">
                     <div className="flex flex-col items-center gap-3">
                       <div className="size-6 animate-spin rounded-full border-2 border-brand-500 border-t-transparent"></div>
                       <span className="text-sm">Loading invitations...</span>
@@ -185,7 +199,7 @@ const EventInvitations: React.FC = () => {
                 </TableRow>
               ) : sortedInvitations.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="py-12 text-center text-gray-400">
+                  <TableCell colSpan={6} className="py-12 text-center text-gray-400">
                     <div className="flex flex-col items-center gap-2">
                        <UserCircleIcon className="size-10 opacity-20 mb-2" />
                       <p className="text-sm font-medium">No invitations found.</p>
@@ -232,6 +246,23 @@ const EventInvitations: React.FC = () => {
                              {invite.responseNotes || "No notes provided"}
                           </p>
                        </div>
+                    </TableCell>
+                    <TableCell className="px-5 py-4 text-center">
+                       <button
+                          onClick={() => {
+                             if (event?.public_id) {
+                                toggleScannerMutation.mutate({
+                                   eventId: event.public_id,
+                                   invitationId: String(invite.id),
+                                   isScanner: !invite.isScanner
+                                });
+                             }
+                          }}
+                          disabled={toggleScannerMutation.isPending}
+                          className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors disabled:opacity-50 ${invite.isScanner ? 'bg-brand-500' : 'bg-gray-200 dark:bg-white/10'}`}
+                       >
+                          <span className={`inline-block size-3.5 transform rounded-full bg-white transition-transform ${invite.isScanner ? 'translate-x-[18px]' : 'translate-x-[2px]'}`} />
+                       </button>
                     </TableCell>
                     <TableCell className="px-5 py-4 text-right">
                        <div className="flex justify-end gap-1">

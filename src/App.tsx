@@ -95,7 +95,7 @@ import ShiftTemplates from "./pages/Scheduling/ShiftTemplates";
 import ShiftAssignments from "./pages/Scheduling/ShiftAssignments";
 import WorkSchedules from "./pages/Scheduling/WorkSchedules";
 import Events from "./pages/Events";
-import EventScanner from "./pages/Events/EventScanner";
+
 import EventInvitations from "./pages/Events/Invitations";
 import EventInvitationPaper from "./pages/Events/InvitationPaper";
 import Guests from "./pages/Guests";
@@ -270,7 +270,7 @@ export default function App() {
               <Route path="/scheduling/assignments" element={<ShiftAssignments />} />
               <Route path="/schedules" element={<WorkSchedules />} />
               <Route path="/events" element={<Events />} />
-              <Route path="/events/scan" element={<EventScanner />} />
+              <Route path="/events/scan" element={<GateScan />} />
               <Route path="/events/:id/invitations" element={<EventInvitations />} />
               <Route path="/events/:id/invitation-paper" element={<EventInvitationPaper />} />
               <Route path="/guests" element={<Guests />} />

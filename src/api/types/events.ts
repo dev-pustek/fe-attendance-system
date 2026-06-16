@@ -74,6 +74,7 @@ export interface EventInvitation {
   invitedAt: string | null;
   respondedAt: string | null;
   responseNotes: string | null;
+  isScanner: boolean;
   user?: User;
   event?: Event;
   attendanceStatus?: EventAttendanceStatus | null;

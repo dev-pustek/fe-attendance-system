@@ -81,6 +81,10 @@ export const eventService = {
     await apiClient.patch(`/events/invitations/${invitationId}/respond`, data);
   },
 
+  setScannerAccess: async (eventId: string | number, invitationId: string | number, isScanner: boolean): Promise<void> => {
+    await apiClient.patch(`/events/${eventId}/invitations/${invitationId}/scanner`, { isScanner });
+  },
+
   respondToEventByEventId: async (eventId: string | number, data: { status: string; responseNotes?: string }): Promise<void> => {
     await apiClient.patch(`/events/${eventId}/my-response`, data);
   },
