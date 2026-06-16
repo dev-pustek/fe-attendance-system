@@ -13,7 +13,7 @@ import {
     TimeIcon, 
     GroupIcon,
     MapPinIcon,
-    QrCodeIcon
+    QrScanIcon
 } from "../../components/atoms/Icons";
 
 interface EventCardProps {
@@ -156,7 +156,7 @@ const EventCard: React.FC<EventCardProps> = ({
                 }}
                 className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-500/10"
                 >
-                <QrCodeIcon className="size-3.5" /> Scan Kehadiran
+                <QrScanIcon className="size-3.5" /> Scan Kehadiran
                 </DropdownItem>
                 <DropdownItem
                 onClick={(e) => {

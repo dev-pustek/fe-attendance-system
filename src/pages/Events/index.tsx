@@ -32,7 +32,7 @@ import {
   PlusIcon, PencilIcon, TrashBinIcon, ChevronLeftIcon,
   ChevronUpIcon, ChevronDownIcon, AngleRightIcon,
   GridIcon, CalenderIcon, TableIcon, ListIcon,
-  UserIcon, TimeIcon, GroupIcon, CloseIcon, FilterIcon, SearchIcon
+  UserIcon, TimeIcon, GroupIcon, CloseIcon, FilterIcon, SearchIcon, QrScanIcon
 } from "../../components/atoms/Icons";
 import Button from "../../components/atoms/Button";
 import Switch from "../../components/atoms/Switch";
@@ -710,7 +710,7 @@ const Events: React.FC = () => {
                                                         onClick={() => navigate(`/events/scan?eventId=${event.public_id}`)}
                                                         className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-500/10"
                                                     >
-                                                        <QrCodeIcon className="size-3.5" /> Scan Kehadiran
+                                                        <QrScanIcon className="size-3.5" /> Scan Kehadiran
                                                     </DropdownItem>
                                                     <DropdownItem
                                                         onClick={() => handleDelete(event.public_id)}
