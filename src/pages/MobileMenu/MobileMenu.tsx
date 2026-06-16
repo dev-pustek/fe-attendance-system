@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import PageMeta from "../../components/atoms/PageMeta";
 import { useAppMenu } from "../../hooks/useAppMenu";
-import { ChevronDownIcon } from "../../components/atoms/Icons";
+import { ChevronDownIcon, UserCircleIcon } from "../../components/atoms/Icons";
 import { ChevronRightIcon, ArrowRightOnRectangleIcon } from "@heroicons/react/24/outline";
 import { useAuthStore } from "../../store/authStore";
 import { showSuccess } from "../../utils/toast";
@@ -136,8 +136,12 @@ const MobileMenu: React.FC = () => {
         {/* Profile Quick Link at bottom just in case */}
         <div className="px-6 pt-4 pb-2">
           <Link to="/profile" className="flex items-center gap-4 bg-white dark:bg-slate-800 p-4 rounded-3xl shadow-sm border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors active:scale-95 duration-200">
-            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white dark:border-slate-700 shadow-md">
-               <img src={user?.photo || "https://i.pravatar.cc/150"} alt="Profile" className="w-full h-full object-cover" />
+            <div className="w-12 h-12 flex items-center justify-center rounded-full overflow-hidden border-2 border-white dark:border-slate-700 shadow-md bg-gray-100 dark:bg-slate-800 text-gray-400">
+               {user?.photo ? (
+                 <img src={user.photo} alt="Profile" className="w-full h-full object-cover" />
+               ) : (
+                 <UserCircleIcon className="w-full h-full" />
+               )}
             </div>
             <div>
               <h3 className="font-bold text-gray-900 dark:text-white text-base">{user?.name || "User"}</h3>

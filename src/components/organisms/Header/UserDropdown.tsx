@@ -57,12 +57,16 @@ export default function UserDropdown({ isMobilePremium }: { isMobilePremium?: bo
         className={`flex items-center text-gray-700 dropdown-toggle dark:text-gray-400 ${isMobilePremium ? 'hover:opacity-80 transition-opacity' : ''}`}
       >
         {isMobilePremium ? (
-          <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white/30 bg-brand-400 shadow-lg">
-            <img 
-              src={user?.photo || "https://i.pravatar.cc/150"} 
-              alt="Profile" 
-              className="w-full h-full object-cover"
-            />
+          <div className="w-10 h-10 flex items-center justify-center rounded-full overflow-hidden border-2 border-white/30 bg-brand-400 shadow-lg text-white">
+            {user?.photo ? (
+              <img 
+                src={user.photo} 
+                alt="Profile" 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <UserCircleIcon className="w-full h-full" />
+            )}
           </div>
         ) : user?.photo ? (
           <span className="mr-0 sm:mr-3 overflow-hidden rounded-full h-11 w-11 flex items-center justify-center bg-gray-100 dark:bg-gray-800 text-gray-400">
