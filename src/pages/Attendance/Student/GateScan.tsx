@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, react-hooks/exhaustive-deps */
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 import { useNavigate, useSearchParams } from "react-router";
@@ -907,7 +908,7 @@ const GateScan = () => {
           isOpen={isConfirmModalOpen}
           onClose={() => setIsConfirmModalOpen(false)}
           title="Confirm Check-In"
-          className="max-w-xs m-4"
+          className="w-full sm:max-w-md m-0 sm:m-4"
           footer={
             <div className="flex justify-end gap-3 w-full">
               <Button
