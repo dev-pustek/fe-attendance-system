@@ -797,6 +797,19 @@ export default function MobileStudentDashboard({ logs = [] }: MobileStudentDashb
                                 </button>
                               </div>
                             )}
+                            
+                            {/* Event Action Button for Scanning/Selfie */}
+                            {isActive && invStatus !== 'declined' && invStatus !== 'pending' && invStatus !== 'invited' && !item.attendanceTime && (
+                              <div className="mt-3 pt-3 border-t border-white/20 flex gap-2 relative z-10">
+                                <button
+                                  onClick={() => navigate("/attendance/gate-scan")}
+                                  className="flex-1 flex items-center justify-center gap-1.5 bg-white text-brand-600 hover:bg-white/90 text-[11px] font-bold py-2 rounded-lg transition-colors active:scale-95 shadow-sm"
+                                >
+                                  <ScanIcon className="w-4 h-4" />
+                                  {requireQrCode ? "Scan QR Event" : requirePhotoEvidence ? "Ambil Selfie Event" : "Proses Kehadiran Event"}
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
