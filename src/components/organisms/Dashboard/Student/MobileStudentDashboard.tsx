@@ -95,9 +95,15 @@ function GateCountdown({ targetTime, onComplete }: { targetTime: string, onCompl
           onComplete();
         }
       } else {
-        const totalMinutes = Math.floor(diff / (1000 * 60));
+        const totalHours = Math.floor(diff / (1000 * 60 * 60));
+        const remainingMinutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
         const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-        setTimeLeft(`${totalMinutes}m ${seconds}s`);
+        
+        if (totalHours > 0) {
+          setTimeLeft(`${totalHours} jam ${remainingMinutes}m ${seconds}s`);
+        } else {
+          setTimeLeft(`${remainingMinutes}m ${seconds}s`);
+        }
       }
     }, 1000);
 
@@ -107,8 +113,9 @@ function GateCountdown({ targetTime, onComplete }: { targetTime: string, onCompl
   if (!timeLeft) return null;
 
   return (
-    <span className="font-mono text-[10px] ml-1 px-1.5 py-0.5 rounded-md bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-400">
-      Opens in {timeLeft}
+    <span className="inline-flex items-center gap-1 text-[9px] font-bold text-pink-600 dark:text-pink-400 bg-pink-50 dark:bg-pink-500/10 border border-pink-100 dark:border-pink-500/20 rounded-md px-1.5 py-0.5">
+      <ClockIcon className="w-3 h-3" />
+      Dibuka dlm {timeLeft}
     </span>
   );
 }
@@ -933,8 +940,11 @@ export default function MobileStudentDashboard({ logs = [] }: MobileStudentDashb
                         <div className="flex justify-between items-center gap-2 w-full mt-1.5">
                           {/* Left: Policies or Upcoming Status */}
                           <div className="flex-1 min-w-0">
-                            {(policies || rules.length > 0) && item.type === 'scan_in' && (
-                              <div className="flex flex-wrap items-center gap-1.5">
+                            {(policies || rules.length > 0 || (!isActive && isUpcoming && item.type === 'scan_in' && (item as any).openTime)) && item.type === 'scan_in' && (
+                              <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                                {!isActive && isUpcoming && (item as any).openTime && (
+                                  <GateCountdown targetTime={(item as any).openTime} onComplete={refetchRoadmap} />
+                                )}
                                 {requirePhotoEvidence && (
                                   <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 rounded-md px-1.5 py-0.5">
                                     <CameraIcon className="w-3 h-3" /> Selfie
@@ -983,13 +993,10 @@ export default function MobileStudentDashboard({ logs = [] }: MobileStudentDashb
                               </div>
                             )}
 
-                            {!isActive && isUpcoming && (
-                              <div className="flex items-center text-gray-500 dark:text-gray-400 font-medium text-[10px]">
+                            {!isActive && isUpcoming && item.type !== 'scan_in' && (
+                              <div className="flex items-center text-gray-500 dark:text-gray-400 font-medium text-[10px] mt-1">
                                 <ClockIcon className="w-3.5 h-3.5 mr-1" />
-                                {item.type === 'break' ? 'Upcoming Break' : 
-                                 (item.type === 'scan_in' && (item as any).openTime) ? 
-                                 <GateCountdown targetTime={(item as any).openTime} onComplete={refetchRoadmap} /> : 
-                                 'Menunggu Waktu...'}
+                                {item.type === 'break' ? 'Upcoming Break' : 'Menunggu Waktu...'}
                               </div>
                             )}
                           </div>
