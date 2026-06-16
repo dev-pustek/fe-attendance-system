@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useEvents, useEventsInfinite, useEventMutation } from "../../api/hooks/useEvents";
+import { useUsers } from "../../api/hooks/useUsers";
+import { eventService } from "../../api/services/eventService";
 import { Event, CreateEventDto, UpdateEventDto } from "../../api/types/events";
 import { useNavigate } from "react-router";
 import PageMeta from "../../components/atoms/PageMeta";
@@ -145,6 +147,9 @@ const Events: React.FC = () => {
   const [selectedIds, setSelectedIds] = useState<Set<number | string>>(new Set());
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  
+  const { users } = useUsers({ limit: 1000 });
+
   const [isManageModalOpen, setIsManageModalOpen] = useState(false);
   const [isDayEventsModalOpen, setIsDayEventsModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -152,7 +157,7 @@ const Events: React.FC = () => {
 
   const [formData, setFormData] = useState<Partial<CreateEventDto & { isCancelled?: boolean, cancellationReason?: string }>>({
     name: "", description: "", location: "", startDateTime: "", endDateTime: "",
-    eventType: "", capacity: null, affectsAttendance: false, isCancelled: false, cancellationReason: ""
+    eventType: "", capacity: null, affectsAttendance: false, isCancelled: false, cancellationReason: "", scannerIds: []
   });
 
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -221,20 +226,33 @@ const Events: React.FC = () => {
     return sortConfig.direction === "asc" ? <ChevronUpIcon className="size-3 text-brand-500" /> : <ChevronDownIcon className="size-3 text-brand-500" />;
   };
 
-  const handleOpenModal = (event?: Event, start?: string, end?: string) => {
+  const handleOpenModal = async (event?: Event, start?: string, end?: string) => {
     if (event) {
       setSelectedEvent(event);
-      setFormData({
-        name: event.name, description: event.description, location: event.location,
-        startDateTime: event.startTime, endDateTime: event.endTime, eventType: event.eventType,
-        capacity: event.capacity, affectsAttendance: event.affectsAttendance,
-        isCancelled: event.isCancelled, cancellationReason: event.cancellationReason
-      });
+      try {
+        const invRes = await eventService.getInvitations(event.public_id, { limit: 1000 });
+        const scannerIds = invRes.data.filter(inv => inv.isScanner).map(inv => inv.userId);
+        setFormData({
+          name: event.name, description: event.description, location: event.location,
+          startDateTime: event.startTime, endDateTime: event.endTime, eventType: event.eventType,
+          capacity: event.capacity, affectsAttendance: event.affectsAttendance,
+          isCancelled: event.isCancelled, cancellationReason: event.cancellationReason,
+          scannerIds
+        });
+      } catch (e) {
+        setFormData({
+          name: event.name, description: event.description, location: event.location,
+          startDateTime: event.startTime, endDateTime: event.endTime, eventType: event.eventType,
+          capacity: event.capacity, affectsAttendance: event.affectsAttendance,
+          isCancelled: event.isCancelled, cancellationReason: event.cancellationReason,
+          scannerIds: []
+        });
+      }
     } else {
       setSelectedEvent(null);
       setFormData({
         name: "", description: "", location: "", startDateTime: start || "", endDateTime: end || "",
-        eventType: "", capacity: null, affectsAttendance: false, isCancelled: false, cancellationReason: ""
+        eventType: "", capacity: null, affectsAttendance: false, isCancelled: false, cancellationReason: "", scannerIds: []
       });
     }
     setIsModalOpen(true);
@@ -854,6 +872,17 @@ const Events: React.FC = () => {
                          placeholder="Tak Terbatas"
                       />
                   </div>
+              </div>
+              <div className="space-y-1.5 mt-4">
+                  <Label>Panitia (Scanner)</Label>
+                  <CustomSelect
+                     multiple
+                     value={formData.scannerIds || []}
+                     onChange={(val) => setFormData({...formData, scannerIds: val})}
+                     options={users?.map((u: any) => ({ label: u.name, value: u.public_id })) || []}
+                     placeholder="Pilih panitia scanner"
+                  />
+                  <p className="text-[10px] text-gray-500">Panitia yang dipilih akan dapat melakukan scan kehadiran pada event ini melalui mobile app.</p>
               </div>
               <div className="flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50/60 p-4 dark:border-white/[0.05] dark:bg-white/[0.02]">
                 <div className="flex items-center gap-3">

@@ -47,6 +47,7 @@ export interface CreateEventDto {
   eventType: string;
   capacity: number | null;
   affectsAttendance: boolean;
+  scannerIds?: string[];
 }
 
 export interface UpdateEventDto extends Partial<CreateEventDto> {
