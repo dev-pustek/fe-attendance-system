@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, react-hooks/exhaustive-deps */
 import { useEffect, useState, useRef } from "react";
+import QRCode from "react-qr-code";
 import { Link, useNavigate } from "react-router";
 import { BellIcon, SparklesIcon } from "@heroicons/react/24/solid";
 import { ArrowDownLeftIcon, ArrowUpRightIcon, ClockIcon, DocumentTextIcon, QrCodeIcon, ChevronRightIcon, FaceSmileIcon, EyeIcon } from "@heroicons/react/24/outline";
@@ -219,6 +220,7 @@ export default function MobileStudentDashboard({ logs = [] }: MobileStudentDashb
   const [selectedDetail, setSelectedDetail] = useState<any>(null);
   const [confirmClassItem, setConfirmClassItem] = useState<StudentRoadmapItem | null>(null);
   const [isAttendingClass, setIsAttendingClass] = useState(false);
+  const [showEventQrModal, setShowEventQrModal] = useState<boolean>(false);
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -800,13 +802,13 @@ export default function MobileStudentDashboard({ logs = [] }: MobileStudentDashb
                             
                             {/* Event Action Button for Scanning/Selfie */}
                             {isActive && invStatus !== 'declined' && invStatus !== 'pending' && invStatus !== 'invited' && !item.attendanceTime && (
-                              <div className="mt-3 pt-3 border-t border-white/20 flex gap-2 relative z-10">
+                              <div className="mt-3 pt-3 border-t border-white/20 flex justify-end gap-2 relative z-10">
                                 <button
-                                  onClick={() => navigate("/attendance/gate-scan")}
-                                  className="flex-1 flex items-center justify-center gap-1.5 bg-white text-brand-600 hover:bg-white/90 text-[11px] font-bold py-2 rounded-lg transition-colors active:scale-95 shadow-sm"
+                                  onClick={() => setShowEventQrModal(true)}
+                                  className="flex items-center justify-center gap-1.5 bg-brand-500 hover:bg-brand-600 text-white text-[10px] font-bold px-3 py-1.5 rounded-full transition-all shadow-sm active:scale-95"
                                 >
-                                  <ScanIcon className="w-4 h-4" />
-                                  {requireQrCode ? "Scan QR Event" : requirePhotoEvidence ? "Ambil Selfie Event" : "Proses Kehadiran Event"}
+                                  <QrCodeIcon className="w-3 h-3" />
+                                  Tampilkan QR Code
                                 </button>
                               </div>
                             )}
@@ -1253,6 +1255,23 @@ export default function MobileStudentDashboard({ logs = [] }: MobileStudentDashb
           </div>
         </div>
       </Modal>
+
+      {/* Event QR Code Modal */}
+      <Modal
+        isOpen={showEventQrModal}
+        onClose={() => setShowEventQrModal(false)}
+        title="QR Code Kehadiran"
+        className="w-full sm:max-w-xs m-0 sm:m-4"
+      >
+        <div className="flex flex-col items-center justify-center p-6 text-center space-y-4">
+          <p className="text-sm text-gray-500">Tunjukkan QR Code ini kepada panitia event atau admin untuk dipindai.</p>
+          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+            <QRCode value={user?.public_id || user?.id || ""} size={200} />
+          </div>
+          <p className="text-xs font-bold text-gray-400 mt-2">{user?.public_id || user?.id}</p>
+        </div>
+      </Modal>
+
     </div>
   );
 }
