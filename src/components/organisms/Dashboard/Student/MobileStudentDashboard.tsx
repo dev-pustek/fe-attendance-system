@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, react-hooks/exhaustive-deps */
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router";
 import { BellIcon, SparklesIcon } from "@heroicons/react/24/solid";
 import { ArrowDownLeftIcon, ArrowUpRightIcon, ClockIcon, DocumentTextIcon, QrCodeIcon, ChevronRightIcon, FaceSmileIcon, EyeIcon } from "@heroicons/react/24/outline";
