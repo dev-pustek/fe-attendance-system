@@ -269,7 +269,11 @@ export default function MobileStudentDashboard({ logs = [] }: MobileStudentDashb
            if (!item.attendanceTime) item.attendanceTime = userPolicy.todayStatus.clockOut;
            
            if (todayRecord) {
-              (item as any).recordDetail = todayRecord;
+              (item as any).recordDetail = { 
+                ...todayRecord, 
+                photoUrl: todayRecord.photoOutUrl || null,
+                photoEvidenceUrl: null
+              };
            } else {
               (item as any).recordDetail = {
                  isLate: false,

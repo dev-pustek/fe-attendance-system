@@ -58,6 +58,7 @@ export interface AttendanceRecord {
   notes?: string | null;
   photoUrl?: string | null;
   photoEvidenceUrl?: string | null;
+  photoOutUrl?: string | null;
   isDeleted?: boolean;
   deletedAt?: string | null;
   createdAt?: string;
