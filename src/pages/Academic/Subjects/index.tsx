@@ -63,46 +63,7 @@ function useIsMobile() {
   return isMobile;
 }
 
-const RowActionMenu = ({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  return (
-    <div className="relative flex justify-center">
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          setIsOpen(!isOpen);
-        }}
-        className="flex size-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-white/[0.05] dark:hover:text-gray-200"
-      >
-        <MoreHorizontalIcon className="size-5" />
-      </button>
-      <Dropdown
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        className="absolute right-0 top-full z-20 mt-1 w-32 origin-top-right rounded-xl border border-gray-200 bg-white py-1.5 shadow-lg dark:border-white/[0.07] dark:bg-gray-900"
-      >
-        <DropdownItem
-          onClick={() => {
-            setIsOpen(false);
-            onEdit();
-          }}
-          className="text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/[0.05]"
-        >
-          <PencilIcon className="size-3.5" /> Edit
-        </DropdownItem>
-        <DropdownItem
-          onClick={() => {
-            setIsOpen(false);
-            onDelete();
-          }}
-          className="text-error-600 hover:bg-error-50 dark:hover:bg-error-500/10"
-        >
-          <TrashBinIcon className="size-3.5" /> Delete
-        </DropdownItem>
-      </Dropdown>
-    </div>
-  );
-};
+
 
 export default function Subjects() {
   const isMobile = useIsMobile();
@@ -565,7 +526,22 @@ export default function Subjects() {
                         </Badge>
                       </TableCell>
                       <TableCell className="px-4 py-4 text-center">
-                        <RowActionMenu onEdit={() => handleOpenModal(subject)} onDelete={() => handleDelete(subject)} />
+                        <div className="flex justify-center gap-1">
+                          <button
+                            onClick={() => handleOpenModal(subject)}
+                            className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-brand-50 hover:text-brand-500 dark:hover:bg-brand-500/10"
+                            title="Edit Subject"
+                          >
+                            <PencilIcon className="size-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(subject)}
+                            className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-error-50 hover:text-error-500 dark:hover:bg-error-500/10"
+                            title="Delete Subject"
+                          >
+                            <TrashBinIcon className="size-4" />
+                          </button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))

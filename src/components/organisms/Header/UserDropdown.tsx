@@ -7,6 +7,7 @@ import { UserCircleIcon } from "../../atoms/Icons";
 import { useAuthStore } from "../../../store/authStore";
 import { showSuccess } from "../../../utils/toast";
 import { User, UserTypeAssignment } from "../../../api/types/user";
+import { getImageUrl } from "../../../utils/imageUrl";
 
 export default function UserDropdown({ isMobilePremium }: { isMobilePremium?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -60,7 +61,7 @@ export default function UserDropdown({ isMobilePremium }: { isMobilePremium?: bo
           <div className="w-10 h-10 flex items-center justify-center rounded-full overflow-hidden border-2 border-white/30 bg-brand-400 shadow-lg text-white">
             {user?.photo ? (
               <img 
-                src={user.photo} 
+                src={getImageUrl(user.photo)} 
                 alt="Profile" 
                 className="w-full h-full object-cover"
               />
@@ -71,7 +72,7 @@ export default function UserDropdown({ isMobilePremium }: { isMobilePremium?: bo
         ) : user?.photo ? (
           <span className="mr-0 sm:mr-3 overflow-hidden rounded-full h-11 w-11 flex items-center justify-center bg-gray-100 dark:bg-gray-800 text-gray-400">
             <img 
-              src={user.photo} 
+              src={getImageUrl(user.photo)} 
               alt="Profile" 
               className="w-full h-full object-cover"
             />

@@ -8,6 +8,7 @@ import { useAuthStore } from "../../store/authStore";
 import { showSuccess } from "../../utils/toast";
 import ConfirmDialog from "../../components/molecules/ConfirmDialog";
 import { useConfirm } from "../../hooks/useConfirm";
+import { getImageUrl } from "../../utils/imageUrl";
 
 const EXCLUDED_PATHS = [
   "/", // Beranda
@@ -151,7 +152,7 @@ const MobileMenu: React.FC = () => {
           <Link to="/profile" className="flex items-center gap-4 bg-white dark:bg-slate-800 p-4 rounded-3xl shadow-sm border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors active:scale-95 duration-200">
             <div className="w-12 h-12 flex items-center justify-center rounded-full overflow-hidden border-2 border-white dark:border-slate-700 shadow-md bg-gray-100 dark:bg-slate-800 text-gray-400">
                {user?.photo ? (
-                 <img src={user.photo} alt="Profile" className="w-full h-full object-cover" />
+                 <img src={getImageUrl(user.photo)} alt="Profile" className="w-full h-full object-cover" />
                ) : (
                  <UserCircleIcon className="w-full h-full" />
                )}

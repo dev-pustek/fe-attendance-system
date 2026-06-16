@@ -22,6 +22,7 @@ import {
   TrashBinIcon,
 } from "../../components/atoms/Icons";
 import { showSuccess, showError } from "../../utils/toast";
+import { getImageUrl } from "../../utils/imageUrl";
 
 export default function EmployeeProfileForm() {
   const { user } = useAuthStore();
@@ -92,7 +93,7 @@ export default function EmployeeProfileForm() {
           notes: profile.notes || "",
         } as any); // Cast because we are mixing Create/Update types partially
 
-        setPreviewPhoto(profile.user?.photo || null);
+        setPreviewPhoto(profile.user?.photo ? getImageUrl(profile.user.photo) : null);
       } catch (error) {
         console.error(error);
         showError("Failed to load profile data.");
