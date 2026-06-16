@@ -174,14 +174,14 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ contextId, globalContextId, s
       await queryClient.invalidateQueries({ queryKey: ["rules", "schedule-rules"] });
       // await refetch(); // Optional, invalidateQueries should trigger it if active
 
-      showSuccess("Weekly schedule saved successfully");
+      showSuccess("Jadwal mingguan berhasil disimpan");
     } catch (e) {
-      showError(e, "Failed to save schedule");
+      showError(e, "Gagal menyimpan jadwal");
     }
   };
 
 
-  if (isLoading && contextId) return <div className="p-8 text-center text-gray-400">Loading schedule...</div>;
+  if (isLoading && contextId) return <div className="p-8 text-center text-gray-400">Memuat jadwal...</div>;
 
   // Inheritance Logic
   const isInherited = !contextId && selectedContext?.type !== "GLOBAL";
@@ -190,11 +190,11 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ contextId, globalContextId, s
     <div className="w-full">
       <div className="flex justify-between items-center mb-6">
          <div>
-            <h4 className="text-lg font-bold text-gray-800 dark:text-gray-100">Standard Weekly Schedule</h4>
+            <h4 className="text-lg font-bold text-gray-800 dark:text-gray-100">Jadwal Mingguan Standar</h4>
             <p className="text-sm text-gray-500 dark:text-gray-400">
                 {isInherited 
-                    ? "Viewing inherited schedule. Override to customize." 
-                    : "Define standard start and end times for each day."}
+                    ? "Melihat jadwal turunan. Timpa (override) untuk mengubah." 
+                    : "Tentukan waktu mulai dan selesai standar untuk setiap hari."}
             </p>
          </div>
 
@@ -202,7 +202,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ contextId, globalContextId, s
              {isInherited && (
                  <Button onClick={onOverride} className="bg-brand-50 border border-brand-200 text-brand-700 hover:bg-brand-100 shadow-sm">
                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
-                     Override Schedule
+                     Timpa Jadwal
                  </Button>
              )}
              
@@ -212,7 +212,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ contextId, globalContextId, s
                 className={isInherited ? "opacity-50 cursor-not-allowed bg-gray-300 text-white border-transparent" : ""}
              >
                 <CheckCircleIcon className="w-4 h-4 mr-2" />
-                {createMutation.isPending || updateMutation.isPending ? "Saving..." : "Save Schedule"}
+                {createMutation.isPending || updateMutation.isPending ? "Menyimpan..." : "Simpan Jadwal"}
              </Button>
          </div>
       </div>
@@ -223,10 +223,10 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ contextId, globalContextId, s
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               </div>
               <div>
-                  <h4 className="text-sm font-bold text-amber-800 dark:text-amber-300">Using Inherited Schedule</h4>
+                  <h4 className="text-sm font-bold text-amber-800 dark:text-amber-300">Menggunakan Jadwal Turunan</h4>
                   <p className="text-sm text-amber-700 dark:text-amber-400 mt-1">
-                      This schedule is currently inherited from the Global or Education Level configuration. 
-                      Cannot edit directly. Click <b>Override Schedule</b> to create a custom schedule for this {selectedContext?.type?.toLowerCase().replace('_', ' ')}.
+                      Jadwal ini saat ini diturunkan dari konfigurasi Global atau Jenjang Pendidikan. 
+                      Tidak dapat diedit secara langsung. Klik <b>Timpa Jadwal</b> untuk membuat jadwal khusus untuk {selectedContext?.type?.toLowerCase().replace('_', ' ')} ini.
                   </p>
               </div>
           </div>
@@ -236,11 +236,11 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ contextId, globalContextId, s
          <table className="min-w-full divide-y divide-gray-200 dark:divide-white/5">
             <thead className="bg-gray-50/50 dark:bg-zinc-800/50">
                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Day</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Hari</th>
                   <th className="px-6 py-4 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-4 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Breaks</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Times</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tolerance</th>
+                  <th className="px-6 py-4 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Istirahat</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Waktu</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Toleransi</th>
                </tr>
             </thead>
             <tbody className="bg-white dark:bg-transparent divide-y divide-gray-100 dark:divide-white/5">
@@ -252,7 +252,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ contextId, globalContextId, s
                   <tr key={day} className={isWorking ? "bg-white dark:bg-transparent" : "bg-gray-50/30 dark:bg-white/[0.02]"}>
                      <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`text-sm font-medium ${isWorking ? "text-gray-900 dark:text-white" : "text-gray-400 dark:text-gray-500"}`}>
-                          {day}
+                          {{ "MONDAY": "Senin", "TUESDAY": "Selasa", "WEDNESDAY": "Rabu", "THURSDAY": "Kamis", "FRIDAY": "Jumat", "SATURDAY": "Sabtu", "SUNDAY": "Minggu" }[day] || day}
                         </span>
                      </td>
                      <td className="px-6 py-4 whitespace-nowrap text-center">
@@ -275,7 +275,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ contextId, globalContextId, s
                            } ${(!isWorking || isInherited) ? "opacity-50 cursor-not-allowed" : ""}`}
                         >
                            <TimeIcon className="size-3.5" />
-                            {config.breaks.length} Breaks
+                            {config.breaks.length} Istirahat
                         </button>
                      </td>
                      <td className="px-6 py-4 whitespace-nowrap">
@@ -323,16 +323,16 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ contextId, globalContextId, s
       <Modal
         isOpen={!!activeBreakDay}
         onClose={() => setActiveBreakDay(null)}
-        title={`Manage Breaks - ${activeBreakDay}`}
-        description="Configure break times (e.g. Lunch, Recess)."
+        title={`Kelola Istirahat - ${activeBreakDay ? ({ "MONDAY": "Senin", "TUESDAY": "Selasa", "WEDNESDAY": "Rabu", "THURSDAY": "Kamis", "FRIDAY": "Jumat", "SATURDAY": "Sabtu", "SUNDAY": "Minggu" }[activeBreakDay] || activeBreakDay) : ""}`}
+        description="Konfigurasi waktu istirahat (misal. Makan Siang, Jeda)."
         className="max-w-lg"
         footer={
             <div className="flex justify-end gap-3 w-full">
                 <Button variant="outline" onClick={() => setActiveBreakDay(null)}>
-                    Cancel
+                    Batal
                 </Button>
                 <Button onClick={handleSaveBreaks}>
-                    Save Changes
+                    Simpan Perubahan
                 </Button>
             </div>
         }
@@ -346,7 +346,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ contextId, globalContextId, s
                   className="flex items-center gap-1.5 text-xs font-medium text-brand-600 hover:text-brand-700 bg-brand-50 hover:bg-brand-100 px-3 py-1.5 rounded-lg transition-colors"
                 >
                     <PlusIcon className="size-3.5" />
-                    Add Break
+                    Tambah Istirahat
                 </button>
             </div>
 
@@ -356,10 +356,10 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ contextId, globalContextId, s
                         <div key={idx} className="flex items-start gap-2 bg-gray-50 dark:bg-white/5 p-3 rounded-xl border border-gray-100 dark:border-white/5">
                              <div className="flex-1 space-y-2">
                                  <div>
-                                    <label className="text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-1 block">Name</label>
+                                    <label className="text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-1 block">Nama</label>
                                     <input
                                         type="text"
-                                        placeholder="e.g. Lunch Break"
+                                        placeholder="misal. Istirahat Makan Siang"
                                         value={brk.name}
                                         onChange={(e) => {
                                             const newBreaks = [...tempBreaks];
@@ -371,7 +371,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ contextId, globalContextId, s
                                  </div>
                                  <div className="grid grid-cols-2 gap-2">
                                      <div>
-                                        <label className="text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-1 block">Start</label>
+                                        <label className="text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-1 block">Mulai</label>
                                         <input
                                             type="time"
                                             value={brk.startTime}
@@ -384,7 +384,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ contextId, globalContextId, s
                                         />
                                      </div>
                                      <div>
-                                        <label className="text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-1 block">End</label>
+                                        <label className="text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-1 block">Selesai</label>
                                         <input
                                             type="time"
                                             value={brk.endTime}
@@ -413,7 +413,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ contextId, globalContextId, s
                 ) : (
                     <div className="flex flex-col items-center justify-center py-8 text-center border-2 border-dashed border-gray-100 dark:border-white/5 rounded-xl">
                         <TimeIcon className="size-8 text-gray-200 dark:text-gray-700 mb-2" />
-                        <p className="text-sm text-gray-500 dark:text-gray-400">No breaks configured for this day.</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Tidak ada waktu istirahat yang dikonfigurasi untuk hari ini.</p>
                     </div>
                 )}
             </div>

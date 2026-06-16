@@ -119,30 +119,30 @@ const LeaveTypesTab: React.FC = () => {
         try {
             if (selectedType) {
                 await updateMutation.mutateAsync({ public_id: selectedType.public_id, data: formData });
-                showSuccess("Leave type updated successfully!");
+                showSuccess("Jenis cuti berhasil diperbarui!");
             } else {
                 await createMutation.mutateAsync(formData);
-                showSuccess("Leave type created successfully!");
+                showSuccess("Jenis cuti berhasil dibuat!");
             }
             setIsFormModalOpen(false);
         } catch (error) {
-            showError(error, "Failed to save leave type");
+            showError(error, "Gagal menyimpan jenis cuti");
         }
     };
 
     const handleDelete = async (type: LeaveType) => {
         const confirmed = await confirm({
             variant: "delete",
-            title: "Delete Leave Type",
-            message: `Are you sure you want to delete "${type.displayName || type.code}"? This action cannot be undone.`,
+            title: "Hapus Jenis Cuti",
+            message: `Apakah Anda yakin ingin menghapus "${type.displayName || type.code}"? Tindakan ini tidak dapat dibatalkan.`,
         });
 
         if (confirmed) {
             try {
                 await deleteMutation.mutateAsync(type.public_id);
-                showSuccess("Leave type deleted successfully!");
+                showSuccess("Jenis cuti berhasil dihapus!");
             } catch (error) {
-                showError(error, "Failed to delete leave type");
+                showError(error, "Gagal menghapus jenis cuti");
             }
         }
     };
@@ -151,8 +151,8 @@ const LeaveTypesTab: React.FC = () => {
         <div className="space-y-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                     <h2 className="text-lg font-bold text-gray-700 dark:text-gray-200">Leave Definitions</h2>
-                     <p className="text-sm text-gray-500 dark:text-gray-400">Manage leave categories and entitlements.</p>
+                     <h2 className="text-lg font-bold text-gray-700 dark:text-gray-200">Definisi Cuti</h2>
+                     <p className="text-sm text-gray-500 dark:text-gray-400">Kelola kategori cuti dan haknya.</p>
                 </div>
             </div>
 
@@ -160,14 +160,14 @@ const LeaveTypesTab: React.FC = () => {
             <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div className="flex flex-1 flex-col gap-4 sm:flex-row sm:items-end">
                 <div className="flex-1 space-y-1.5">
-                  <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Search</label>
+                  <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cari</label>
                   <div className="relative">
                     <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">
                       <GridIcon className="size-4" />
                     </div>
                     <input
                       type="text"
-                      placeholder="Search leave types..."
+                      placeholder="Cari jenis cuti..."
                       value={searchQuery}
                       onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
                       className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none transition-all focus:border-brand-500 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-white"
@@ -181,9 +181,9 @@ const LeaveTypesTab: React.FC = () => {
                     value={statusFilter}
                     onChange={(val: string | number) => { setStatusFilter(String(val)); setPage(1); }}
                     options={[
-                      { label: "All Status", value: "" },
-                      { label: "Active", value: "true" },
-                      { label: "Inactive", value: "false" },
+                      { label: "Semua Status", value: "" },
+                      { label: "Aktif", value: "true" },
+                      { label: "Tidak Aktif", value: "false" },
                     ]}
                   />
                 </div>
@@ -201,13 +201,13 @@ const LeaveTypesTab: React.FC = () => {
                          <div className="size-12 rounded-full bg-gray-100 dark:bg-white/5 flex items-center justify-center mb-3">
                             <GridIcon className="size-6 text-gray-400" />
                         </div>
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">No leave types found</p>
-                        <p className="text-xs text-gray-500 mt-1 mb-4">Get started by creating a new leave definition.</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">Tidak ada jenis cuti ditemukan</p>
+                        <p className="text-xs text-gray-500 mt-1 mb-4">Mulai dengan membuat definisi cuti baru.</p>
                         <button
                             onClick={() => handleOpenFormModal()}
                             className="text-sm font-medium text-brand-600 hover:text-brand-700 hover:underline"
                         >
-                            Create New Type
+                            Buat Jenis Baru
                         </button>
                     </div>
                 ) : (
@@ -229,10 +229,10 @@ const LeaveTypesTab: React.FC = () => {
                             
                             <div className="text-center relative">
                                 <span className="text-lg font-bold text-gray-900 dark:text-white block group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
-                                    Add New Type
+                                    Tambah Jenis Baru
                                 </span>
                                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1.5 font-medium max-w-[180px]">
-                                    Define a new leave category
+                                    Tentukan kategori cuti baru
                                 </p>
                             </div>
                         </div>
@@ -249,7 +249,7 @@ const LeaveTypesTab: React.FC = () => {
                                             {type.code}
                                         </span>
                                         <Badge color={type.isActive ? 'success' : 'light'} className="px-1.5 py-0 text-[10px] uppercase tracking-wider font-semibold rounded-full whitespace-nowrap">
-                                            {type.isActive ? 'Active' : 'Inactive'}
+                                            {type.isActive ? 'Aktif' : 'Tidak Aktif'}
                                         </Badge>
                                     </div>
                                     <h3 className="text-base font-bold text-gray-900 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors leading-tight">
@@ -259,21 +259,21 @@ const LeaveTypesTab: React.FC = () => {
 
                                 <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-white/5">
                                     <div className="flex items-center justify-between text-xs">
-                                        <span className="text-gray-500 dark:text-gray-400">Entitlement</span>
-                                        <span className="font-medium text-gray-900 dark:text-white">{type.maxDaysPerYear} Days / Year</span>
+                                        <span className="text-gray-500 dark:text-gray-400">Hak Cuti</span>
+                                        <span className="font-medium text-gray-900 dark:text-white">{type.maxDaysPerYear} Hari / Tahun</span>
                                     </div>
                                     <div className="flex items-center justify-between text-xs">
-                                        <span className="text-gray-500 dark:text-gray-400">Approval Steps</span>
-                                        <span className="font-medium text-gray-900 dark:text-white">{type.approvalLevelsRequired} Level(s)</span>
+                                        <span className="text-gray-500 dark:text-gray-400">Langkah Persetujuan</span>
+                                        <span className="font-medium text-gray-900 dark:text-white">{type.approvalLevelsRequired} Tingkat</span>
                                     </div>
                                     <div className="flex items-center justify-between text-xs">
-                                        <span className="text-gray-500 dark:text-gray-400">Document</span>
+                                        <span className="text-gray-500 dark:text-gray-400">Dokumen</span>
                                          {type.requiresFile ? (
                                             <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 font-medium">
-                                                Required
+                                                Wajib
                                             </span>
                                          ) : (
-                                            <span className="text-gray-400 dark:text-white/20">Optional</span>
+                                            <span className="text-gray-400 dark:text-white/20">Opsional</span>
                                          )}
                                     </div>
                                 </div>
@@ -316,9 +316,9 @@ const LeaveTypesTab: React.FC = () => {
             {total > 0 && (
               <div className="flex flex-col gap-4 px-2 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Showing <span className="font-medium text-gray-700 dark:text-white">{(page - 1) * limit + 1}</span> to{" "}
-                  <span className="font-medium text-gray-700 dark:text-white">{Math.min(page * limit, total)}</span> of{" "}
-                  <span className="font-medium text-gray-700 dark:text-white">{total}</span> types
+                  Menampilkan <span className="font-medium text-gray-700 dark:text-white">{(page - 1) * limit + 1}</span> ke{" "}
+                  <span className="font-medium text-gray-700 dark:text-white">{Math.min(page * limit, total)}</span> dari{" "}
+                  <span className="font-medium text-gray-700 dark:text-white">{total}</span> jenis
                 </p>
                 <div className="flex items-center gap-2">
                   <button
@@ -327,7 +327,7 @@ const LeaveTypesTab: React.FC = () => {
                     className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400 dark:hover:bg-white/[0.05]"
                   >
                     <ChevronLeftIcon className="size-4" />
-                    Previous
+                    Sebelumnya
                   </button>
                   
                   <div className="flex items-center gap-1.5 px-2">
@@ -341,7 +341,7 @@ const LeaveTypesTab: React.FC = () => {
                     disabled={page === totalPages || totalPages === 0}
                     className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400 dark:hover:bg-white/[0.05]"
                   >
-                    Next
+                    Berikutnya
                     <AngleRightIcon className="size-4" />
                   </button>
                 </div>
@@ -351,8 +351,8 @@ const LeaveTypesTab: React.FC = () => {
             <Modal 
                 isOpen={isFormModalOpen} 
                 onClose={() => setIsFormModalOpen(false)} 
-                title={selectedType ? 'Update Leave Type' : 'New Leave Type'}
-                description="Configure settings for this leave category."
+                title={selectedType ? 'Perbarui Jenis Cuti' : 'Jenis Cuti Baru'}
+                description="Konfigurasi pengaturan untuk kategori cuti ini."
                 className="max-w-md"
                 footer={
                     <div className="flex justify-end gap-3">
@@ -361,7 +361,7 @@ const LeaveTypesTab: React.FC = () => {
                             onClick={() => setIsFormModalOpen(false)}
                             className="rounded-xl px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors"
                         >
-                            Cancel
+                            Batal
                         </button>
                         <button
                             type="submit"
@@ -369,19 +369,19 @@ const LeaveTypesTab: React.FC = () => {
                             disabled={createMutation.isPending || updateMutation.isPending}
                             className="rounded-xl bg-brand-500 px-6 py-2 text-sm font-medium text-white shadow-lg shadow-brand-500/20 hover:bg-brand-600 transition-all disabled:opacity-70"
                         >
-                            {createMutation.isPending || updateMutation.isPending ? 'Saving...' : 'Save'}
+                            {createMutation.isPending || updateMutation.isPending ? 'Menyimpan...' : 'Simpan'}
                         </button>
                     </div>
                 }
             >
                 <form id="leave-type-form" onSubmit={handleFormSubmit} className="space-y-4">
                         <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Display Name</label>
+                            <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Tampilan</label>
                             <input
                                 type="text"
                                 value={formData.displayName}
                                 onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
-                                placeholder="e.g. Annual Leave"
+                                placeholder="misal. Cuti Tahunan"
                                 className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm transition-all focus:border-brand-500 text-gray-900 focus:outline-none"
                                 required
                             />
@@ -389,7 +389,7 @@ const LeaveTypesTab: React.FC = () => {
                         
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="text-xs font-medium text-gray-500 uppercase tracking-wider block mb-1.5">Max Days/Year</label>
+                                <label className="text-xs font-medium text-gray-500 uppercase tracking-wider block mb-1.5">Maks Hari/Tahun</label>
                                 <NumberInput
                                     value={formData.maxDaysPerYear}
                                     onChange={(val) => setFormData({ ...formData, maxDaysPerYear: Number(val) })}
@@ -397,7 +397,7 @@ const LeaveTypesTab: React.FC = () => {
                                 />
                             </div>
                             <div>
-                                <label className="text-xs font-medium text-gray-500 uppercase tracking-wider block mb-1.5">Approval Levels</label>
+                                <label className="text-xs font-medium text-gray-500 uppercase tracking-wider block mb-1.5">Tingkat Persetujuan</label>
                                 <NumberInput
                                     value={formData.approvalLevelsRequired}
                                     onChange={(val) => setFormData({ ...formData, approvalLevelsRequired: Number(val) })}
@@ -414,10 +414,10 @@ const LeaveTypesTab: React.FC = () => {
                         }`}>
                             <div className="flex flex-col">
                                 <span className={`text-sm font-semibold ${formData.requiresFile ? "text-blue-700" : "text-gray-700"}`}>
-                                    {formData.requiresFile ? "File Required" : "No File Needed"}
+                                    {formData.requiresFile ? "Dokumen Diperlukan" : "Tidak Perlu Dokumen"}
                                 </span>
                                 <span className="text-[10px] text-gray-500">
-                                    {formData.requiresFile ? "Must upload document." : "No attachment needed."}
+                                    {formData.requiresFile ? "Harus mengunggah dokumen." : "Tidak perlu lampiran."}
                                 </span>
                             </div>
                             <Switch
@@ -433,10 +433,10 @@ const LeaveTypesTab: React.FC = () => {
                         }`}>
                             <div className="flex flex-col">
                                 <span className={`text-sm font-semibold ${formData.isActive ? "text-green-700" : "text-gray-700"}`}>
-                                    {formData.isActive ? "Active Type" : "Inactive Type"}
+                                    {formData.isActive ? "Jenis Aktif" : "Jenis Tidak Aktif"}
                                 </span>
                                 <span className="text-[10px] text-gray-500">
-                                    {formData.isActive ? "Visible to employees." : "Hidden from selection."}
+                                    {formData.isActive ? "Terlihat oleh pegawai." : "Disembunyikan dari pilihan."}
                                 </span>
                             </div>
                             <Switch

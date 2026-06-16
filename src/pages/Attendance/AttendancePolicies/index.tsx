@@ -18,7 +18,7 @@ const AttendanceRules: React.FC = () => {
   }>({
     type: RuleContextType.GLOBAL,
     id: 0,
-    name: "Global Settings",
+    name: "Pengaturan Global",
   });
 
   const [activeTab, setActiveTab] = useState<"policies" | "schedule" | "leaves" | "statuses">("policies");
@@ -157,11 +157,11 @@ const AttendanceRules: React.FC = () => {
   };
 
   const tabs = React.useMemo(() => [
-    { id: "policies", label: "General Rules" },
-    { id: "schedule", label: "Weekly Schedule" },
+    { id: "policies", label: "Aturan Umum" },
+    { id: "schedule", label: "Jadwal Mingguan" },
     ...(selectedContext.type === RuleContextType.GLOBAL ? [
-      { id: "leaves", label: "Leave Types" },
-      { id: "statuses", label: "Presence Status" }
+      { id: "leaves", label: "Jenis Cuti" },
+      { id: "statuses", label: "Status Kehadiran" }
     ] : [])
   ], [selectedContext.type]);
 
@@ -194,8 +194,8 @@ const AttendanceRules: React.FC = () => {
 
   return (
     <>
-      <PageMeta title="Attendance Policies | SIAPUS" description="Configure attendance rules, schedules, and policies." />
-      <PageBreadcrumb pageTitle="Attendance Policies" />
+      <PageMeta title="Kebijakan Absensi | SIAPUS" description="Atur aturan absensi, jadwal, dan kebijakan." />
+      <PageBreadcrumb pageTitle="Kebijakan Absensi" />
 
       <div className="relative flex flex-col h-[calc(100vh-220px)] min-h-[600px]">
         
@@ -206,12 +206,12 @@ const AttendanceRules: React.FC = () => {
             <aside className="w-80 h-full bg-white dark:bg-zinc-900 border-l border-gray-200 dark:border-white/10 shadow-2xl flex flex-col">
                  <div className="p-4 pt-6 pb-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between bg-gray-50/50 dark:bg-zinc-800/50">
                     <h2 className="font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2 text-sm uppercase tracking-wider">
-                        Context Selector
+                        Pemilih Konteks
                     </h2>
                     <button 
                         onClick={() => setIsSidebarOpen(false)} 
                         className="p-1.5 hover:bg-gray-200 dark:hover:bg-white/10 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-                        title="Close Sidebar"
+                        title="Tutup Sidebar"
                     >
                         <CloseIcon className="size-4" />
                     </button>
@@ -240,7 +240,7 @@ const AttendanceRules: React.FC = () => {
                  >
                     <ListIcon className="size-6 shrink-0 min-w-6" />
                     <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-75 whitespace-nowrap ml-3 text-sm font-semibold pointer-events-none">
-                        Open Menu
+                        Buka Menu
                     </span>
                  </button>
              )}
@@ -257,7 +257,7 @@ const AttendanceRules: React.FC = () => {
                                  <div>
                                      <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{selectedContext.name}</h1>
                                      <div className="flex items-center gap-2 mt-2">
-                                         <span className="text-sm text-gray-500 dark:text-gray-400">Configuration Scope:</span>
+                                         <span className="text-sm text-gray-500 dark:text-gray-400">Cakupan Konfigurasi:</span>
                                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-brand-50 text-brand-700 dark:bg-brand-500/10 dark:text-brand-300 border border-brand-100 dark:border-brand-500/20">
                                              {selectedContext.type}
                                          </span>

@@ -72,7 +72,7 @@ const SidebarTree: React.FC<SidebarTreeProps> = ({ selectedContext, onSelect }) 
       <div className="flex-1 overflow-y-auto p-3">
         {/* Global Node (Always Visible) */}
         <div 
-          onClick={() => onSelect({ type: RuleContextType.GLOBAL, id: 0, name: "Global Settings" })}
+          onClick={() => onSelect({ type: RuleContextType.GLOBAL, id: 0, name: "Pengaturan Global" })}
           className={`flex items-center gap-2 p-2.5 rounded-md cursor-pointer text-sm mb-2 transition-colors ${
             selectedContext.type === RuleContextType.GLOBAL 
               ? "bg-blue-50 text-blue-700 font-semibold ring-1 ring-blue-100" 
@@ -80,12 +80,12 @@ const SidebarTree: React.FC<SidebarTreeProps> = ({ selectedContext, onSelect }) 
           }`}
         >
           <GridIcon className={`w-4 h-4 ${selectedContext.type === RuleContextType.GLOBAL ? "text-blue-600" : "text-gray-400"}`} />
-          <span>Global Settings</span>
+          <span>Pengaturan Global</span>
         </div>
 
         {levels.length === 0 && (
           <div className="text-xs text-gray-400 text-center py-4 italic">
-            No education levels found.
+            Tidak ada jenjang pendidikan ditemukan.
           </div>
         )}
 

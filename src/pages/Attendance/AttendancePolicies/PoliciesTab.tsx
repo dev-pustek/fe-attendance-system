@@ -120,16 +120,16 @@ const PoliciesTab: React.FC<PoliciesTabProps> = ({ contextId, selectedContext, o
       });
 
       if (changes.length === 0) {
-          showSuccess("No changes to save");
+          showSuccess("Tidak ada perubahan untuk disimpan");
           return;
       }
 
       await Promise.all(changes);
-      showSuccess(`Successfully updated ${changes.length} policies`);
+      showSuccess(`Berhasil memperbarui ${changes.length} kebijakan`);
       refetch();
     } catch (e) {
       console.error("Save Error:", e);
-      showError(e, "Failed to update policies");
+      showError(e, "Gagal memperbarui kebijakan");
     }
   };
 
@@ -137,7 +137,7 @@ const PoliciesTab: React.FC<PoliciesTabProps> = ({ contextId, selectedContext, o
     setFormValues(prev => ({ ...prev, [type]: String(val) }));
   };
 
-  if (isLoading && contextId) return <div className="p-8 text-center text-gray-400">Loading policies...</div>;
+  if (isLoading && contextId) return <div className="p-8 text-center text-gray-400">Memuat aturan...</div>;
 
   const isInherited = !contextId && selectedContext.type !== RuleContextType.GLOBAL;
 
@@ -145,11 +145,11 @@ const PoliciesTab: React.FC<PoliciesTabProps> = ({ contextId, selectedContext, o
     <div className="w-full">
       <div className="flex justify-between items-center mb-6">
          <div>
-            <h4 className="text-lg font-bold text-gray-800 dark:text-gray-100">General Policies</h4>
+            <h4 className="text-lg font-bold text-gray-800 dark:text-gray-100">Aturan Umum</h4>
             <p className="text-sm text-gray-500 dark:text-gray-400">
                 {isInherited 
-                    ? "Viewing inherited rules. Override to customize." 
-                    : `Configure attendance limits and requirements for ${selectedContext.name}.`}
+                    ? "Melihat aturan turunan. Timpa (override) untuk mengubah." 
+                    : `Konfigurasi batas absensi dan persyaratan untuk ${selectedContext.name}.`}
             </p>
          </div>
 
@@ -157,7 +157,7 @@ const PoliciesTab: React.FC<PoliciesTabProps> = ({ contextId, selectedContext, o
              {isInherited && (
                  <Button onClick={onOverride} className="bg-brand-50 border border-brand-200 text-brand-700 hover:bg-brand-100 shadow-sm">
                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
-                     Override Settings
+                     Timpa Pengaturan
                  </Button>
              )}
 
@@ -167,7 +167,7 @@ const PoliciesTab: React.FC<PoliciesTabProps> = ({ contextId, selectedContext, o
                 className={isInherited ? "opacity-50 cursor-not-allowed bg-gray-300 text-white border-transparent" : ""}
              >
                 <CheckCircleIcon className="w-4 h-4 mr-2" />
-                {createMutation.isPending || updateMutation.isPending ? "Saving..." : "Save Changes"}
+                {createMutation.isPending || updateMutation.isPending ? "Menyimpan..." : "Simpan Perubahan"}
              </Button>
          </div>
       </div>
@@ -178,10 +178,10 @@ const PoliciesTab: React.FC<PoliciesTabProps> = ({ contextId, selectedContext, o
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               </div>
               <div>
-                  <h4 className="text-sm font-bold text-amber-800 dark:text-amber-300">Using Inherited Rules</h4>
+                  <h4 className="text-sm font-bold text-amber-800 dark:text-amber-300">Menggunakan Aturan Turunan</h4>
                   <p className="text-sm text-amber-700 dark:text-amber-400 mt-1">
-                      These settings are currently inherited from the Global or Education Level configuration. 
-                      You cannot edit them directly. Click <b>Override Settings</b> to create a custom configuration for this {selectedContext.type.toLowerCase().replace('_', ' ')}.
+                      Pengaturan ini saat ini diturunkan dari konfigurasi Global atau Jenjang Pendidikan. 
+                      Anda tidak dapat mengeditnya secara langsung. Klik <b>Timpa Pengaturan</b> untuk membuat konfigurasi khusus untuk {selectedContext.type.toLowerCase().replace('_', ' ')} ini.
                   </p>
               </div>
           </div>
@@ -193,14 +193,14 @@ const PoliciesTab: React.FC<PoliciesTabProps> = ({ contextId, selectedContext, o
         <div className="bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-2xl p-6">
             <h5 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider border-b border-gray-200 dark:border-white/10 pb-3 mb-4 flex items-center gap-2">
                 <span className="size-2 rounded-full bg-brand-500"></span>
-                Time Limits
+                Batas Waktu
             </h5>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                  {/* Late Tolerance */}
                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Late Tolerance (Min)</label>
-                    <p className="text-xs text-gray-400 mb-2 truncate" title="Grace period after start time before marked as 'Late'.">Grace period before 'Late'.</p>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Batas Toleransi Keterlambatan (Menit)</label>
+                    <p className="text-xs text-gray-400 mb-2 truncate" title="Waktu toleransi setelah jam masuk sebelum ditandai 'Terlambat'.">Waktu toleransi sebelum 'Terlambat'.</p>
                     <input
                         type="number"
                         min="0"
@@ -213,8 +213,8 @@ const PoliciesTab: React.FC<PoliciesTabProps> = ({ contextId, selectedContext, o
 
                  {/* Absent Threshold */}
                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Absent Threshold (Min)</label>
-                    <p className="text-xs text-gray-400 mb-2 truncate" title="Minutes late before automatically marked as 'Absent'.">Mins late before 'Absent'.</p>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Batas Waktu Alpa (Menit)</label>
+                    <p className="text-xs text-gray-400 mb-2 truncate" title="Menit keterlambatan sebelum otomatis ditandai 'Alpa'.">Batas menit sebelum 'Alpa'.</p>
                     <input
                         type="number"
                         min="0"
@@ -226,8 +226,8 @@ const PoliciesTab: React.FC<PoliciesTabProps> = ({ contextId, selectedContext, o
                  </div>
 
                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Check-in Window (Min)</label>
-                    <p className="text-xs text-gray-400 mb-2 truncate" title="How many minutes before start time check-in is allowed.">Mins before start allowed.</p>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Jendela Waktu Check-in (Menit)</label>
+                    <p className="text-xs text-gray-400 mb-2 truncate" title="Berapa menit sebelum jam masuk check-in diperbolehkan.">Menit sebelum mulai yang diizinkan.</p>
                     <input
                         type="number"
                         min="0"
@@ -244,14 +244,14 @@ const PoliciesTab: React.FC<PoliciesTabProps> = ({ contextId, selectedContext, o
         <div className="bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-2xl p-6">
              <h5 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider border-b border-gray-200 dark:border-white/10 pb-3 mb-4 flex items-center gap-2">
                 <span className="size-2 rounded-full bg-indigo-500"></span>
-                Requirements
+                Persyaratan
              </h5>
              
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                  <div className="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 shadow-sm">
                     <div>
-                        <span className="font-bold text-gray-800 dark:text-gray-200 text-sm block">Require Selfie Evidence</span>
-                        <span className="text-xs text-gray-500">Users must take a photo when checking in/out.</span>
+                        <span className="font-bold text-gray-800 dark:text-gray-200 text-sm block">Wajibkan Bukti Selfie</span>
+                        <span className="text-xs text-gray-500">Pengguna harus mengambil foto saat check in/out.</span>
                     </div>
                     <Switch 
                         checked={formValues[AttendanceRuleType.REQUIRE_PHOTO_EVIDENCE] === "true"}
@@ -262,8 +262,8 @@ const PoliciesTab: React.FC<PoliciesTabProps> = ({ contextId, selectedContext, o
 
                  <div className="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 shadow-sm">
                     <div>
-                        <span className="font-bold text-gray-800 dark:text-gray-200 text-sm block">Require Geo-Location</span>
-                        <span className="text-xs text-gray-500">Users must grant GPS location access to check in.</span>
+                        <span className="font-bold text-gray-800 dark:text-gray-200 text-sm block">Wajibkan Lokasi Geografis</span>
+                        <span className="text-xs text-gray-500">Pengguna harus memberikan akses lokasi GPS untuk check in.</span>
                     </div>
                     <Switch 
                         checked={formValues[AttendanceRuleType.REQUIRE_GEO_LOCATION] === "true"}
@@ -274,8 +274,8 @@ const PoliciesTab: React.FC<PoliciesTabProps> = ({ contextId, selectedContext, o
 
                  <div className="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 shadow-sm">
                     <div>
-                        <span className="font-bold text-gray-800 dark:text-gray-200 text-sm block">Require QR Code</span>
-                        <span className="text-xs text-gray-500">Users must use QR code scanning to check in at the gate.</span>
+                        <span className="font-bold text-gray-800 dark:text-gray-200 text-sm block">Wajibkan Kode QR</span>
+                        <span className="text-xs text-gray-500">Pengguna harus memindai kode QR untuk check in di gerbang.</span>
                     </div>
                     <Switch 
                         checked={formValues[AttendanceRuleType.REQUIRE_QR_CODE] === "true"}
@@ -286,8 +286,8 @@ const PoliciesTab: React.FC<PoliciesTabProps> = ({ contextId, selectedContext, o
 
                  <div className="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 shadow-sm">
                     <div>
-                        <span className="font-bold text-gray-800 dark:text-gray-200 text-sm block">Dynamic Teacher Schedule</span>
-                        <span className="text-xs text-gray-500">Teachers' check-in time depends on their first class schedule.</span>
+                        <span className="font-bold text-gray-800 dark:text-gray-200 text-sm block">Jadwal Guru Dinamis</span>
+                        <span className="text-xs text-gray-500">Waktu check in guru bergantung pada jadwal kelas pertama mereka.</span>
                     </div>
                     <Switch 
                         checked={formValues[AttendanceRuleType.DYNAMIC_TEACHER_SCHEDULE] === "true"}

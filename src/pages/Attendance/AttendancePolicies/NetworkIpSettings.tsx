@@ -7,7 +7,7 @@ const NetworkIpSettings: React.FC = () => {
   const { data: response, isLoading, createMutation, updateMutation } = useSettings({ limit: 100 });
   
   const [allowedIps, setAllowedIps] = useState<string>('');
-  const [currentIp, setCurrentIp] = useState<string>('Loading...');
+  const [currentIp, setCurrentIp] = useState<string>('Memuat...');
 
   // Extract existing settings
   useEffect(() => {
@@ -22,7 +22,7 @@ const NetworkIpSettings: React.FC = () => {
     fetch('https://api.ipify.org?format=json')
       .then(res => res.json())
       .then(data => setCurrentIp(data.ip))
-      .catch(() => setCurrentIp('Unknown'));
+      .catch(() => setCurrentIp('Tidak diketahui'));
   }, []);
 
   const handleSave = async () => {
@@ -46,14 +46,14 @@ const NetworkIpSettings: React.FC = () => {
       }
 
       setAllowedIps(cleanedIps);
-      showSuccess('Network IP settings saved successfully!');
+      showSuccess('Pengaturan IP Jaringan berhasil disimpan!');
     } catch (err) {
-      showError(err, 'Failed to save network IP settings');
+      showError(err, 'Gagal menyimpan pengaturan IP Jaringan');
     }
   };
 
   const addCurrentIp = () => {
-    if (currentIp && currentIp !== 'Unknown' && currentIp !== 'Loading...') {
+    if (currentIp && currentIp !== 'Tidak diketahui' && currentIp !== 'Memuat...') {
       const existing = allowedIps.split(',').map(ip => ip.trim()).filter(ip => ip !== '');
       if (!existing.includes(currentIp)) {
         setAllowedIps(existing.length > 0 ? `${allowedIps}, ${currentIp}` : currentIp);
@@ -61,23 +61,23 @@ const NetworkIpSettings: React.FC = () => {
     }
   };
 
-  if (isLoading) return <div className="p-4 text-center text-gray-500">Loading Network Settings...</div>;
+  if (isLoading) return <div className="p-4 text-center text-gray-500">Memuat Pengaturan Jaringan...</div>;
 
   return (
     <div className="bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-2xl p-6 mt-6">
       <div className="flex items-center justify-between border-b border-gray-200 dark:border-white/10 pb-3 mb-4">
         <h5 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
             <span className="size-2 rounded-full bg-blue-500"></span>
-            Global Network IP Policy
+            Kebijakan IP Jaringan Global
         </h5>
         <div className="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-400">
           <WifiIcon className="size-4" />
-          Your Current IP: <span className="font-mono text-gray-900 dark:text-white bg-gray-200 dark:bg-white/10 px-2 py-0.5 rounded">{currentIp}</span>
+          IP Anda Saat Ini: <span className="font-mono text-gray-900 dark:text-white bg-gray-200 dark:bg-white/10 px-2 py-0.5 rounded">{currentIp}</span>
         </div>
       </div>
       
       <p className="text-sm text-gray-500 mb-6">
-        Define which network IP addresses are permitted for checking in and out. If specified, users will be required to be connected to the school's Wi-Fi network. Separate multiple IP addresses with commas. Leave blank or use <b>*</b> to allow any IP address.
+        Tentukan alamat IP jaringan mana yang diizinkan untuk check in dan check out. Jika ditentukan, pengguna akan diharuskan terhubung ke jaringan Wi-Fi sekolah. Pisahkan beberapa alamat IP dengan koma. Kosongkan atau gunakan <b>*</b> untuk mengizinkan alamat IP apa pun.
       </p>
 
       <div className="grid grid-cols-1 gap-6">
@@ -85,25 +85,25 @@ const NetworkIpSettings: React.FC = () => {
           <div>
             <div className="flex justify-between items-end mb-1">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Allowed IP Addresses
+                Alamat IP yang Diizinkan
               </label>
               <button
                 type="button"
                 onClick={addCurrentIp}
                 className="text-xs text-brand-600 dark:text-brand-400 font-bold hover:underline"
               >
-                + Add my current IP
+                + Tambahkan IP saya saat ini
               </button>
             </div>
             <textarea
               rows={3}
               value={allowedIps}
               onChange={(e) => setAllowedIps(e.target.value)}
-              placeholder="e.g. 203.0.113.1, 198.51.100.24"
+              placeholder="misal. 203.0.113.1, 198.51.100.24"
               className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-white font-mono focus:border-brand-500 focus:ring-brand-500 resize-none shadow-sm"
             />
             <p className="text-xs text-gray-400 mt-2">
-              Note: If your server sits behind a proxy (like Cloudflare), ensure proxy headers are passed correctly for this to work.
+              Catatan: Jika server Anda berada di belakang proxy (seperti Cloudflare), pastikan header proxy diteruskan dengan benar agar ini berfungsi.
             </p>
           </div>
 
@@ -113,7 +113,7 @@ const NetworkIpSettings: React.FC = () => {
               disabled={isLoading || updateMutation.isPending || createMutation.isPending}
               className="flex items-center justify-center gap-2 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-6 py-2.5 text-sm font-medium transition-all hover:bg-gray-800 dark:hover:bg-gray-100 disabled:opacity-50"
             >
-              {updateMutation.isPending || createMutation.isPending ? 'Saving...' : 'Save IP Policy'}
+              {updateMutation.isPending || createMutation.isPending ? 'Menyimpan...' : 'Simpan Kebijakan IP'}
             </button>
           </div>
         </div>

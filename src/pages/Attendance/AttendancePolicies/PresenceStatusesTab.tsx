@@ -53,10 +53,10 @@ const PresenceStatusesTab: React.FC = () => {
 
   const handleDelete = async (id: number) => {
     const shouldDelete = await confirm({
-      title: "Delete Status",
-      message: "Are you sure you want to delete this status? This action cannot be undone.",
+      title: "Hapus Status",
+      message: "Apakah Anda yakin ingin menghapus status ini? Tindakan ini tidak dapat dibatalkan.",
       variant: "delete",
-      confirmText: "Delete Status"
+      confirmText: "Hapus Status"
     });
 
     if (shouldDelete) {
@@ -91,14 +91,14 @@ const PresenceStatusesTab: React.FC = () => {
     <div className="space-y-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex-1 space-y-1.5 w-full sm:max-w-xs">
-           <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Search</label>
+           <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Cari</label>
            <div className="relative">
              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">
                <GridIcon className="size-4" />
              </div>
              <input
                type="text"
-               placeholder="Search statuses..."
+               placeholder="Cari status..."
                value={searchQuery}
                onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
                className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none transition-all focus:border-brand-500"
@@ -118,10 +118,10 @@ const PresenceStatusesTab: React.FC = () => {
                 <div className="size-12 rounded-full bg-gray-100 dark:bg-white/5 flex items-center justify-center mb-3">
                     <GridIcon className="size-6 text-gray-400" />
                 </div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">No statuses found</p>
-                <p className="text-xs text-gray-500 mt-1 mb-4">Add a new presence status to get started.</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Tidak ada status ditemukan</p>
+                <p className="text-xs text-gray-500 mt-1 mb-4">Tambahkan status kehadiran baru untuk memulai.</p>
                 <Button onClick={handleCreate} size="sm">
-                    Create Status
+                    Buat Status
                 </Button>
             </div>
         ) : (
@@ -143,10 +143,10 @@ const PresenceStatusesTab: React.FC = () => {
                 
                 <div className="text-center relative">
                     <span className="text-base font-bold text-gray-900 dark:text-white block group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
-                        Add Status
+                        Tambah Status
                     </span>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 font-medium">
-                        New definitions
+                        Definisi baru
                     </p>
                 </div>
             </div>
@@ -162,7 +162,7 @@ const PresenceStatusesTab: React.FC = () => {
                             <h3 className="text-base font-bold text-gray-900 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
                                 {status.name}
                             </h3>
-                            <span className="text-xs text-gray-500 dark:text-gray-400">Status Definition</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">Definisi Status</span>
                         </div>
                         <Badge color={getBadgeColor(String(status.code))} className="font-mono tracking-wider">
                             {status.code}
@@ -199,9 +199,9 @@ const PresenceStatusesTab: React.FC = () => {
           {total > 0 && (
             <div className="flex flex-col gap-4 px-2 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Showing <span className="font-medium text-gray-700 dark:text-white">{(page - 1) * limit + 1}</span> to{" "}
-                  <span className="font-medium text-gray-700 dark:text-white">{Math.min(page * limit, total)}</span> of{" "}
-                  <span className="font-medium text-gray-700 dark:text-white">{total}</span> statuses
+                  Menampilkan <span className="font-medium text-gray-700 dark:text-white">{(page - 1) * limit + 1}</span> ke{" "}
+                  <span className="font-medium text-gray-700 dark:text-white">{Math.min(page * limit, total)}</span> dari{" "}
+                  <span className="font-medium text-gray-700 dark:text-white">{total}</span> status
                 </p>
                 <div className="flex items-center gap-2">
                   <button
@@ -210,7 +210,7 @@ const PresenceStatusesTab: React.FC = () => {
                     className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400 dark:hover:bg-white/[0.05]"
                   >
                     <ChevronLeftIcon className="size-4" />
-                    Previous
+                    Sebelumnya
                   </button>
                   
                   <div className="flex items-center gap-1.5 px-2">
@@ -224,7 +224,7 @@ const PresenceStatusesTab: React.FC = () => {
                     disabled={page === totalPages || totalPages === 0}
                     className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400 dark:hover:bg-white/[0.05]"
                   >
-                    Next
+                    Berikutnya
                     <AngleRightIcon className="size-4" />
                   </button>
                 </div>
@@ -234,8 +234,8 @@ const PresenceStatusesTab: React.FC = () => {
       <Modal 
           isOpen={isModalOpen} 
           onClose={() => setIsModalOpen(false)} 
-          title={editingStatus ? "Edit Status" : "Add Status"} 
-          description="Definitions for attendance records."
+          title={editingStatus ? "Edit Status" : "Tambah Status"} 
+          description="Definisi untuk catatan absensi."
           className="max-w-md"
           footer={
               <div className="flex justify-end gap-3">
@@ -244,14 +244,14 @@ const PresenceStatusesTab: React.FC = () => {
                       onClick={() => setIsModalOpen(false)}
                       className="rounded-xl px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors"
                   >
-                      Cancel
+                      Batal
                   </button>
                   <button 
                       type="submit" 
                       form="status-form-tab"
                       className="rounded-xl bg-brand-500 px-6 py-2 text-sm font-medium text-white hover:bg-brand-600 shadow-lg shadow-brand-500/20 transition-all"
                   >
-                      {editingStatus ? "Update" : "Create"}
+                      {editingStatus ? "Perbarui" : "Buat"}
                   </button>
               </div>
           }
@@ -259,22 +259,22 @@ const PresenceStatusesTab: React.FC = () => {
           <form id="status-form-tab" onSubmit={handleSubmit} className="space-y-4 p-1">
               <div>
                   <FormInput 
-                      label="Name" 
+                      label="Nama" 
                       id="status-name"
                       value={formData.name}
                       onChange={e => setFormData({...formData, name: e.target.value})}
                       required
-                      placeholder="e.g. Present, Late"
+                      placeholder="misal. Hadir, Terlambat"
                   />
               </div>
               <div>
                   <FormInput 
-                      label="Code" 
+                      label="Kode" 
                       id="status-code"
                       value={formData.code}
                       onChange={e => setFormData({...formData, code: e.target.value})}
                       required
-                      placeholder="e.g. PRESENT, LATE"
+                      placeholder="misal. HADIR, TERLAMBAT"
                   />
               </div>
           </form>

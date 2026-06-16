@@ -60,7 +60,7 @@ const GeoFencingSettings: React.FC = () => {
 
   const handleSave = async () => {
     if (lat === '' || lng === '' || radius === '') {
-      showError(null, 'Please fill in all fields (Latitude, Longitude, Radius)');
+      showError(null, 'Harap isi semua bidang (Garis Lintang, Garis Bujur, Radius)');
       return;
     }
 
@@ -91,15 +91,15 @@ const GeoFencingSettings: React.FC = () => {
         await createMutation.mutateAsync({ key: 'ATTENDANCE_RADIUS', value: radius.toString(), description: 'Max allowed radius in meters for check-ins' });
       }
 
-      showSuccess('Geo-Fencing settings saved successfully!');
+      showSuccess('Pengaturan Geo-Fencing berhasil disimpan!');
     } catch (err) {
-      showError(err, 'Failed to save geo-fencing settings');
+      showError(err, 'Gagal menyimpan pengaturan geo-fencing');
     }
   };
 
   const handleGetCurrentLocation = () => {
     if (!navigator.geolocation) {
-      showError(null, "Geolocation is not supported by your browser.");
+      showError(null, "Geolokasi tidak didukung oleh browser Anda.");
       return;
     }
 
@@ -109,11 +109,11 @@ const GeoFencingSettings: React.FC = () => {
         setLat(position.coords.latitude);
         setLng(position.coords.longitude);
         setIsLocating(false);
-        showSuccess("Location updated to your current position.");
+        showSuccess("Lokasi diperbarui ke posisi Anda saat ini.");
       },
       (error) => {
         console.error("Geolocation error:", error);
-        showError(null, "Unable to retrieve your location. Please ensure location permissions are granted.");
+        showError(null, "Tidak dapat mengambil lokasi Anda. Pastikan izin lokasi diberikan.");
         setIsLocating(false);
       },
       { enableHighAccuracy: true }
@@ -122,14 +122,14 @@ const GeoFencingSettings: React.FC = () => {
 
   const center: [number, number] = (lat !== '' && lng !== '') ? [lat, lng] : DEFAULT_CENTER;
 
-  if (isLoading) return <div className="p-4 text-center text-gray-500">Loading Geo-Fencing Settings...</div>;
+  if (isLoading) return <div className="p-4 text-center text-gray-500">Memuat Pengaturan Geo-Fencing...</div>;
 
   return (
     <div className="bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-2xl p-6 mt-6">
       <div className="flex items-center justify-between border-b border-gray-200 dark:border-white/10 pb-3 mb-4">
         <h5 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
             <span className="size-2 rounded-full bg-green-500"></span>
-            Global Geo-Fencing Settings
+            Pengaturan Geo-Fencing Global
         </h5>
         <button
           type="button"
@@ -138,19 +138,19 @@ const GeoFencingSettings: React.FC = () => {
           className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50 transition-colors shadow-sm"
         >
           <ViewfinderCircleIcon className={`size-4 ${isLocating ? "animate-spin" : ""}`} />
-          {isLocating ? "Locating..." : "Get Current Location"}
+          {isLocating ? "Mencari lokasi..." : "Dapatkan Lokasi Saat Ini"}
         </button>
       </div>
       
       <p className="text-sm text-gray-500 mb-6">
-        These coordinates define the central point of the school. Students must be within the allowed radius to successfully check in when the "Require Geo-Location" policy is enabled.
+        Koordinat ini menentukan titik pusat sekolah. Siswa harus berada dalam radius yang diizinkan agar berhasil check in saat kebijakan "Wajibkan Lokasi Geografis" diaktifkan.
       </p>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Latitude
+              Garis Lintang
             </label>
             <input
               type="number"
@@ -164,7 +164,7 @@ const GeoFencingSettings: React.FC = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Longitude
+              Garis Bujur
             </label>
             <input
               type="number"
@@ -178,7 +178,7 @@ const GeoFencingSettings: React.FC = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Allowed Radius (Meters)
+              Radius yang Diizinkan (Meter)
             </label>
             <input
               type="number"
@@ -194,13 +194,13 @@ const GeoFencingSettings: React.FC = () => {
             disabled={isLoading || updateMutation.isPending || createMutation.isPending}
             className="w-full flex items-center justify-center gap-2 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-6 py-2.5 text-sm font-medium transition-all hover:bg-gray-800 dark:hover:bg-gray-100 disabled:opacity-50 mt-4"
           >
-            {updateMutation.isPending || createMutation.isPending ? 'Saving...' : 'Save Geo-Fencing'}
+            {updateMutation.isPending || createMutation.isPending ? 'Menyimpan...' : 'Simpan Geo-Fencing'}
           </button>
         </div>
 
         <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl overflow-hidden relative border border-gray-200 dark:border-gray-700" style={{ height: '350px' }}>
           <div className="absolute top-2 left-1/2 -translate-x-1/2 z-[1000] bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full shadow border border-gray-200 text-xs font-medium text-gray-700 pointer-events-none">
-            Click map to set center
+            Klik peta untuk mengatur pusat
           </div>
           <MapContainer 
             key={lat !== '' ? 'loaded' : 'default'}
