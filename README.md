@@ -1,193 +1,94 @@
-# TailAdmin React - Free React Tailwind Admin Dashboard Template
+# SIAPUS Frontend (Attendance System with CCTV)
 
-TailAdmin is a free and open-source admin dashboard template built on **React and Tailwind CSS**, providing developers
-with everything they need to create a comprehensive, data-driven back-end,
-dashboard, or admin panel solution for upcoming web projects.
+**SIAPUS (Sistem Informasi Absensi Pustek)** is a modern, responsive, and feature-rich attendance management system built for schools. This frontend application is a Progressive Web App (PWA) designed to provide a seamless experience for Students, Teachers, Admins, and Security (Piket) staff across all devices.
 
-With TailAdmin, you get access to all the necessary dashboard UI components, elements, and pages required to build a
-feature-rich and complete dashboard or admin panel. Whether you're building dashboard or admin panel for a complex web
-application or a simple website, TailAdmin is the perfect solution to help you get up and running quickly.
+## 🌟 Key Features
 
-![TailAdmin React.js Dashboard Preview](./banner.png)
+- **Role-Based Dashboards:** Unique, tailored interfaces for Admins, Teachers, Students, and Piket staff.
+- **Mobile-First Experience:** A highly optimized mobile view featuring native-feeling horizontal carousels, swipeable tabs, and progressive web app (PWA) capabilities.
+- **Advanced Attendance Methods:** Support for multiple check-in workflows based on dynamic rules:
+  - 📷 **QR Code Scanning**
+  - 📍 **GPS / Geolocation Check-in**
+  - 🤳 **Selfie / Photo Verification**
+- **Dynamic Scheduling Roadmap:** A real-time timeline for students and teachers showing expected gate scans, classes, break times, schedule overrides, and holidays.
+- **Gate & CCTV Monitoring:** Dedicated dashboards for security and admins to monitor live gate attendance and integrate with CCTV feeds.
+- **Complex Rule Engine:** Handles nuanced attendance policies including late tolerances, early leave thresholds, auto-alfa (absent) calculations, and substitute teacher assignments.
+- **Premium UI/UX:** Built with Tailwind CSS v4 featuring glassmorphism, animated metrics cards, framer-motion page transitions, and dark mode support.
 
-## Overview
+## 🛠 Tech Stack
 
-TailAdmin provides essential UI components and layouts for building feature-rich, data-driven admin dashboards and
-control panels. It's built on:
+- **Framework:** [React 19](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
+- **Build Tool:** [Vite](https://vitejs.dev/)
+- **Styling:** [Tailwind CSS v4](https://tailwindcss.com/)
+- **State Management & Data Fetching:** React Query (TanStack Query)
+- **Routing:** React Router
+- **Animations:** Framer Motion
+- **QR Code Scanning:** HTML5-QRCode
+- **PWA Integration:** Vite PWA Plugin
 
-- React 19
-- TypeScript
-- Tailwind CSS v4
-
-### Quick Links
-
-- [✨ Visit Website](https://tailadmin.com)
-- [📄 Documentation](https://tailadmin.com/docs)
-- [⬇️ Download](https://tailadmin.com/download)
-- [🖌️ Figma Design File (Community Edition)](https://www.figma.com/community/file/1214477970819985778)
-- [⚡ Get PRO Version](https://tailadmin.com/pricing)
-
-### Demos
-
-- [Free Version](https://free-react-demo.tailadmin.com/)
-- [Pro Version](https://react-demo.tailadmin.com)
-
-### Other Versions
-
-- [HTML Version](https://github.com/TailAdmin/tailadmin-free-tailwind-dashboard-template)
-- [Next.js Version](https://github.com/TailAdmin/free-nextjs-admin-dashboard)
-- [Vue.js Version](https://github.com/TailAdmin/vue-tailwind-admin-dashboard)
-- [Angular Version](https://github.com/TailAdmin/free-angular-tailwind-dashboard)
-- [Laravel Version](https://github.com/TailAdmin/tailadmin-laravel)
-
-## Installation
+## 🚀 Getting Started
 
 ### Prerequisites
 
-To get started with TailAdmin, ensure you have the following prerequisites installed and set up:
+Ensure you have the following installed:
+- [Node.js](https://nodejs.org/) (v18.x or later, Node 20.x recommended)
+- `npm` or `yarn`
 
-- Node.js 18.x or later (recommended to use Node.js 20.x or later)
+### Installation
 
-### Cloning the Repository
+1. **Clone the repository:**
+   ```bash
+   git clone <your-repo-url>
+   cd fe-attendance-system-with-cctv
+   ```
 
-Clone the repository using the following command:
-
-```bash
-git clone https://github.com/TailAdmin/free-react-tailwind-admin-dashboard.git
-```
-
-> Windows Users: place the repository near the root of your drive if you face issues while cloning.
-
-1. Install dependencies:
-
+2. **Install dependencies:**
    ```bash
    npm install
    # or
    yarn install
    ```
 
+3. **Environment Configuration:**
+   Copy the `.env.example` to `.env` and configure your API endpoints.
+   ```bash
+   cp .env.example .env
+   ```
+   *Make sure `VITE_API_URL` points to your running backend instance.*
 
-2. Start the development server:
+4. **Start the development server:**
    ```bash
    npm run dev
    # or
    yarn dev
    ```
+   The application will be available at `http://localhost:5173`.
 
-## Components
+## 📜 Available Scripts
 
-TailAdmin is a pre-designed starting point for building a web-based dashboard using React.js and Tailwind CSS. The
-template includes:
+- `npm run dev`: Starts the development server.
+- `npm run build`: Builds the app for production (includes PWA service worker generation).
+- `npm run preview`: Locally previews the production build.
+- `npm run lint`: Runs ESLint to find and fix problems in the code.
 
-- Sophisticated and accessible sidebar
-- Data visualization components
-- Prebuilt profile management and 404 page
-- Tables and Charts(Line and Bar)
-- Authentication forms and input elements
-- Alerts, Dropdowns, Modals, Buttons and more
-- Can't forget Dark Mode 🕶️
+## 🏗 Project Structure
 
-All components are built with React and styled using Tailwind CSS for easy customization.
+```
+src/
+├── api/             # API client services, types, and axios interceptors
+├── assets/          # Static assets like images and global styles
+├── components/      # Reusable UI components (Atomic design: atoms, molecules, organisms)
+├── hooks/           # Custom React hooks (e.g., useAuth, useAttendance)
+├── layout/          # Page layout wrappers (Sidebar, Header, Mobile view wrappers)
+├── pages/           # Application route pages (Dashboard, History, Settings, etc.)
+├── router/          # Route definitions and guarded routes configuration
+└── utils/           # Helper functions and formatters
+```
 
-## Feature Comparison
+## 🎨 Design System
 
-### Free Version
+This project originally derived its foundation from the TailAdmin template but has been heavily customized and expanded to fit the specific needs of the SIAPUS ecosystem. We follow strict component modularity and use Tailwind's utility classes to maintain a consistent, premium aesthetic across both desktop and mobile viewports.
 
-- 1 Unique Dashboard
-- 30+ dashboard components
-- 50+ UI elements
-- Basic Figma design files
-- Community support
+## 📄 License
 
-### Pro Version
-
-- 7 Unique Dashboards: Analytics, Ecommerce, Marketing, CRM, SaaS, Stocks, Logistics (more coming soon)
-- 500+ dashboard components and UI elements
-- Complete Figma design file
-- Email support
-
-To learn more about pro version features and pricing, visit our [pricing page](https://tailadmin.com/pricing).
-
-## Changelog
-
-### Version 2.0.2 - [March 25, 2025]
-
-- Upgraded to React 19
-- Included overrides for packages to prevent peer dependency errors.
-- Migrated from react-flatpickr to flatpickr package for React 19 support
-
-### Version 2.0.1 - [February 27, 2025]
-
-#### Update Overview
-
-- Upgraded to Tailwind CSS v4 for better performance and efficiency.
-- Updated class usage to match the latest syntax and features.
-- Replaced deprecated class and optimized styles.
-
-#### Next Steps
-
-- Run npm install or yarn install to update dependencies.
-- Check for any style changes or compatibility issues.
-- Refer to the Tailwind CSS v4 [Migration Guide](https://tailwindcss.com/docs/upgrade-guide) on this release. if needed.
-- This update keeps the project up to date with the latest Tailwind improvements. 🚀
-
-### Version 2.0.0 - [February 2025]
-
-A major update with comprehensive redesign and modern React patterns implementation.
-
-#### Major Improvements
-
-- Complete UI redesign with modern React patterns
-- New features: collapsible sidebar, chat, and calendar
-- Improved performance and accessibility
-- Updated data visualization using ApexCharts
-
-#### Key Features
-
-- Redesigned dashboards (Ecommerce, Analytics, Marketing, CRM)
-- Enhanced navigation with React Router integration
-- Advanced tables with sorting and filtering
-- Calendar with drag-and-drop support
-- New UI components and improved existing ones
-
-#### Breaking Changes
-
-- Updated sidebar component API
-- Migrated charts to ApexCharts
-- Revised authentication system
-
-[Read more](https://tailadmin.com/docs/update-logs/react) on this release.
-
-### Version 1.3.7 - [June 20, 2024]
-
-#### Enhancements
-
-1. Remove Repetition of DefaultLayout in every Pages
-2. Add ClickOutside Component for reduce repeated functionality in Header Message, Notification and User Dropdowns.
-
-### Version 1.3.6 - [Jan 31, 2024]
-
-#### Enhancements
-
-1. Integrate flatpickr in [Date Picker/Form Elements]
-2. Change color after select an option [Select Element/Form Elements].
-3. Make it functional [Multiselect Dropdown/Form Elements].
-4. Make best value editable [Pricing Table One/Pricing Table].
-5. Rearrange Folder structure.
-
-### Version 1.2.0 - [Apr 28, 2023]
-
-- Add Typescript in TailAdmin React.
-
-### Version 1.0.0 - Initial Release - [Mar 13, 2023]
-
-- Initial release of TailAdmin React.
-
-## License
-
-TailAdmin React.js Free Version is released under the MIT License.
-
-## Support
-
-If you find this project helpful, please consider giving it a star on GitHub. Your support helps us continue developing
-and maintaining this template.
+This project is proprietary and confidential. Unauthorized copying of files from this repository, via any medium, is strictly prohibited.
