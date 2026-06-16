@@ -88,11 +88,17 @@ function GateCountdown({ targetTime, onComplete }: { targetTime: string, onCompl
       const diff = targetTimeDate.getTime() - now.getTime();
       
       if (diff <= 0) {
-        setTimeLeft("");
-        clearInterval(timer);
+        setTimeLeft("Sekarang");
         if (!hasTriggeredRef.current) {
           hasTriggeredRef.current = true;
-          onComplete();
+          // Add a delay to allow server time to catch up, then trigger refresh
+          setTimeout(() => {
+            onComplete();
+            // Reset trigger after 5 seconds to retry if backend still returns 'upcoming'
+            setTimeout(() => {
+              hasTriggeredRef.current = false;
+            }, 5000);
+          }, 1000);
         }
       } else {
         const totalHours = Math.floor(diff / (1000 * 60 * 60));
@@ -114,8 +120,8 @@ function GateCountdown({ targetTime, onComplete }: { targetTime: string, onCompl
 
   return (
     <span className="inline-flex items-center gap-1 text-[9px] font-bold text-pink-600 dark:text-pink-400 bg-pink-50 dark:bg-pink-500/10 border border-pink-100 dark:border-pink-500/20 rounded-md px-1.5 py-0.5">
-      <ClockIcon className="w-3 h-3" />
-      Dibuka dlm {timeLeft}
+      <ClockIcon className={timeLeft === "Sekarang" ? "w-3 h-3 animate-spin" : "w-3 h-3"} />
+      {timeLeft === "Sekarang" ? "Memuat..." : `Dibuka dlm ${timeLeft}`}
     </span>
   );
 }
