@@ -8,6 +8,7 @@ import {
   CheckCircleIcon,
   AlertIcon,
   ChevronLeftIcon,
+} from "../../components/atoms/Icons";
 import { AnimatePresence, motion } from "framer-motion";
 import toast from "react-hot-toast";
 
@@ -1136,7 +1137,7 @@ const QRScanner = () => {
           isOpen={isConfirmModalOpen}
           onClose={() => setIsConfirmModalOpen(false)}
           title="Confirm Check-In"
-          className="max-w-xs m-4"
+          className="w-full sm:max-w-md m-0 sm:m-4"
           footer={
             <div className="flex justify-end gap-3 w-full">
               <Button
