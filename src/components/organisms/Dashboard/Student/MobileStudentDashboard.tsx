@@ -485,11 +485,12 @@ export default function MobileStudentDashboard({ logs = [] }: MobileStudentDashb
             </span>
             <span className="w-1 h-1 rounded-full bg-white/30"></span>
             <span className="flex items-center gap-1">
-              <PieChartIcon className="w-3 h-3 text-green-300" /> 98.5%
+              <PieChartIcon className="w-3 h-3 text-green-300" /> 
+              {dashboardData?.attendanceRate !== undefined ? `${Number(dashboardData.attendanceRate).toFixed(1)}%` : "0.0%"}
             </span>
             <span className="w-1 h-1 rounded-full bg-white/30"></span>
             <span className="flex items-center gap-1">
-              <LockIcon className="w-3 h-3 text-orange-300" /> 192.168.x.x
+              <LockIcon className="w-3 h-3 text-orange-300" /> {dashboardData?.clientIp || "Loading..."}
             </span>
           </div>
 
