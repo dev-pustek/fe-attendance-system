@@ -12,7 +12,8 @@ import {
     UserIcon, 
     TimeIcon, 
     GroupIcon,
-    MapPinIcon
+    MapPinIcon,
+    QrCodeIcon
 } from "../../components/atoms/Icons";
 
 interface EventCardProps {
@@ -22,6 +23,7 @@ interface EventCardProps {
   onEdit: () => void;
   onDelete: () => void;
   onManageInvites: () => void;
+  onScan: () => void;
 }
 
 const formatDate = (d?: string) =>
@@ -39,7 +41,8 @@ const EventCard: React.FC<EventCardProps> = ({
   onToggle,
   onEdit,
   onDelete,
-  onManageInvites
+  onManageInvites,
+  onScan
 }) => {
 
   const getEventIcon = () => {
@@ -145,6 +148,15 @@ const EventCard: React.FC<EventCardProps> = ({
                 className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/[0.04]"
                 >
                 <PencilIcon className="size-3.5" /> Edit
+                </DropdownItem>
+                <DropdownItem
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onScan();
+                }}
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-500/10"
+                >
+                <QrCodeIcon className="size-3.5" /> Scan Kehadiran
                 </DropdownItem>
                 <DropdownItem
                 onClick={(e) => {

@@ -548,6 +548,7 @@ const Events: React.FC = () => {
                             onEdit={() => handleOpenModal(event)}
                             onDelete={() => handleDelete(event.public_id)}
                             onManageInvites={() => { setSelectedEvent(event); setIsManageModalOpen(true); }}
+                            onScan={() => navigate(`/events/scan?eventId=${event.public_id}`)}
                         />
                         ))}
                     </div>
@@ -706,6 +707,12 @@ const Events: React.FC = () => {
                                                         <PencilIcon className="size-3.5" /> Edit Acara
                                                     </DropdownItem>
                                                     <DropdownItem
+                                                        onClick={() => navigate(`/events/scan?eventId=${event.public_id}`)}
+                                                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-500/10"
+                                                    >
+                                                        <QrCodeIcon className="size-3.5" /> Scan Kehadiran
+                                                    </DropdownItem>
+                                                    <DropdownItem
                                                         onClick={() => handleDelete(event.public_id)}
                                                         className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/10"
                                                     >
@@ -806,11 +813,27 @@ const Events: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label>Waktu Mulai <span className="text-red-500">*</span></Label>
-                    <DatePicker type="datetime" value={formData.startDateTime ? new Date(formData.startDateTime).toISOString().slice(0, 16).replace('T', ' ') : ""} onChange={(val) => { if(val) setFormData({...formData, startDateTime: new Date(val).toISOString()}) }} />
+                    <DatePicker 
+                      type="datetime" 
+                      value={formData.startDateTime ? (() => {
+                        const d = new Date(formData.startDateTime);
+                        const tzOffset = d.getTimezoneOffset() * 60000;
+                        return new Date(d.getTime() - tzOffset).toISOString().slice(0, 16).replace('T', ' ');
+                      })() : ""} 
+                      onChange={(val) => { if(val) setFormData({...formData, startDateTime: new Date(val).toISOString()}) }} 
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label>Waktu Selesai <span className="text-red-500">*</span></Label>
-                    <DatePicker type="datetime" value={formData.endDateTime ? new Date(formData.endDateTime).toISOString().slice(0, 16).replace('T', ' ') : ""} onChange={(val) => { if(val) setFormData({...formData, endDateTime: new Date(val).toISOString()}) }} />
+                    <DatePicker 
+                      type="datetime" 
+                      value={formData.endDateTime ? (() => {
+                        const d = new Date(formData.endDateTime);
+                        const tzOffset = d.getTimezoneOffset() * 60000;
+                        return new Date(d.getTime() - tzOffset).toISOString().slice(0, 16).replace('T', ' ');
+                      })() : ""} 
+                      onChange={(val) => { if(val) setFormData({...formData, endDateTime: new Date(val).toISOString()}) }} 
+                    />
                   </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
