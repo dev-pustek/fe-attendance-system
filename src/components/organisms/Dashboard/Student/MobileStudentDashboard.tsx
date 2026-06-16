@@ -72,6 +72,47 @@ function BreakCountdown({ timeRange, isActive }: { timeRange: string, isActive: 
   );
 }
 
+function GateCountdown({ targetTime, onComplete }: { targetTime: string, onComplete: () => void }) {
+  const [timeLeft, setTimeLeft] = useState<string>("");
+  const hasTriggeredRef = useRef(false);
+
+  useEffect(() => {
+    if (!targetTime) return;
+
+    const timer = setInterval(() => {
+      const now = new Date();
+      const targetTimeDate = new Date();
+      const [h, m, s] = targetTime.split(":").map(Number);
+      targetTimeDate.setHours(h, m, s || 0, 0);
+
+      const diff = targetTimeDate.getTime() - now.getTime();
+      
+      if (diff <= 0) {
+        setTimeLeft("");
+        clearInterval(timer);
+        if (!hasTriggeredRef.current) {
+          hasTriggeredRef.current = true;
+          onComplete();
+        }
+      } else {
+        const totalMinutes = Math.floor(diff / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+        setTimeLeft(`${totalMinutes}m ${seconds}s`);
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [targetTime, onComplete]);
+
+  if (!timeLeft) return null;
+
+  return (
+    <span className="font-mono text-[10px] ml-1 px-1.5 py-0.5 rounded-md bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-400">
+      Opens in {timeLeft}
+    </span>
+  );
+}
+
 function MobileDashboardSkeleton() {
   return (
     <div className="animate-pulse w-full">
@@ -945,7 +986,10 @@ export default function MobileStudentDashboard({ logs = [] }: MobileStudentDashb
                             {!isActive && isUpcoming && (
                               <div className="flex items-center text-gray-500 dark:text-gray-400 font-medium text-[10px]">
                                 <ClockIcon className="w-3.5 h-3.5 mr-1" />
-                                {item.type === 'break' ? 'Upcoming Break' : 'Menunggu Waktu...'}
+                                {item.type === 'break' ? 'Upcoming Break' : 
+                                 (item.type === 'scan_in' && (item as any).openTime) ? 
+                                 <GateCountdown targetTime={(item as any).openTime} onComplete={refetchRoadmap} /> : 
+                                 'Menunggu Waktu...'}
                               </div>
                             )}
                           </div>
