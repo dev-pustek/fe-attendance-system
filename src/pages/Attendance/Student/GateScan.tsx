@@ -47,6 +47,7 @@ const GateScan = () => {
   const [policyError, setPolicyError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"landing" | "scanner">("landing");
   const [requireSelfie, setRequireSelfie] = useState(false);
+  const [cameraFacingMode, setCameraFacingMode] = useState<"user" | "environment">("user");
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [pendingScanCode, setPendingScanCode] = useState<string | null>(null);
@@ -338,7 +339,7 @@ const GateScan = () => {
                     canvas.height = sourceHeight;
                     const ctx = canvas.getContext("2d");
                     if (ctx) {
-                        const isMirrored = videoEl.style.transform.includes("scaleX(-1)");
+                        const isMirrored = cameraFacingMode === "user";
                         if (isMirrored) {
                             ctx.translate(canvas.width, 0);
                             ctx.scale(-1, 1);
@@ -406,7 +407,7 @@ const GateScan = () => {
         scannerRef.current = scanner;
 
         await scanner.start(
-          { facingMode: "environment" },
+          { facingMode: cameraFacingMode },
           {
             fps: 10,
           },
@@ -432,7 +433,7 @@ const GateScan = () => {
           .catch(console.error);
       }
     };
-  }, [handleScan, viewMode]);
+  }, [handleScan, viewMode, cameraFacingMode]);
 
   // -- Fetch Policy on Mount & Manual Refresh --
   const fetchPolicy = useCallback(() => {
@@ -972,7 +973,7 @@ const GateScan = () => {
       <div className="relative w-full h-full">
         <div id="gate-reader" ref={renderRef} className="absolute inset-0 w-full h-full bg-black" />
         <style>{`
-          #gate-reader video { object-fit: cover !important; width: 100% !important; height: 100% !important; }
+          #gate-reader video { object-fit: cover !important; width: 100% !important; height: 100% !important; ${cameraFacingMode === 'user' ? 'transform: scaleX(-1);' : ''} }
           #gate-reader canvas, #gate-reader img, #gate-reader svg { display: none !important; }
           #gate-reader div { box-shadow: none !important; border: none !important; }
         `}</style>
@@ -1037,6 +1038,22 @@ const GateScan = () => {
                     <div className="absolute -top-0.5 -right-0.5 w-8 h-8 border-r-4 border-t-4 border-brand-500 rounded-tr-2xl pointer-events-none" />
                     <div className="absolute -bottom-0.5 -left-0.5 w-8 h-8 border-l-4 border-b-4 border-brand-500 rounded-bl-2xl pointer-events-none" />
                     <div className="absolute -bottom-0.5 -right-0.5 w-8 h-8 border-r-4 border-b-4 border-brand-500 rounded-br-2xl pointer-events-none" />
+                </motion.div>
+
+                {/* Switch Camera Button */}
+                <motion.div
+                    initial={{ scale: 0.95, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="absolute top-24 right-4 z-50"
+                >
+                    <button
+                        onClick={() => setCameraFacingMode(prev => prev === "user" ? "environment" : "user")}
+                        className="p-3 bg-black/50 hover:bg-black/70 rounded-full text-white transition-colors backdrop-blur-md border border-white/10 active:scale-95"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                        </svg>
+                    </button>
                 </motion.div>
 
                 {/* Modern Camera Button */}
