@@ -169,7 +169,7 @@ const Settings: React.FC = () => {
 
   return (
     <>
-      <PageMeta title="System Settings | Visia" description="Manage system-wide configuration settings." />
+      <PageMeta title="System Settings | SIAPUS" description="Manage system-wide configuration settings." />
       <PageBreadcrumb pageTitle="Settings" />
 
       <div className="space-y-6">

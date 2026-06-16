@@ -296,6 +296,8 @@ export interface TeachingSessionParams extends PaginationParams {
   classSubjectId?: number;
   actualTeacherId?: string;
   sessionDate?: string;
+  startDate?: string;
+  endDate?: string;
   isCancelled?: boolean;
 }
 

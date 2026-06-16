@@ -6,7 +6,10 @@ import PageBreadcrumb from "../../components/molecules/PageBreadcrumb";
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "../../components/atoms/Table";
 import Modal from "../../components/molecules/Modal";
 import CustomSelect from "../../components/molecules/CustomSelect";
-import { PencilIcon, TrashBinIcon, PlusIcon, GridIcon, ChevronLeftIcon, AngleRightIcon, VideoIcon, InfoIcon as MapPinIcon, ChevronUpIcon, ChevronDownIcon } from "../../components/atoms/Icons";
+import { PencilIcon, TrashBinIcon, PlusIcon, GridIcon, ChevronLeftIcon, AngleRightIcon, VideoIcon, InfoIcon as MapPinIcon, ChevronUpIcon, ChevronDownIcon, FilterIcon, SearchIcon } from "../../components/atoms/Icons";
+import TableToolbar from "../../components/molecules/TableToolbar";
+import TableActionMenu from "../../components/molecules/TableActionMenu";
+import DropdownItem from "../../components/atoms/DropdownItem";
 import { useDebounce } from "../../hooks/useDebounce";
 import { showSuccess, showError } from "../../utils/toast";
 import ConfirmDialog from "../../components/molecules/ConfirmDialog";
@@ -19,6 +22,7 @@ const Devices: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   // const [typeFilter, setTypeFilter] = useState(""); // Removed type filter
   const [statusFilter, setStatusFilter] = useState("");
+  const [isFilterOpen, setIsFilterOpen] = useState(true);
   const debouncedSearch = useDebounce(searchQuery, 500);
   const { confirm, confirmState } = useConfirm();
 
@@ -204,7 +208,7 @@ const Devices: React.FC = () => {
 
   return (
     <>
-      <PageMeta title="Device Management | Visia" description="Manage CCTV cameras and attendance biometric devices." />
+      <PageMeta title="Device Management | SIAPUS" description="Manage CCTV cameras and attendance biometric devices." />
       <PageBreadcrumb pageTitle="Devices" />
 
       <div className="space-y-6">
@@ -223,68 +227,79 @@ const Devices: React.FC = () => {
           </button>
         </div>
 
-        {/* Bulk Selection Actions Bar */}
-        {selectedIds.length > 0 && (
-          <div className="flex items-center justify-between p-4 bg-brand-50 border border-brand-100 rounded-2xl dark:bg-brand-500/10 dark:border-brand-500/20 animate-in slide-in-from-top-2 duration-300">
-            <div className="flex items-center gap-3">
-              <div className="size-8 rounded-full bg-brand-500 text-white flex items-center justify-center text-sm font-bold shadow-sm font-mono">
-                {selectedIds.length}
-              </div>
-              <p className="text-sm font-semibold text-brand-700 dark:text-brand-400">Devices Selected</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleBulkDelete}
-                className="flex items-center gap-2 px-4 py-2 bg-error-50 dark:bg-error-500/10 border border-error-100 dark:border-error-500/20 rounded-xl text-sm font-bold text-error-600 dark:text-error-400 hover:bg-error-100 transition-all shadow-sm"
-              >
-                <TrashBinIcon className="size-4" />
-                Delete Selected
-              </button>
-              <button
-                onClick={() => setSelectedIds([])}
-                className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-700 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Filters */}
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div className="flex flex-1 flex-col gap-4 sm:flex-row sm:items-end">
-            <div className="flex-1 space-y-1.5">
-              <label className="text-xs font-normal text-gray-500 dark:text-gray-400 uppercase tracking-wider">Search Device</label>
-              <div className="relative">
-                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">
-                  <GridIcon className="size-4" />
+        {/* ── Advanced Filter Card ── */}
+        <div className="mb-4 rounded-2xl border border-white/40 bg-white/40 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:border-white/10 dark:bg-white/5 dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] overflow-hidden">
+            <button 
+                onClick={() => setIsFilterOpen(!isFilterOpen)} 
+                className="w-full flex items-center justify-between p-5 hover:bg-gray-50/50 dark:hover:bg-white/[0.02] transition-colors"
+            >
+                <div className="text-left">
+                    <div className="flex items-center gap-2 mb-1">
+                        <FilterIcon className="size-5 text-brand-500" />
+                        <h3 className="text-sm font-bold uppercase tracking-wider text-gray-800 dark:text-gray-200">
+                            Search & Filter Devices
+                        </h3>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Use the criteria below to filter device data based on status.
+                    </p>
                 </div>
-                <input
-                  type="text"
-                  placeholder="Name or location..."
-                  value={searchQuery}
-                  onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
-                  className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none transition-all focus:border-brand-500 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-white"
-                />
-              </div>
+                <div className="shrink-0 ml-4">
+                    <ChevronDownIcon className={`size-5 text-gray-400 transition-transform duration-200 ${isFilterOpen ? "rotate-180" : ""}`} />
+                </div>
+            </button>
+            
+            <div 
+                className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${
+                    isFilterOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                }`}
+            >
+                <div className="overflow-hidden min-h-0">
+                    <div className="px-5 pb-5">
+                        <hr className="mb-5 border-gray-100 dark:border-white/[0.05]" />
+                        
+                        <div className="grid grid-cols-1 gap-5 items-end md:grid-cols-2">
+                            <div className="md:col-span-1 space-y-1.5">
+                                <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Search Device</label>
+                                <div className="relative">
+                                    <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+                                    <input
+                                        type="text"
+                                        value={searchQuery}
+                                        onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
+                                        placeholder="Name or location..."
+                                        className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-4 text-sm text-gray-900 transition-colors focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-white/[0.08] dark:bg-white/[0.02] dark:text-white dark:focus:border-brand-400 dark:focus:ring-brand-400"
+                                    />
+                                </div>
+                            </div>
+                            <div className="md:col-span-1 space-y-1.5">
+                                <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Status</label>
+                                <CustomSelect
+                                    value={statusFilter}
+                                    onChange={(val: string | number) => { setStatusFilter(String(val)); setPage(1); }}
+                                    options={[
+                                        { label: "All Status", value: "" },
+                                        { label: "Active", value: "true" },
+                                        { label: "Inactive", value: "false" },
+                                    ]}
+                                    className="w-full [&>button]:w-full [&>button]:h-11 [&>button]:text-sm [&>button]:rounded-xl"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-
-            <div className="w-full sm:w-48">
-              <CustomSelect
-                label="Status"
-                value={statusFilter}
-                onChange={(val: string | number) => { setStatusFilter(String(val)); setPage(1); }}
-                options={[
-                  { label: "All Status", value: "" },
-                  { label: "Active", value: "true" },
-                  { label: "Inactive", value: "false" },
-                ]}
-              />
-            </div>
-          </div>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-white/[0.05] dark:bg-white/[0.03]">
+        <TableToolbar
+            selectedCount={selectedIds.length}
+            onClearSelection={() => setSelectedIds([])}
+            bulkActions={[
+                { label: "Delete Selected", icon: <TrashBinIcon className="size-3.5" />, onClick: handleBulkDelete, variant: "danger" }
+            ]}
+        />
+
+        <div className="overflow-hidden rounded-2xl border border-white/40 bg-white/40 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:border-white/10 dark:bg-white/5 dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)]">
           <Table>
             <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
               <TableRow>
@@ -388,20 +403,20 @@ const Devices: React.FC = () => {
                 </div>
                     </TableCell>
                     <TableCell className="px-5 py-4 text-right">
-                      <div className="flex justify-end gap-1">
-                        <button
+                      <TableActionMenu>
+                        <DropdownItem
                           onClick={() => handleOpenModal(device)}
-                          className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-brand-50 hover:text-brand-500 dark:hover:bg-brand-500/10"
+                          className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/[0.04]"
                         >
-                          <PencilIcon className="size-4" />
-                        </button>
-                        <button
+                          <PencilIcon className="size-4" /> Edit
+                        </DropdownItem>
+                        <DropdownItem
                           onClick={() => handleDelete(device.public_id)}
-                          className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-error-50 hover:text-error-500 dark:hover:bg-error-500/10"
+                          className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/10"
                         >
-                          <TrashBinIcon className="size-4" />
-                        </button>
-                      </div>
+                          <TrashBinIcon className="size-4" /> Delete
+                        </DropdownItem>
+                      </TableActionMenu>
                     </TableCell>
                   </TableRow>
                 ))

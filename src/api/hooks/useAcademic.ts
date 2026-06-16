@@ -393,6 +393,30 @@ export const useMajors = (params?: MajorParams) => {
   return { ...query, createMutation, updateMutation, deleteMutation };
 };
 
+export const useMajorsInfinite = (params?: Omit<MajorParams, 'page'>) => {
+  return useInfiniteQuery({
+    queryKey: ["academic", "majors", "infinite", params],
+    queryFn: ({ pageParam = 1 }) =>
+      academicService.getMajors({ ...params, page: pageParam as number, limit: 10 }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage: any) => {
+      const meta = lastPage?.meta;
+      if (!meta) return undefined;
+      return meta.page < meta.totalPages ? meta.page + 1 : undefined;
+    },
+  });
+};
+
+export const useImportMajors = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => academicService.importMajors(file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["academic", "majors"] });
+    },
+  });
+};
+
 export const useClassScheduleOverrides = (
   params?: ClassScheduleOverrideParams
 ) => {
@@ -435,7 +459,42 @@ export const useClassScheduleOverrides = (
       }),
   });
 
-  return { ...query, createMutation, updateMutation, deleteMutation };
+  return {
+    ...query,
+    createMutation,
+    updateMutation,
+    deleteMutation,
+  };
+};
+
+export const useClassScheduleOverridesInfinite = (
+  params?: ClassScheduleOverrideParams
+) => {
+  return useInfiniteQuery({
+    queryKey: ["academic", "schedule-overrides", "infinite", params],
+    queryFn: ({ pageParam = 1 }) =>
+      academicService.getClassScheduleOverrides({ ...params, page: pageParam as number, limit: 10 }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage: any) => {
+      const meta = lastPage?.meta;
+      if (!meta) return undefined;
+      return meta.page < meta.totalPages ? meta.page + 1 : undefined;
+    },
+  });
+};
+
+export const useGradesInfinite = (params?: Omit<GradeParams, 'page'>) => {
+  return useInfiniteQuery({
+    queryKey: ["academic", "grades", "infinite", params],
+    queryFn: ({ pageParam = 1 }) =>
+      academicService.getGrades({ ...params, page: pageParam as number, limit: 10 }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage: any) => {
+      const meta = lastPage?.meta;
+      if (!meta) return undefined;
+      return meta.page < meta.totalPages ? meta.page + 1 : undefined;
+    },
+  });
 };
 
 export const useGrades = (params?: GradeParams) => {
@@ -510,6 +569,19 @@ export const useProgramStudies = (params?: ProgramStudyParams) => {
   return { ...query, createMutation, updateMutation, deleteMutation };
 };
 
+export const useProgramStudiesInfinite = (params?: ProgramStudyParams) => {
+  return useInfiniteQuery({
+    queryKey: ["academic", "program-studies", "infinite", params],
+    queryFn: ({ pageParam = 1 }) =>
+      academicService.getProgramStudies({ ...params, page: pageParam, limit: 10 }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const meta = lastPage?.meta;
+      return meta && meta.page < meta.totalPages ? meta.page + 1 : undefined;
+    },
+  });
+};
+
 export const useSubjects = (params?: SubjectParams) => {
   const queryClient = useQueryClient();
 
@@ -543,6 +615,19 @@ export const useSubjects = (params?: SubjectParams) => {
   });
 
   return { ...query, createMutation, updateMutation, deleteMutation };
+};
+
+export const useSubjectsInfinite = (params?: SubjectParams) => {
+  return useInfiniteQuery({
+    queryKey: ["academic", "subjects", "infinite", params],
+    queryFn: ({ pageParam = 1 }) =>
+      academicService.getSubjects({ ...params, page: pageParam, limit: 10 }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage: PaginatedResponse<Subject>) => {
+      const meta = lastPage?.meta;
+      return meta && meta.page < meta.totalPages ? meta.page + 1 : undefined;
+    },
+  });
 };
 
 export const useTeacherSubjects = (params?: TeacherSubjectParams) => {

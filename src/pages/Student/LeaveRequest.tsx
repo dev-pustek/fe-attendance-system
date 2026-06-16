@@ -14,6 +14,7 @@ import DatePicker from "../../components/molecules/DatePicker";
 import { useConfirm } from "../../hooks/useConfirm";
 import ConfirmDialog from "../../components/molecules/ConfirmDialog";
 import ApprovalHistoryTimeline from "../../components/organisms/Leaves/ApprovalHistoryTimeline";
+import LeaveFormModal from "../Leaves/Requests/LeaveFormModal";
 import { format, differenceInDays, parseISO } from "date-fns";
 
 const StudentLeaveRequest: React.FC = () => {
@@ -34,20 +35,6 @@ const StudentLeaveRequest: React.FC = () => {
     const submitMutation = useSubmitLeave();
 
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const [createForm, setCreateForm] = useState<{
-        leaveTypeCode: string;
-        startDate: string;
-        endDate: string;
-        reason: string;
-        image: File | null;
-    }>({
-        leaveTypeCode: "",
-        startDate: "",
-        endDate: "",
-        reason: "",
-        image: null
-    });
-    const [imagePreview, setImagePreview] = useState<string | null>(null);
 
     const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
     const [historySubmissionId, setHistorySubmissionId] = useState<string | null>(null);
@@ -66,61 +53,12 @@ const StudentLeaveRequest: React.FC = () => {
 
     const submissions = Array.isArray((submissionsResponse as any)?.data?.data) ? (submissionsResponse as any).data.data : [];
 
-    const selectedLeaveType = useMemo(() => 
-        leaveTypes.find(t => t.code === createForm.leaveTypeCode),
-    [leaveTypes, createForm.leaveTypeCode]);
-
-    const isAttachmentRequired = selectedLeaveType?.requiresFile || false;
-
     // Redirection logic AFTER hooks
     if (isAdminMode) {
         return <Navigate to="/leaves/requests" replace />;
     }
 
     // Handlers
-    const handleCreateSubmit = async () => {
-        if (!createForm.leaveTypeCode || !createForm.startDate || !createForm.endDate || !createForm.reason) {
-            showError(null, "Please fill in all required fields");
-            return;
-        }
-
-        if (isAttachmentRequired && !createForm.image) {
-            showError(null, "Attachment is required for this leave type");
-            return;
-        }
-
-        try {
-            await submitMutation.mutateAsync({
-                ...createForm,
-                image: createForm.image || undefined
-            });
-            showSuccess("Leave request submitted successfully!");
-            setIsCreateModalOpen(false);
-            setCreateForm({
-                leaveTypeCode: "",
-                startDate: "",
-                endDate: "",
-                reason: "",
-                image: null
-            });
-            setImagePreview(null);
-        } catch (error) {
-            showError(error, "Failed to submit request");
-        }
-    };
-
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setCreateForm(prev => ({ ...prev, image: file }));
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setImagePreview(reader.result as string);
-            };
-            reader.readAsDataURL(file);
-        }
-    };
-
     const handleDelete = async (submission: LeaveSubmission) => {
         if (submission.status !== "pending") {
             showError(null, "You can only delete pending requests.");
@@ -188,7 +126,7 @@ const StudentLeaveRequest: React.FC = () => {
 
     return (
         <div className="pb-24">
-            <PageMeta title="My Leave Requests | Visia" description="Managed your leave submissions." />
+            <PageMeta title="My Leave Requests | SIAPUS" description="Managed your leave submissions." />
             <PageBreadcrumb pageTitle="My Leave Requests" />
 
             <div className="space-y-6">
@@ -331,84 +269,12 @@ const StudentLeaveRequest: React.FC = () => {
                 </div>
             </div>
 
-            <Modal 
+            <LeaveFormModal 
                 isOpen={isCreateModalOpen} 
                 onClose={() => setIsCreateModalOpen(false)} 
-                className="max-w-lg"
-                title="New Leave Request"
-                description="Submit your leave application for approval."
-                footer={
-                    <div className="flex justify-end gap-3 w-full sm:w-auto">
-                        <Button variant="outline" onClick={() => setIsCreateModalOpen(false)} className="flex-1 sm:flex-none">Cancel</Button>
-                        <Button onClick={handleCreateSubmit} disabled={submitMutation.isPending} className="flex-1 sm:flex-none">
-                            {submitMutation.isPending ? "Submitting..." : "Submit"}
-                        </Button>
-                    </div>
-                }
-            >
-                <div className="space-y-4 py-2">
-                    <CustomSelect
-                        label="Leave Type *"
-                        value={createForm.leaveTypeCode}
-                        onChange={(val) => setCreateForm(prev => ({...prev, leaveTypeCode: String(val)}))}
-                        options={leaveTypes.map(t => ({ label: t.displayName || t.code, value: t.code }))}
-                        placeholder="Select leave type"
-                    />
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                        <DatePicker
-                            label="Start Date *"
-                            value={createForm.startDate}
-                            onChange={(date) => setCreateForm(prev => ({...prev, startDate: date}))}
-                            type="date"
-                        />
-                        <DatePicker
-                            label="End Date *"
-                            value={createForm.endDate}
-                            onChange={(date) => setCreateForm(prev => ({...prev, endDate: date}))}
-                            type="date"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="mb-1.5 block text-xs font-bold uppercase text-gray-500">Reason *</label>
-                        <textarea
-                            value={createForm.reason}
-                            onChange={(e) => setCreateForm(prev => ({...prev, reason: e.target.value}))}
-                            placeholder="Why are you requesting leave?"
-                            rows={3}
-                            className="w-full rounded-xl border border-gray-200 bg-white p-4 text-sm font-medium text-gray-900 outline-none transition-all focus:border-brand-500 dark:border-gray-800 dark:bg-gray-900 dark:text-white"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="mb-1.5 block text-xs font-bold uppercase text-gray-500">
-                            Attachment {isAttachmentRequired ? "(Required) *" : "(Optional)"}
-                        </label>
-                        <div className="relative">
-                            <input
-                                type="file"
-                                onChange={handleFileChange}
-                                className="hidden"
-                                id="leave-attachment"
-                                accept="image/*"
-                            />
-                            <label
-                                htmlFor="leave-attachment"
-                                className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 py-8 text-sm font-medium text-gray-500 transition-all hover:bg-gray-100 dark:border-gray-800 dark:bg-gray-900 dark:hover:bg-gray-800"
-                            >
-                                <PlusIcon className="size-5" />
-                                {createForm.image ? createForm.image.name : "Click to upload image"}
-                            </label>
-                        </div>
-                        {imagePreview && (
-                            <div className="mt-4 overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
-                                <img src={imagePreview} alt="Preview" className="h-40 w-full object-cover" />
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </Modal>
+                selectedEntity={null} 
+                leaveTypes={leaveTypes} 
+            />
 
             <Modal
                 isOpen={isHistoryModalOpen}

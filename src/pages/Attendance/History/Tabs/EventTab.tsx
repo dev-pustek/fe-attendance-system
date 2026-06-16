@@ -9,35 +9,25 @@ import { SkeletonTable } from "../../../../components/molecules/SkeletonRow";
 import CustomSelect from "../../../../components/molecules/CustomSelect";
 import Checkbox from "../../../../components/atoms/Checkbox";
 import Badge from "../../../../components/atoms/Badge";
-import Dropdown from "../../../../components/molecules/Dropdown";
 import DropdownItem from "../../../../components/atoms/DropdownItem";
+import Label from "../../../../components/atoms/Label";
 
 import { useConfirm } from "../../../../hooks/useConfirm";
 
 import {
-  MoreDotIcon,
   EyeIcon,
   CalenderIcon,
   CheckCircleIcon,
   CloseIcon,
+  FilterIcon,
+  ChevronDownIcon,
 } from "../../../../components/atoms/Icons";
 
 import EventCard from "../Cards/EventCard";
 import TableActionMenu from "../../../../components/molecules/TableActionMenu";
+import MetricCard from "../../../../components/molecules/MetricCard";
 
-const MetricCard = ({ label, value, icon }: { label: string, value: number | string, icon: React.ReactNode }) => (
-  <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-white/5 shadow-sm flex items-center gap-3">
-    <div className="p-2 rounded-lg bg-gray-50 dark:bg-white/5 shrink-0">
-      {React.isValidElement(icon)
-         ? React.cloneElement(icon as React.ReactElement<{ className?: string }>, { className: `size-5 ${((icon as React.ReactElement).props as { className?: string }).className || ''}` })
-         : icon}
-    </div>
-    <div>
-      <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">{label}</p>
-      <p className="text-lg font-bold text-gray-900 dark:text-white">{value}</p>
-    </div>
-  </div>
-);
+
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 640);
@@ -58,20 +48,12 @@ const getStatusBadge = (status: string, isLate?: boolean) => {
 };
 
 const RowActionMenu = ({ onViewDetails }: { onViewDetails: () => void }) => {
-  const [isOpen, setIsOpen] = useState(false);
   return (
-    <div className="relative flex justify-center">
-      <button onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }}
-        className="flex size-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-white/[0.05] dark:hover:text-gray-200">
-        <MoreDotIcon className="size-5" />
-      </button>
-      <Dropdown isOpen={isOpen} onClose={() => setIsOpen(false)}
-        className="absolute right-0 top-full z-20 mt-1 w-36 origin-top-right rounded-xl border border-gray-200 bg-white py-1.5 shadow-lg dark:border-white/[0.07] dark:bg-gray-900">
-        <DropdownItem onClick={() => { setIsOpen(false); onViewDetails(); }} className="text-gray-700 dark:text-gray-300">
-          <EyeIcon className="size-3.5" /> View Details
+    <TableActionMenu>
+        <DropdownItem onClick={onViewDetails} className="text-gray-700 dark:text-gray-300">
+          <EyeIcon className="size-3.5" /> Lihat Detail
         </DropdownItem>
-      </Dropdown>
-    </div>
+    </TableActionMenu>
   );
 };
 
@@ -79,6 +61,7 @@ export default function EventTab() {
   const isMobile = useIsMobile();
 
   // ── Pagination & Filters ──
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [eventStatus, setEventStatus] = useState("");
@@ -167,36 +150,95 @@ export default function EventTab() {
     <div className="space-y-5">
       {/* Metrics */}
       {!isLoading && meta && eventResponse?.metrics && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <MetricCard label="Total Events" value={eventResponse.metrics.totalEvents} icon={<CalenderIcon className="text-blue-500" />} />
-          <MetricCard label="Attended" value={eventResponse.metrics.attendedCount} icon={<CheckCircleIcon className="text-green-500" />} />
-          <MetricCard label="Missed" value={eventResponse.metrics.missedCount} icon={<CloseIcon className="text-red-500" />} />
+        <div className="flex overflow-x-auto gap-3 pb-2 -mx-4 px-4 snap-x snap-mandatory md:grid md:grid-cols-4 md:gap-4 md:pb-0 md:mx-0 md:px-0 no-scrollbar">
+          <MetricCard className="min-w-[140px] w-[40vw] max-w-[160px] shrink-0 snap-center md:w-auto md:max-w-none md:min-w-0" title="Total Acara" value={eventResponse.metrics.totalEvents} icon={<CalenderIcon />} color="blue" />
+          <MetricCard className="min-w-[140px] w-[40vw] max-w-[160px] shrink-0 snap-center md:w-auto md:max-w-none md:min-w-0" title="Hadir" value={eventResponse.metrics.attendedCount} icon={<CheckCircleIcon />} color="green" />
+          <MetricCard className="min-w-[140px] w-[40vw] max-w-[160px] shrink-0 snap-center md:w-auto md:max-w-none md:min-w-0" title="Tidak Hadir" value={eventResponse.metrics.missedCount} icon={<CloseIcon />} color="red" />
         </div>
       )}
 
-      {/* Filters & Toolbar */}
+      {/* ── Advanced Filter Card ── */}
+      <div className="mb-4 rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-white/[0.05] dark:bg-white/[0.02] overflow-hidden">
+          <button 
+              onClick={() => setIsFilterOpen(!isFilterOpen)} 
+              className="w-full flex items-center justify-between p-5 hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors"
+          >
+              <div className="text-left">
+                  <div className="flex items-center gap-2 mb-1">
+                      <FilterIcon className="size-5 text-brand-500" />
+                      <h3 className="text-sm font-bold uppercase tracking-wider text-gray-800 dark:text-gray-200">
+                          Cari & Filter Acara
+                      </h3>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Gunakan kriteria di bawah ini untuk memfilter undangan acara berdasarkan status dan waktu.
+                  </p>
+              </div>
+              <div className="shrink-0 ml-4">
+                  <ChevronDownIcon className={`size-5 text-gray-400 transition-transform duration-200 ${isFilterOpen ? "rotate-180" : ""}`} />
+              </div>
+          </button>
+          
+          <div 
+              className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${
+                  isFilterOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+              }`}
+          >
+              <div className="overflow-hidden min-h-0">
+                  <div className="px-5 pb-5">
+                      <hr className="mb-5 border-gray-100 dark:border-white/[0.05]" />
+                      
+                      <div className="grid grid-cols-1 gap-5 items-end sm:grid-cols-2 lg:grid-cols-12">
+                          <div className="space-y-1.5 sm:col-span-1 lg:col-span-3">
+                              <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Status Undangan</Label>
+                              <CustomSelect
+                                  value={eventStatus}
+                                  onChange={(val) => { setEventStatus(String(val)); setPage(1); }}
+                                  options={[
+                                      { label: "Semua Status Undangan", value: "" },
+                                      { label: "Menunggu", value: "pending" },
+                                      { label: "Diterima", value: "accepted" },
+                                      { label: "Ditolak", value: "declined" },
+                                  ]}
+                                  className="w-full [&>button]:w-full [&>button]:h-11 [&>button]:text-sm [&>button]:rounded-xl"
+                              />
+                          </div>
+                          <div className="space-y-1.5 sm:col-span-1 lg:col-span-3">
+                              <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Waktu Acara</Label>
+                              <CustomSelect
+                                  value={eventTimeFilter}
+                                  onChange={(val) => { setEventTimeFilter(val as "all" | "upcoming" | "past"); setPage(1); }}
+                                  options={[
+                                      { label: "Semua Waktu", value: "all" },
+                                      { label: "Akan Datang", value: "upcoming" },
+                                      { label: "Selesai", value: "past" },
+                                  ]}
+                                  className="w-full [&>button]:w-full [&>button]:h-11 [&>button]:text-sm [&>button]:rounded-xl"
+                              />
+                          </div>
+                          <div className="flex items-center gap-3 sm:col-span-2 lg:col-span-6">
+                              <button
+                                  onClick={() => {
+                                      setEventStatus("");
+                                      setEventTimeFilter("all");
+                                      setPage(1);
+                                  }}
+                                  className="flex h-11 flex-1 items-center justify-center rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 dark:border-white/[0.08] dark:bg-transparent dark:text-gray-300 dark:hover:bg-white/[0.05]"
+                              >
+                                  Reset
+                              </button>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </div>
+
+      {/* Toolbar for Bulk Actions */}
       <TableToolbar
-        searchValue={""}
-        onSearchChange={() => {}}
-        searchPlaceholder="Search events unavailable"
         selectedCount={selectedIds.size}
         onClearSelection={() => setSelectedIds(new Set())}
-        filters={
-          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-             <CustomSelect 
-                value={eventStatus} 
-                onChange={(val) => { setEventStatus(String(val)); setPage(1); }} 
-                options={[{label: "All Invitation Status", value: ""}, {label: "Pending", value: "pending"}, {label: "Accepted", value: "accepted"}, {label: "Declined", value: "declined"}]} 
-                className="w-full sm:w-auto flex-1 sm:flex-none [&>button]:w-full [&>button]:h-10 [&>button]:text-sm [&>button]:min-w-[130px] [&>button]:rounded-xl [&>button]:bg-white [&>button]:border-gray-200 dark:[&>button]:bg-gray-800/60 dark:[&>button]:border-white/[0.06]"
-             />
-             <CustomSelect 
-                value={eventTimeFilter} 
-                onChange={(val) => { setEventTimeFilter(val as "all" | "upcoming" | "past"); setPage(1); }} 
-                options={[{label: "All Time", value: "all"}, {label: "Upcoming", value: "upcoming"}, {label: "Past", value: "past"}]} 
-                className="w-full sm:w-auto flex-1 sm:flex-none [&>button]:w-full [&>button]:h-10 [&>button]:text-sm [&>button]:min-w-[130px] [&>button]:rounded-xl [&>button]:bg-white [&>button]:border-gray-200 dark:[&>button]:bg-gray-800/60 dark:[&>button]:border-white/[0.06]"
-             />
-          </div>
-        }
+        bulkActions={[]}
       />
 
       {/* Content */}
@@ -206,7 +248,7 @@ export default function EventTab() {
             <div className="flex items-center gap-3 px-1">
               <Checkbox checked={allSelected} onChange={toggleAll} />
               <span className="text-xs text-gray-500 dark:text-gray-400">
-                {selectedIds.size > 0 ? `${selectedIds.size} selected` : "Select all"}
+                {selectedIds.size > 0 ? `${selectedIds.size} terpilih` : "Pilih semua"}
               </span>
             </div>
           )}
@@ -218,7 +260,7 @@ export default function EventTab() {
                 ))}
              </div>
           ) : displayItems.length === 0 ? (
-            <div className="py-12 text-center text-gray-400 text-sm">No event attendance records found.</div>
+            <div className="py-12 text-center text-gray-400 text-sm">Tidak ada rekaman kehadiran acara ditemukan.</div>
           ) : (
             <div className="grid grid-cols-1 gap-3">
               {displayItems.map((item) => (
@@ -227,6 +269,7 @@ export default function EventTab() {
                   record={item}
                   isSelected={selectedIds.has(item.id || item.public_id)}
                   onToggle={() => toggleOne(item.id || item.public_id)}
+                  onViewDetails={() => { /* View details for Event */ }}
                 />
               ))}
             </div>
@@ -246,13 +289,13 @@ export default function EventTab() {
                 <TableCell isHeader className="w-10 px-4 py-3.5">
                   <Checkbox checked={allSelected} onChange={toggleAll} />
                 </TableCell>
-                <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Event Name</TableCell>
-                <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Location & Schedule</TableCell>
-                <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Clock In</TableCell>
-                <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Clock Out</TableCell>
-                <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Invited Status</TableCell>
-                <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Attendance Status</TableCell>
-                <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Actions</TableCell>
+                <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Nama Acara</TableCell>
+                <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Lokasi & Jadwal</TableCell>
+                <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Masuk</TableCell>
+                <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Keluar</TableCell>
+                <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Status Undangan</TableCell>
+                <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Status Kehadiran</TableCell>
+                <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Aksi</TableCell>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -261,7 +304,7 @@ export default function EventTab() {
               ) : displayItems.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="py-12 text-center text-gray-500 text-sm">
-                    No event attendance records found.
+                    Tidak ada rekaman kehadiran acara ditemukan.
                   </TableCell>
                 </TableRow>
               ) : (
@@ -285,10 +328,10 @@ export default function EventTab() {
                         </div>
                       </TableCell>
                       <TableCell className="px-4 py-4 text-sm text-gray-700 dark:text-gray-300">
-                        <p className="font-medium text-gray-900 dark:text-white mb-1">{record.event?.location || 'No location set'}</p>
+                        <p className="font-medium text-gray-900 dark:text-white mb-1">{record.event?.location || 'Tidak ada lokasi'}</p>
                         <p className="text-xs text-gray-500">
                            {record.event?.startTime ? format(parseISO(record.event.startTime), 'dd MMM yy HH:mm') : '-'}
-                           {' to '}
+                           {' hingga '}
                            {record.event?.endTime ? format(parseISO(record.event.endTime), 'HH:mm') : '-'}
                         </p>
                       </TableCell>
@@ -306,7 +349,7 @@ export default function EventTab() {
                       <TableCell className="px-4 py-4 text-center">
                          {record.attendanceStatus?.hasAttended
                              ? getStatusBadge(record.attendanceStatus.status, record.attendanceStatus.isLate)
-                             : <Badge color="warning">Not Attended</Badge>}
+                             : <Badge color="warning">Tidak Hadir</Badge>}
                       </TableCell>
                       <TableCell className="px-4 py-4 text-center">
                         <RowActionMenu 
@@ -324,16 +367,16 @@ export default function EventTab() {
           {!isLoading && meta && meta.totalPages > 1 && (
             <div className="flex items-center justify-between border-t border-gray-100 bg-white px-6 py-4 dark:border-white/[0.05] dark:bg-gray-900">
               <span className="text-sm text-gray-500 dark:text-gray-400">
-                Showing <span className="font-medium text-gray-900 dark:text-white">{(page - 1) * limit + 1}</span> to <span className="font-medium text-gray-900 dark:text-white">{Math.min(page * limit, meta.total)}</span> of <span className="font-medium text-gray-900 dark:text-white">{meta.total}</span> records
+                Menampilkan <span className="font-medium text-gray-900 dark:text-white">{(page - 1) * limit + 1}</span> hingga <span className="font-medium text-gray-900 dark:text-white">{Math.min(page * limit, meta.total)}</span> dari <span className="font-medium text-gray-900 dark:text-white">{meta.total}</span> rekaman
               </span>
               <div className="flex gap-2">
                 <button disabled={page === 1} onClick={() => setPage(page - 1)}
                   className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-50 dark:border-white/[0.06] dark:text-gray-300 dark:hover:bg-white/[0.02]">
-                  Previous
+                  Sebelumnya
                 </button>
                 <button disabled={page >= meta.totalPages} onClick={() => setPage(page + 1)}
                   className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-50 dark:border-white/[0.06] dark:text-gray-300 dark:hover:bg-white/[0.02]">
-                  Next
+                  Berikutnya
                 </button>
               </div>
             </div>

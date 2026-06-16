@@ -7,7 +7,7 @@ export default function MyIdCardPage() {
 
     return (
         <div className="space-y-6">
-            <PageMeta title="My ID Card | Visia" description="View and download your student ID card" />
+            <PageMeta title="My ID Card | SIAPUS" description="View and download your student ID card" />
             
             <div>
                  <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-1">My ID Card</h1>

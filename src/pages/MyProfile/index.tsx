@@ -4,6 +4,7 @@ import PageMeta from "../../components/atoms/PageMeta";
 import PageBreadcrumb from "../../components/molecules/PageBreadcrumb";
 import StudentProfileForm from "./StudentProfileForm";
 import EmployeeProfileForm from "./EmployeeProfileForm";
+import UpdatePasswordForm from "./UpdatePasswordForm";
 
 export default function MyProfile() {
   const { user } = useAuthStore();
@@ -17,18 +18,22 @@ export default function MyProfile() {
 
   return (
     <>
-      <PageMeta title="My Profile" description="Manage your profile information." />
-      <PageBreadcrumb pageTitle="My Profile" />
+      <PageMeta title="Profil Saya" description="Kelola informasi profil Anda." />
+      
+      <div className="hidden sm:block">
+        <PageBreadcrumb pageTitle="Profil Saya" />
+      </div>
 
-      <div className="bg-white dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-2xl p-6 lg:p-10 shadow-sm max-w-7xl mx-auto">
-        <div className="mb-8 border-b border-gray-100 dark:border-white/5 pb-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            My Profile
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Manage your personal information and records.
-          </p>
+      <div className="space-y-3 sm:space-y-6 max-w-7xl mx-auto">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Profil Saya</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Kelola informasi pribadi dan catatan Anda.</p>
+          </div>
         </div>
+
+        <div className="sm:bg-white sm:dark:bg-white/[0.02] sm:border sm:border-gray-100 sm:dark:border-white/5 sm:rounded-2xl sm:p-6 lg:p-10 sm:shadow-sm">
+
 
         {isStudent ? (
           <StudentProfileForm />
@@ -36,9 +41,12 @@ export default function MyProfile() {
           <EmployeeProfileForm />
         ) : (
           <div className="p-8 text-center text-gray-500">
-            Profile view is not available for your current role.
+            Tampilan profil tidak tersedia untuk peran Anda saat ini.
           </div>
         )}
+        
+        <UpdatePasswordForm />
+        </div>
       </div>
     </>
   );

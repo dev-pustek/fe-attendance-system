@@ -251,6 +251,38 @@ export const academicService = {
   deleteMajor: async (id: number | string) => {
     await apiClient.delete(`/majors/${id}`);
   },
+
+  exportMajorsExcel: async (params?: MajorParams) => {
+    const response = await apiClient.get<Blob>("/majors/export/excel", {
+      params,
+      responseType: "blob",
+    });
+    return response.data;
+  },
+
+  exportMajorsPdf: async (params?: MajorParams) => {
+    const response = await apiClient.get<Blob>("/majors/export/pdf", {
+      params,
+      responseType: "blob",
+    });
+    return response.data;
+  },
+
+  downloadMajorsTemplate: async () => {
+    const response = await apiClient.get<Blob>("/majors/template", {
+      responseType: "blob",
+    });
+    return response.data;
+  },
+
+  importMajors: async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await apiClient.post("/majors/import", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data;
+  },
   
   // Class Schedule Overrides
   getClassScheduleOverrides: async (params?: ClassScheduleOverrideParams) => {

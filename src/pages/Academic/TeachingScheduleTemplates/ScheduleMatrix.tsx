@@ -94,17 +94,17 @@ const SessionCard: React.FC<{
   return (
     <div
       ref={drag as any}
-      className={`group relative flex flex-col gap-1.5 rounded-lg p-2 text-left shadow-sm transition-all hover:shadow-md cursor-grab active:cursor-grabbing ${
+      className={`group relative flex flex-col gap-1.5 rounded-lg p-2 text-left shadow-sm transition-all hover:shadow-md cursor-grab active:cursor-grabbing overflow-hidden ${
         isDragging ? 'opacity-50 grayscale' : 'opacity-100'
-      }`}
+      } ${!template.isActive ? 'opacity-60' : ''}`}
       style={{
           backgroundColor: bgColor,
           borderColor: hasConflict ? '#ef4444' : borderColor, // Red if conflict
       }}
-      title={`Duration: ${durationMins} mins`}
+      title={`Duration: ${durationMins} mins${!template.isActive ? ' (INACTIVE)' : ''}`}
     >
-      <div className="flex justify-between items-start">
-         <span className="font-bold text-xs leading-tight line-clamp-2" style={{ color: textColor }}>
+      <div className="flex justify-between items-start relative z-10">
+         <span className="font-bold text-xs leading-tight line-clamp-2 pr-14" style={{ color: textColor }}>
             {subjectName}
          </span>
          {!readOnly && (
@@ -125,18 +125,24 @@ const SessionCard: React.FC<{
          )}
       </div>
       
-      <div className="flex items-center gap-1.5 text-[10px] font-medium" style={{ color: hasConflict ? '#ef4444' : textColor, opacity: 0.8 }}>
+      <div className="flex items-center gap-1.5 text-[10px] font-medium relative z-10" style={{ color: hasConflict ? '#ef4444' : textColor, opacity: 0.8 }}>
          <TimeIcon className="size-3 shrink-0" />
          <span>{template.startTime.slice(0, 5)} - {template.endTime.slice(0, 5)}</span>
       </div>
 
-       <div className="flex items-center gap-1.5 text-[10px]" style={{ color: textColor, opacity: 0.8 }}>
+       <div className="flex items-center gap-1.5 text-[10px] relative z-10" style={{ color: textColor, opacity: 0.8 }}>
          <UserIcon className="size-3 shrink-0" />
          <span className="truncate max-w-[120px]">{teacherName}</span>
       </div>
 
+      {!template.isActive && (
+          <div className="mt-0.5 inline-flex w-fit items-center justify-center rounded-full bg-red-100/80 px-2 py-0.5 border border-red-200/50 relative z-10">
+             <span className="text-[8px] leading-none font-bold tracking-wider text-red-600 uppercase">Inactive</span>
+          </div>
+      )}
+
       {className && (
-          <div className="mt-1 flex items-center justify-between">
+          <div className="mt-1 flex items-center justify-between relative z-10">
              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-white/60 border border-black/5" style={{ color: textColor }}>
                 {className}
              </span>
@@ -147,13 +153,9 @@ const SessionCard: React.FC<{
              )}
           </div>
       )}
-      
-      {!template.isActive && (
-          <div className="absolute top-1 right-1 size-2 rounded-full bg-red-400" title="Inactive" />
-      )}
 
       {hasConflict && (
-           <div className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm flex items-center gap-0.5">
+           <div className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm flex items-center gap-0.5 z-20">
                <span>⚠️</span> {isOverlapping ? "Overlap" : "Restriction"}
            </div>
       )}
@@ -340,7 +342,7 @@ const DayColumn: React.FC<DayColumnProps> = ({
   return (
     <div
       ref={dropRef as any}
-      className={`min-h-[500px] border-b border-gray-200 dark:border-white/5 px-1 py-2 transition-all duration-300 relative flex flex-col gap-2 ${
+      className={`min-h-[500px] border-b border-gray-200 dark:border-white/5 px-4 md:px-1 py-4 md:py-2 transition-all duration-300 relative flex flex-col gap-3 md:gap-2 ${
         isActive 
             ? isGlobalDragging 
                 ? "bg-brand-50/40 border-2 border-dashed border-brand-300 dark:bg-brand-500/10 dark:border-brand-500/30"

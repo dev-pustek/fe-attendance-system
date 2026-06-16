@@ -9,6 +9,7 @@ import {
 } from "../../../api/hooks/useAttendance";
 import { useClassEnrollments } from "../../../api/hooks/useAcademic";
 import { TeachingSession } from "../../../api/types/attendance";
+import { attendanceService } from "../../../api/services/attendanceService";
 import { ClassEnrollment } from "../../../api/types/academic";
 import {
   TimeIcon as ClockIcon,
@@ -116,12 +117,16 @@ const ClassroomCommand: React.FC = () => {
   const handleTeacherCheckIn = async (session: TeachingSession) => {
     if (!session || !user?.id) return;
     try {
-      await createSubjectAttendance.mutateAsync({
+      await attendanceService.bulkCreateSubjectAttendance({
         teachingSessionId: session.id,
-        studentId: user.id.toString(),
-        status: 'present',
-        remarks: 'Teacher check-in',
-        method: 'manual'
+        records: [
+          {
+            studentId: user.id.toString(),
+            status: 'present',
+            remarks: 'Teacher check-in',
+            method: 'manual'
+          }
+        ]
       });
       
       if (session.validationStatus === 'invalid' || session.validationStatus === 'valid') {
@@ -140,7 +145,7 @@ const ClassroomCommand: React.FC = () => {
 
   const handleOpenValidateModal = (session: TeachingSession) => {
     setSessionToValidate(session);
-    setValidationNotes("");
+    setValidationNotes(session.validationNotes || "");
     setIsValidateModalOpen(true);
   };
 
@@ -249,6 +254,19 @@ const ClassroomCommand: React.FC = () => {
             </Badge>
           </div>
 
+          {activeSession.validationNotes && (
+            <div className={`p-3 rounded-lg border text-sm ${
+              activeSession.validationStatus === 'invalid' 
+                ? 'bg-rose-50 border-rose-200 text-rose-700 dark:bg-rose-950/30 dark:border-rose-900/50 dark:text-rose-300' 
+                : activeSession.validationStatus === 'valid'
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950/30 dark:border-emerald-900/50 dark:text-emerald-300'
+                : 'bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-950/30 dark:border-amber-900/50 dark:text-amber-300'
+            }`}>
+              <p className="font-semibold mb-0.5 text-xs uppercase tracking-wider opacity-80">Validation Note</p>
+              <p>{activeSession.validationNotes}</p>
+            </div>
+          )}
+
           <BubbleBoard teachingSession={activeSession} />
         </section>
       )}
@@ -292,12 +310,16 @@ const ClassroomCommand: React.FC = () => {
                   });
                   
                   if (sessionToValidate.actualTeacherId) {
-                    await createSubjectAttendance.mutateAsync({
+                    await attendanceService.bulkCreateSubjectAttendance({
                       teachingSessionId: sessionToValidate.id,
-                      studentId: sessionToValidate.actualTeacherId.toString(),
-                      status: 'absent',
-                      remarks: 'Piket marked as invalid (Teacher Missing)',
-                      method: 'manual'
+                      records: [
+                        {
+                          studentId: sessionToValidate.actualTeacherId.toString(),
+                          status: 'absent',
+                          remarks: 'Piket marked as invalid (Teacher Missing)',
+                          method: 'manual'
+                        }
+                      ]
                     }).catch(() => {});
                   }
 
@@ -325,12 +347,16 @@ const ClassroomCommand: React.FC = () => {
                   });
 
                   if (sessionToValidate.actualTeacherId) {
-                    await createSubjectAttendance.mutateAsync({
+                    await attendanceService.bulkCreateSubjectAttendance({
                       teachingSessionId: sessionToValidate.id,
-                      studentId: sessionToValidate.actualTeacherId.toString(),
-                      status: 'present',
-                      remarks: 'Piket physically validated',
-                      method: 'manual'
+                      records: [
+                        {
+                          studentId: sessionToValidate.actualTeacherId.toString(),
+                          status: 'present',
+                          remarks: 'Piket physically validated',
+                          method: 'manual'
+                        }
+                      ]
                     }).catch(() => {});
                   }
 

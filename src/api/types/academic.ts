@@ -40,6 +40,7 @@ export interface Class {
   totalStudents?: number;
   totalPlannedJP?: number;
   totalScheduledJP?: number;
+  subjectsCount?: number;
 }
 
 export interface CreateClassDto {
@@ -614,12 +615,12 @@ export interface TeachingScheduleTemplate {
 }
 
 export interface TeachingScheduleTemplateParams {
+  academicYearId?: number | string;
   classId?: number | string;
   classSubjectId?: number | string;
   teacherId?: string;
   dayOfWeek?: string;
   isActive?: boolean | string;
-  teacherId?: string;
 
   page?: number | string;
   limit?: number | string;
@@ -710,6 +711,7 @@ export type GroupedTeacherSubjectsResponse = GroupedTeacherSubjectLevel[];
 // Grouped Teaching Assignments Response
 export interface GroupedTeachingAssignment {
   assignmentId: number | string;
+  classSubjectId: number | string;
   role: "primary" | "assistant";
   subjectName: string;
   subjectCode: string;

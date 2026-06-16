@@ -80,4 +80,8 @@ export const eventService = {
   respondToInvitation: async (invitationId: string | number, data: { status: string; responseNotes?: string }): Promise<void> => {
     await apiClient.patch(`/events/invitations/${invitationId}/respond`, data);
   },
+
+  respondToEventByEventId: async (eventId: string | number, data: { status: string; responseNotes?: string }): Promise<void> => {
+    await apiClient.patch(`/events/${eventId}/my-response`, data);
+  },
 };

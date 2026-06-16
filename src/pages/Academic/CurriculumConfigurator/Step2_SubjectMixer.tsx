@@ -15,12 +15,14 @@ import {
   SearchIcon,
   DocsIcon,
 } from "../../../components/atoms/Icons";
+import Button from "../../../components/atoms/Button";
 import ComponentCard from "../../../components/molecules/ComponentCard";
 import Modal from "../../../components/molecules/Modal";
 
 const Step2_SubjectMixer: React.FC = () => {
   const { 
     selectedClassName, 
+    selectedMajorId,
     selectedSubjectIds, 
     toggleSubject, 
     setSubjects, 
@@ -28,18 +30,24 @@ const Step2_SubjectMixer: React.FC = () => {
     teacherAssignments,
     setTeacherAssignments,
     subjectConfigs,
-    setSubjectConfig
+    setSubjectConfig,
+    selectedGradeId
   } = useCurriculumWizardStore();
   const { data: allSubjects, isLoading: loadingAll } = useSubjects({
     limit: 100,
   });
   const [search, setSearch] = useState("");
+  const [showAllGrades, setShowAllGrades] = useState(false);
 
   const availableSubjects = useMemo(() => {
     return (
-      allSubjects?.data.filter((s) => !selectedSubjectIds.includes(s.id)) || []
+      allSubjects?.data.filter((s) => 
+        !selectedSubjectIds.includes(s.id) && 
+        (s.majorId === selectedMajorId || !s.majorId) &&
+        (showAllGrades ? true : (s.gradeId === selectedGradeId || !s.gradeId))
+      ) || []
     );
-  }, [allSubjects, selectedSubjectIds]);
+  }, [allSubjects, selectedSubjectIds, selectedMajorId, selectedGradeId, showAllGrades]);
 
   const assignedSubjects = useMemo(() => {
     return (
@@ -149,50 +157,66 @@ const Step2_SubjectMixer: React.FC = () => {
           </div>
           <div>
             <p className="text-[10px] uppercase font-bold text-gray-400 tracking-widest mb-1">
-              Configuring Curriculum for
+              Mengonfigurasi Kurikulum untuk
             </p>
             <h2 className="text-xl font-bold text-gray-900 dark:text-white uppercase tracking-tighter">
               {selectedClassName}
             </h2>
           </div>
         </div>
-        <button
+        <Button
+          variant="secondary"
+          size="sm"
+          startIcon={<CopyIcon className="size-4" />}
           onClick={() => setIsCopyModalOpen(true)}
-          className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-gray-50 dark:bg-white/5 text-xs font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-100 transition-all border border-transparent hover:border-gray-200"
+          className="!bg-brand-50 hover:!bg-brand-100 !text-brand-600 dark:!bg-brand-500/10 dark:hover:!bg-brand-500/20 dark:!text-brand-400 !shadow-none !rounded-xl"
         >
-          <CopyIcon className="size-4" />
-          Copy from Another Class
-        </button>
+          Salin dari Kelas Lain
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         {/* Available Subjects */}
         <ComponentCard
-          title="Available Subjects"
-          desc="Select subjects to add to the class curriculum"
+          title="Mata Pelajaran Tersedia"
+          desc="Pilih mata pelajaran untuk ditambahkan ke kurikulum kelas"
         >
-          <div className="flex items-center gap-2 mb-4">
-            <div className="relative flex-1">
-              <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search by code or name..."
-                className="w-full pl-11 pr-4 py-2 text-sm rounded-xl border border-gray-50 dark:border-white/5 bg-gray-50/50 dark:bg-white/5 outline-none focus:ring-2 focus:ring-brand-500/10"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
+          <div className="flex flex-col gap-3 mb-4">
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Cari berdasarkan kode atau nama..."
+                  className="w-full pl-11 pr-4 py-2 text-sm rounded-xl border border-gray-50 dark:border-white/5 bg-gray-50/50 dark:bg-white/5 outline-none focus:ring-2 focus:ring-brand-500/10"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+              {availableSubjects.length > 0 && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleAddAll}
+                  className="!text-xs !font-bold !text-brand-600 !bg-brand-50 hover:!bg-brand-100 !rounded-xl !shadow-none !py-2 !px-4"
+                >
+                  Tambah Semua
+                </Button>
+              )}
             </div>
-            {availableSubjects.length > 0 && (
-              <button
-                onClick={handleAddAll}
-                className="px-4 py-2 text-xs font-bold text-brand-600 bg-brand-50 hover:bg-brand-100 rounded-xl transition-colors whitespace-nowrap"
-              >
-                Add All
-              </button>
-            )}
+            
+            <label className="flex items-center gap-2 cursor-pointer mt-1 select-none">
+                <input 
+                    type="checkbox" 
+                    className="rounded text-brand-500 focus:ring-brand-500/20 border-gray-200"
+                    checked={showAllGrades}
+                    onChange={(e) => setShowAllGrades(e.target.checked)}
+                />
+                <span className="text-[11px] text-gray-500 font-medium">Tampilkan mata pelajaran dari tingkat lain</span>
+            </label>
           </div>
 
-          <div className="grid grid-cols-1 gap-2 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin">
+          <div className="grid grid-cols-1 gap-2 max-h-none lg:max-h-[400px] overflow-y-auto lg:pr-2 scrollbar-thin">
             {filteredAvailable.map((s) => (
               <div
                 key={s.id}
@@ -217,20 +241,22 @@ const Step2_SubjectMixer: React.FC = () => {
 
         {/* Assigned Bucket */}
         <ComponentCard
-          title="Class Curriculum"
-          desc={`${selectedSubjectIds.length} subjects currently assigned`}
+          title="Kurikulum Kelas"
+          desc={`${selectedSubjectIds.length} mata pelajaran saat ini ditugaskan`}
         >
           <div className="flex justify-end mb-4">
             {selectedSubjectIds.length > 0 && (
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={handleRemoveAll}
-                className="px-4 py-2 text-xs font-bold text-error-600 bg-error-50 hover:bg-error-100 rounded-xl transition-colors"
+                className="!text-xs !font-bold !text-error-600 !bg-error-50 hover:!bg-error-100 !rounded-xl !shadow-none !py-2 !px-4"
               >
-                Remove All
-              </button>
+                Hapus Semua
+              </Button>
             )}
           </div>
-          <div className="grid grid-cols-1 gap-2 max-h-[450px] overflow-y-auto pr-2 scrollbar-thin">
+          <div className="grid grid-cols-1 gap-2 max-h-none lg:max-h-[450px] overflow-y-auto lg:pr-2 scrollbar-thin">
             {assignedSubjects.map((s) => {
                const assignment = teacherAssignments.find(ta => ta.subjectId === s.id && ta.teacherName);
                const config = subjectConfigs[String(s.id)] || { plannedTotalUnits: 0, plannedUnitsPerWeek: 0 };
@@ -238,57 +264,70 @@ const Step2_SubjectMixer: React.FC = () => {
                return (
                   <div
                     key={s.id}
-                    className="flex items-start justify-between p-3 rounded-xl border border-brand-100 bg-brand-50/50 dark:border-brand-500/20 dark:bg-brand-500/5 transition-all gap-4"
+                    className="flex flex-col sm:flex-row sm:items-start justify-between p-3 rounded-xl border border-brand-100 bg-brand-50/50 dark:border-brand-500/20 dark:bg-brand-500/5 transition-all gap-3 sm:gap-4"
                   >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-brand-700 dark:text-brand-300 uppercase tracking-tighter">
-                        {s.code}
-                      </p>
-                      <p className="text-[11px] text-brand-600/70 dark:text-brand-400/70 font-medium truncate">
-                        {s.name}
-                      </p>
-                      {assignment && (
-                        <div className="flex items-center gap-1.5 mt-1.5">
-                            <div className="size-4 rounded-full bg-white dark:bg-white/10 flex items-center justify-center text-[8px] font-bold text-brand-600 border border-brand-200 dark:border-white/10">
-                                {assignment.teacherName?.charAt(0)}
+                    <div className="flex-1 min-w-0 flex items-start justify-between w-full sm:w-auto">
+                        <div>
+                          <p className="text-xs font-bold text-brand-700 dark:text-brand-300 uppercase tracking-tighter">
+                            {s.code}
+                          </p>
+                          <p className="text-[11px] text-brand-600/70 dark:text-brand-400/70 font-medium truncate pr-2">
+                            {s.name}
+                          </p>
+                          {assignment && (
+                            <div className="flex items-center gap-1.5 mt-1.5">
+                                <div className="size-4 rounded-full bg-white dark:bg-white/10 flex items-center justify-center text-[8px] font-bold text-brand-600 border border-brand-200 dark:border-white/10 shrink-0">
+                                    {assignment.teacherName?.charAt(0)}
+                                </div>
+                                <span className="text-[10px] font-medium text-brand-600/80 dark:text-brand-400 sm:truncate sm:max-w-[150px]">
+                                    {assignment.teacherName}
+                                </span>
                             </div>
-                            <span className="text-[10px] font-medium text-brand-600/80 dark:text-brand-400 truncate max-w-[120px]">
-                                {assignment.teacherName}
-                            </span>
+                          )}
                         </div>
-                      )}
+
+                        {/* Mobile Close Button */}
+                        <button
+                          onClick={() => toggleSubject(s.id)}
+                          className="sm:hidden size-8 rounded-lg bg-white dark:bg-white/5 flex items-center justify-center text-error-500 hover:bg-error-500 hover:text-white transition-all shadow-sm border border-brand-100/50 dark:border-brand-500/10 shrink-0"
+                        >
+                          <CloseIcon className="size-4" />
+                        </button>
                     </div>
                     
                     {/* Unit Inputs */}
-                    <div className="flex items-center gap-2">
-                        <div className="w-16">
-                            <input 
-                                type="number" 
-                                placeholder="Total"
-                                value={config.plannedTotalUnits || ""}
-                                onChange={(e) => setSubjectConfig(s.id, { plannedTotalUnits: Number(e.target.value) })}
-                                className="w-full px-2 py-1.5 text-xs text-center rounded-lg border border-brand-200 dark:border-brand-500/30 bg-white dark:bg-white/10 outline-none focus:ring-2 focus:ring-brand-500/20"
-                            />
-                            <p className="text-[9px] text-center mt-0.5 text-brand-600/60 dark:text-brand-400/60 font-medium">Total</p>
+                    <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4 pt-2 sm:pt-0 border-t border-brand-100/50 sm:border-t-0 dark:border-white/5">
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                            <div className="flex-1 sm:flex-none sm:w-16">
+                                <input 
+                                    type="number" 
+                                    placeholder="Total"
+                                    value={config.plannedTotalUnits || ""}
+                                    onChange={(e) => setSubjectConfig(s.id, { plannedTotalUnits: Number(e.target.value) })}
+                                    className="w-full px-2 py-1.5 text-xs text-center rounded-lg border border-brand-200 dark:border-brand-500/30 bg-white dark:bg-white/10 outline-none focus:ring-2 focus:ring-brand-500/20"
+                                />
+                                <p className="text-[9px] text-center mt-0.5 text-brand-600/60 dark:text-brand-400/60 font-medium">Total</p>
+                            </div>
+                            <div className="flex-1 sm:flex-none sm:w-14">
+                                <input 
+                                    type="number" 
+                                    placeholder="Pekan"
+                                    value={config.plannedUnitsPerWeek || ""}
+                                    onChange={(e) => setSubjectConfig(s.id, { plannedUnitsPerWeek: Number(e.target.value) })}
+                                    className="w-full px-2 py-1.5 text-xs text-center rounded-lg border border-brand-200 dark:border-brand-500/30 bg-white dark:bg-white/10 outline-none focus:ring-2 focus:ring-brand-500/20"
+                                />
+                                <p className="text-[9px] text-center mt-0.5 text-brand-600/60 dark:text-brand-400/60 font-medium">Pekan</p>
+                            </div>
                         </div>
-                        <div className="w-14">
-                            <input 
-                                type="number" 
-                                placeholder="Week"
-                                value={config.plannedUnitsPerWeek || ""}
-                                onChange={(e) => setSubjectConfig(s.id, { plannedUnitsPerWeek: Number(e.target.value) })}
-                                className="w-full px-2 py-1.5 text-xs text-center rounded-lg border border-brand-200 dark:border-brand-500/30 bg-white dark:bg-white/10 outline-none focus:ring-2 focus:ring-brand-500/20"
-                            />
-                            <p className="text-[9px] text-center mt-0.5 text-brand-600/60 dark:text-brand-400/60 font-medium">Week</p>
-                        </div>
-                    </div>
 
-                    <button
-                      onClick={() => toggleSubject(s.id)}
-                      className="size-8 rounded-lg bg-white dark:bg-white/5 flex items-center justify-center text-error-500 hover:bg-error-500 hover:text-white transition-all shadow-sm border border-brand-100/50 dark:border-brand-500/10 shrink-0"
-                    >
-                      <CloseIcon className="size-4" />
-                    </button>
+                        {/* Desktop Close Button */}
+                        <button
+                          onClick={() => toggleSubject(s.id)}
+                          className="hidden sm:flex size-8 rounded-lg bg-white dark:bg-white/5 items-center justify-center text-error-500 hover:bg-error-500 hover:text-white transition-all shadow-sm border border-brand-100/50 dark:border-brand-500/10 shrink-0"
+                        >
+                          <CloseIcon className="size-4" />
+                        </button>
+                    </div>
                   </div>
                );
             })}
@@ -301,25 +340,25 @@ const Step2_SubjectMixer: React.FC = () => {
         isOpen={isCopyModalOpen}
         onClose={() => setIsCopyModalOpen(false)}
         className="max-w-md"
-        title="Copy Curriculum"
-        description="Select a class to copy its subject configuration from."
+        title="Salin Kurikulum"
+        description="Pilih kelas untuk menyalin konfigurasi mata pelajarannya."
         footer={
            <div className="flex justify-end gap-3 w-full">
-               <button 
+               <Button 
+                variant="secondary"
                 onClick={() => setIsCopyModalOpen(false)} 
-                className="rounded-xl px-4 py-2 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.05]"
                >
-                Cancel
-               </button>
-               <button 
+                Batal
+               </Button>
+               <Button 
+                variant="primary"
                 disabled={!selectedSourceClassId}
                 onClick={handleCopySubjects} 
-                className="rounded-xl bg-brand-500 px-6 py-2 text-sm font-medium text-white transition-all hover:bg-brand-600 shadow-lg shadow-brand-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
                >
                 {selectedSourceClassId && sourceSubjectsResponse?.data
-                    ? `Import Subjects (${sourceSubjectsResponse.data.length})`
-                    : "Import Subjects"}
-               </button>
+                    ? `Impor Mata Pelajaran (${sourceSubjectsResponse.data.length})`
+                    : "Impor Mata Pelajaran"}
+               </Button>
            </div>
         }
       >
@@ -329,7 +368,7 @@ const Step2_SubjectMixer: React.FC = () => {
                 <input
                     type="text"
                     autoFocus
-                    placeholder="Search class to copy..."
+                    placeholder="Cari kelas untuk disalin..."
                     className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 outline-none focus:ring-2 focus:ring-brand-500/20"
                     value={sourceClassSearch}
                     onChange={(e) => {
@@ -342,7 +381,7 @@ const Step2_SubjectMixer: React.FC = () => {
             <div className="max-h-[300px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
                 {loadingClasses && (
                     <div className="text-center py-4 text-xs text-gray-400">
-                        Loading classes...
+                        Memuat kelas...
                     </div>
                 )}
                 
@@ -367,18 +406,18 @@ const Step2_SubjectMixer: React.FC = () => {
                 {selectedSourceClassId && (
                      <div className="space-y-3 pt-2">
                         <div className="flex items-center justify-between text-xs text-gray-500 uppercase font-bold tracking-wider px-1">
-                            <span>Subjects Preview</span>
+                            <span>Pratinjau Mata Pelajaran</span>
                             <button 
                                 onClick={() => { setSelectedSourceClassId(null); setSourceClassSearch(""); }}
                                 className="text-brand-600 hover:text-brand-700"
                             >
-                                Change Class
+                                Ganti Kelas
                             </button>
                         </div>
                         
                         {sourceSubjectsResponse?.data?.length === 0 ? (
                              <div className="text-center py-8 text-sm text-gray-400 italic bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                                This class has no subjects assigned.
+                                Kelas ini tidak memiliki mata pelajaran yang ditugaskan.
                              </div>
                         ) : (
                             sourceSubjectsResponse?.data.map((cs) => {
@@ -416,27 +455,24 @@ const Step2_SubjectMixer: React.FC = () => {
       </Modal>
 
       {/* Footer Navigation */}
-      <div className="flex items-center justify-between pt-8 border-t border-gray-100 dark:border-white/5">
-        <button
+      <div className="flex items-center justify-between pt-8 pb-10 mt-4 border-t border-gray-100 dark:border-white/5">
+        <Button
+          variant="outline"
           onClick={() => setStep(1)}
-          className="flex items-center gap-2 px-8 py-4 rounded-2xl bg-white dark:bg-white/[0.03] border border-gray-100 dark:border-white/5 text-sm font-bold uppercase tracking-widest text-gray-600 dark:text-gray-400 hover:bg-gray-50 transition-all shadow-sm active:scale-95"
+          startIcon={<ChevronLeftIcon className="size-5" />}
+          className="!rounded-xl !font-bold"
         >
-          <ChevronLeftIcon className="size-5" />
-          Back
-        </button>
-
-        <button
+          Kembali
+        </Button>
+        <Button
+          variant="primary"
           disabled={selectedSubjectIds.length === 0}
           onClick={() => setStep(3)}
-          className={`flex items-center gap-2 px-12 py-4 rounded-2xl font-bold text-sm uppercase tracking-widest transition-all shadow-lg ${
-            selectedSubjectIds.length > 0
-              ? "bg-brand-600 text-white shadow-brand-600/20 hover:scale-[1.02] active:scale-[0.98]"
-              : "bg-gray-100 text-gray-400 dark:bg-white/5 cursor-not-allowed"
-          }`}
+          endIcon={<ArrowRightIcon className="size-5" />}
+          className="!rounded-xl !font-bold !shadow-brand-500/20"
         >
-          Next: Assign Teachers
-          <ArrowRightIcon className="size-5" />
-        </button>
+          Selanjutnya
+        </Button>
       </div>
     </div>
   );

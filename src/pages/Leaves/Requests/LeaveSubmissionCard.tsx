@@ -72,7 +72,7 @@ const LeaveSubmissionCard: React.FC<LeaveSubmissionCardProps> = ({
                             {submission.user?.name || "Unknown User"}
                         </p>
                         <p className="truncate text-xs text-gray-500 mt-0.5">
-                            {submission.totalDays} Days
+                            {submission.totalDays} Hari
                         </p>
                     </div>
                 </div>

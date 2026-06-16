@@ -40,4 +40,5 @@ export interface NotificationMeta {
     page: number;
     limit: number;
     totalPages: number;
+    unreadCount?: number;
 }

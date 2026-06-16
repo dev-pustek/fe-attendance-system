@@ -8,7 +8,7 @@ interface DropdownItemProps {
   href?: string;
   children: React.ReactNode;
   className?: string;
-  onClick?: () => void;
+  onClick?: (e: React.MouseEvent) => void;
 }
 
 export const DropdownItem: React.FC<DropdownItemProps> = ({
@@ -20,8 +20,8 @@ export const DropdownItem: React.FC<DropdownItemProps> = ({
   className = "",
   onClick,
 }) => {
-  const handleClick = () => {
-    if (onClick) onClick();
+  const handleClick = (e: React.MouseEvent) => {
+    if (onClick) onClick(e);
     if (onItemClick) onItemClick();
   };
 

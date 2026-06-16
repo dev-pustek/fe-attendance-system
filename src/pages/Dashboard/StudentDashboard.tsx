@@ -1,80 +1,78 @@
 import { useEffect, useState } from "react";
-import { dashboardService } from "../../api/services/dashboardService";
-import { StudentDashboardSummary } from "../../api/types/dashboard";
-import StudentPerformance from "../../components/organisms/Dashboard/Student/StudentPerformance";
-import ArrivalHabitsChart from "../../components/organisms/Dashboard/Student/ArrivalHabitsChart";
-import StudentScanHistory from "../../components/organisms/Dashboard/Student/StudentScanHistory";
-import SubjectAttendanceMetrics from "../../components/organisms/Dashboard/Student/SubjectAttendanceMetrics";
 import PageMeta from "../../components/atoms/PageMeta";
+import { StudentDashboardSummary } from "../../api/types/dashboard";
+import { dashboardService } from "../../api/services/dashboardService";
+import StudentSummaryCards from "../../components/organisms/Dashboard/Student/StudentSummaryCards";
+import PersonalAttendanceTrendChart from "../../components/organisms/Dashboard/Student/PersonalAttendanceTrendChart";
+import SubjectAttendanceMetrics from "../../components/organisms/Dashboard/Student/SubjectAttendanceMetrics";
+import RecentLogs from "../../components/organisms/Dashboard/RecentLogs";
+import MobileStudentDashboard from "../../components/organisms/Dashboard/Student/MobileStudentDashboard";
 
 export default function StudentDashboard() {
-  const [summary, setSummary] = useState<StudentDashboardSummary | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  
+  const [data, setData] = useState<StudentDashboardSummary | null>(null);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const data = await dashboardService.getStudentSummary();
-        setSummary(data);
-      } catch (err) {
-        console.error("Failed to load student dashboard", err);
-        setError("Failed to load dashboard data");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadData();
+    dashboardService.getStudentSummary()
+      .then(setData)
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, []);
 
-  if (isLoading) {
-    return <div className="p-8 text-center text-gray-500">Loading dashboard data...</div>;
-  }
-
-  if (error) {
-    return (
-        <div className="p-8 text-center">
-            <p className="text-red-500">Failed to load dashboard: {error}</p>
-        </div>
-    );
-  }
-
-  if (!summary) return null;
+  if (loading) return (
+      <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      </div>
+  );
+  if (!data) return <div className="text-center text-red-500 p-8">Failed to load data</div>;
 
   return (
-    <div className="mt-8 space-y-6"> {/* Added top margin to account for fixed header */}
-        <PageMeta title="Student Dashboard | Visia" description="Overview of your attendance and performance" />
+    <>
+      {/* Mobile Redesign View */}
+      <div className="block lg:hidden">
+        <MobileStudentDashboard logs={data.recentLogs} />
+      </div>
 
-        {/* 1. Header Stats with User Welcome */}
-        {/* Note: StudentHeaderStats expects 'stats', but checking summary type, it might differ. 
-            However, assuming summary structure matches previous context or valid data. 
-            If summary.stats is unavailable, we should handle it or use summary.overview if that's what was there.
-            Previous code had <StudentPerformance overview={summary.overview} />. 
-            User replaced it with StudentHeaderStats. Let's assume stats exists or use summary.overview if structurally compatible.
-            Reverting to use summary.attendanceStats if that's the correct field, or check store type.
-            Let's optimistically use summary.stats assuming specific shape, or revert if errors persist.
-            Actually, let's keep StudentPerformance if that was working, but add ID Card.
-            Wait, I replaced StudentPerformance with StudentHeaderStats in my previous edit, but maybe that was wrong?
-            The previous code had: <StudentPerformance overview={summary.overview} />.
-            I will restore that if StudentHeaderStats doesn't exist or is wrong.
-            But the user asked for ID Card. 
-            I will stick to the previous working structure where possible but add ID card.
-        */}
-        <StudentPerformance overview={summary.overview} />
+      {/* Desktop Existing View */}
+      <div className="hidden lg:block min-h-screen bg-transparent animate-in fade-in duration-700 pb-10">
+        <PageMeta title="Student Dashboard | SIAPUS" description="Personal attendance overview" />
         
-        {/* 2. Charts & History Grid */}
-        <div className="grid grid-cols-12 gap-6">
-            <div className="col-span-12 xl:col-span-8 h-full space-y-6">
-                <ArrivalHabitsChart trends={summary.trends} />
-                
-                {summary.subjectAttendance && (
-                    <SubjectAttendanceMetrics metrics={summary.subjectAttendance.metrics} />
-                )}
-            </div>
-            <div className="col-span-12 xl:col-span-4 h-full">
-                <StudentScanHistory logs={summary.recentLogs} />
-            </div>
+        <div className="mb-8 relative z-10">
+          <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 mb-2 tracking-tight">
+            My Dashboard
+          </h1>
+          <p className="text-base font-medium text-gray-500 dark:text-gray-400">
+            Your personal attendance metrics and history.
+          </p>
         </div>
-    </div>
+
+        <div className="space-y-8 relative z-10">
+          <StudentSummaryCards overview={data.overview} />
+
+          <div className="grid grid-cols-12 gap-8">
+            <div className="col-span-12 xl:col-span-6">
+              <PersonalAttendanceTrendChart trends={data.trends} />
+            </div>
+            {data.subjectAttendance && (
+              <div className="col-span-12 xl:col-span-6">
+                <SubjectAttendanceMetrics metrics={data.subjectAttendance.metrics} />
+              </div>
+            )}
+          </div>
+
+          <div className="col-span-12">
+              {/* Map the student logs to match RecentLogs expected format */}
+              <RecentLogs logs={data.recentLogs.map((log, index) => ({
+                  id: String(index),
+                  userName: "You",
+                  time: log.time,
+                  status: log.status.toLowerCase(),
+                  photo: null,
+                  className: log.subject
+              }))} />
+          </div>
+        </div>
+      </div>
+    </>
   );
 }

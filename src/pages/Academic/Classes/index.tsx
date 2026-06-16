@@ -627,11 +627,12 @@ const Classes: React.FC = () => {
                 </div>
             </div>
         ) : (
-            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-white/[0.05] dark:bg-white/[0.03] [&_table_thead_th:first-child]:rounded-tl-xl [&_table_thead_th:last-child]:rounded-tr-xl">
-                <div className="overflow-x-auto">
-                    <Table>
-                        <TableHeader className="border-b border-gray-100 bg-gray-50/60 dark:border-white/[0.05] dark:bg-white/[0.01]">
-                            <TableRow>
+            <>
+                <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-white/[0.05] dark:bg-white/[0.03]">
+                    <div className="overflow-x-auto">
+                        <Table>
+                            <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
+                                <TableRow>
                                 <TableCell isHeader className="w-10 px-4 py-3.5">
                                     <Checkbox
                                         checked={allSelected}
@@ -721,32 +722,39 @@ const Classes: React.FC = () => {
                             ))}
                         </TableBody>
                     </Table>
-                </div>
-
-                {/* Desktop Pagination */}
-                {!isLoadingDesktop && (classes.length > 0 || total > 0) && (
-                    <div className="flex flex-col gap-4 border-t border-gray-100 p-4 dark:border-white/[0.05] sm:flex-row sm:items-center sm:justify-between">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Showing <span className="font-medium text-gray-700 dark:text-white">{(page - 1) * limit + 1}</span> to{" "}
-                            <span className="font-medium text-gray-700 dark:text-white">{Math.min(page * limit, total)}</span> of{" "}
-                            <span className="font-medium text-gray-700 dark:text-white">{total}</span> results
-                        </p>
-                        <div className="flex items-center gap-2">
-                            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400">
-                                <ChevronLeftIcon className="size-4" /> Previous
-                            </button>
-                            <div className="flex items-center gap-1.5 px-2">
-                                <span className="text-sm font-semibold text-gray-900 dark:text-white">{page}</span>
-                                <span className="text-sm text-gray-400">/</span>
-                                <span className="text-sm text-gray-500 dark:text-gray-400">{totalPages || 1}</span>
-                            </div>
-                            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages || totalPages === 0} className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400">
-                                Next <AngleRightIcon className="size-4" />
-                            </button>
-                        </div>
                     </div>
-                )}
-            </div>
+
+                    {/* Pagination */}
+                    {!isLoadingDesktop && (classes.length > 0 || total > 0) && (
+                        <div className="flex flex-col gap-4 border-t border-gray-100 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between dark:border-white/[0.05]">
+                            <p className="text-xs text-gray-400 dark:text-gray-500">
+                                Showing{" "}
+                                <span className="font-semibold text-gray-600 dark:text-gray-300">
+                                    {(page - 1) * limit + 1}–{Math.min(page * limit, total)}
+                                </span>{" "}
+                                of <span className="font-semibold text-gray-600 dark:text-gray-300">{total}</span>
+                            </p>
+                            <div className="flex items-center gap-1.5">
+                                <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50 disabled:pointer-events-none disabled:opacity-40 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400">
+                                    <ChevronLeftIcon className="size-3.5" /> Prev
+                                </button>
+                                {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                                    const p = i + 1;
+                                    return (
+                                        <button key={p} onClick={() => setPage(p)} className={`flex size-7 items-center justify-center rounded-lg text-xs font-medium transition ${page === p ? "bg-brand-500 text-white shadow-sm" : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400"}`}>
+                                            {p}
+                                        </button>
+                                    );
+                                })}
+                                {totalPages > 5 && <span className="px-1 text-xs text-gray-400">…</span>}
+                                <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages || totalPages === 0} className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50 disabled:pointer-events-none disabled:opacity-40 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400">
+                                    Next <AngleRightIcon className="size-3.5" />
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </>
         )}
       </div>
 

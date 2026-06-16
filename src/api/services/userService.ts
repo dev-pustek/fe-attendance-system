@@ -1,5 +1,5 @@
 import apiClient from "../client";
-import { User, UserParams } from "../types/user";
+import { User, UserParams, ChangePasswordDto } from "../types/user";
 import { BaseResponse, PaginatedResponse } from "../types/common";
 
 export interface CreateUserDto {
@@ -104,6 +104,11 @@ export const userService = {
 
   getMe: async (): Promise<BaseResponse<User>> => {
     const response = await apiClient.get<BaseResponse<User>>("/users/me");
+    return response.data;
+  },
+
+  changePassword: async (data: ChangePasswordDto): Promise<BaseResponse<void>> => {
+    const response = await apiClient.patch<BaseResponse<void>>("/users/me/password", data);
     return response.data;
   },
 };

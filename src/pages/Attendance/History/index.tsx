@@ -23,9 +23,9 @@ export default function AttendanceHistory() {
   const [activeTab, setActiveTab] = useState<AttendanceTab>(initialTab);
 
   const tabs: TabItem[] = [
-    { id: 'gate', label: 'Gate Entry', icon: GridIcon },
-    { id: 'class', label: 'Class/Subject', icon: CalenderIcon },
-    { id: 'event', label: 'Events', icon: UserIcon },
+    { id: 'gate', label: 'Akses Gerbang', icon: GridIcon },
+    { id: 'class', label: 'Kelas/Pelajaran', icon: CalenderIcon },
+    { id: 'event', label: 'Kegiatan', icon: UserIcon },
   ];
 
   const handleTabChange = (id: string | number) => {
@@ -36,43 +36,57 @@ export default function AttendanceHistory() {
 
   return (
     <>
-      <PageMeta
-        title="Attendance History | Visia"
-        description="View comprehensive attendance history records."
-      />
-      <PageBreadcrumb pageTitle="Attendance History" />
+      <div className="hidden md:block">
+        <PageMeta
+          title="Riwayat Kehadiran | SIAPUS"
+          description="Lihat catatan riwayat kehadiran komprehensif."
+        />
+        <PageBreadcrumb pageTitle="Riwayat Kehadiran" />
+      </div>
 
-      <div className="space-y-5 mb-10 md:mb-0">
-        {/* Header - HIDDEN on mobile to match standard */}
-        <div className="hidden sm:flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-brand-50 text-brand-500 dark:bg-brand-500/10">
-              <CalenderIcon className="size-5" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">Attendance History</h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">View and track all attendance records across different types.</p>
-            </div>
-          </div>
-        </div>
+      <div className="relative flex flex-col md:h-[calc(100vh-250px)] md:min-h-[600px] max-w-7xl -m-4 md:m-0 md:mx-auto md:pb-20 pb-24">
+         <div className="flex-1 w-full relative min-w-0">
+             <div className="md:space-y-6 w-full h-full flex flex-col">
+                  
+                  {/* Main Panel Wrapper */}
+                  <div className="bg-white dark:bg-transparent md:dark:bg-white/[0.02] md:border border-gray-100 dark:border-white/5 md:rounded-2xl md:shadow-sm flex flex-col min-w-0 w-full max-w-full flex-1 min-h-[calc(100vh-80px)] md:min-h-0">
+                      
+                      {/* Header Section (Hidden on mobile) */}
+                      <div className="hidden md:block p-6 pb-6 relative border-b border-gray-100 dark:border-white/5">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                            <div className="flex items-center gap-3">
+                              <div className="flex size-10 items-center justify-center rounded-xl bg-brand-50 text-brand-500 dark:bg-brand-500/10">
+                                <CalenderIcon className="size-5" />
+                              </div>
+                              <div>
+                                <h1 className="text-xl font-bold text-gray-900 dark:text-white">Riwayat Kehadiran</h1>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">Lihat dan pantau semua riwayat kehadiran dari berbagai kategori.</p>
+                              </div>
+                            </div>
+                          </div>
+                      </div>
 
-        {/* Tab Navigation Wrapper */}
-        <div className="bg-transparent md:bg-white md:dark:bg-gray-800 md:rounded-2xl md:border md:border-gray-200 md:dark:border-white/5 md:shadow-sm md:p-6 overflow-hidden">
-            {/* Sticky Header for Mobile */}
-            <div className="sticky top-[64px] z-20 bg-gray-50 dark:bg-gray-900 pt-2 pb-2 md:static md:bg-transparent md:border-none md:pt-0 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0">
-                <TabNavigation
-                    tabs={tabs}
-                    activeTab={activeTab}
-                    onTabChange={handleTabChange}
-                />
-            </div>
+                      {/* Sticky Header for Mobile Tab Navigation */}
+                      <div className="sticky top-0 z-40 bg-white/90 dark:bg-[#0B0B0F]/90 backdrop-blur-md border-b border-gray-200 dark:border-white/10 pt-2 md:static md:bg-transparent md:pt-4 md:px-6">
+                          <TabNavigation
+                              tabs={tabs}
+                              activeTab={activeTab}
+                              onTabChange={handleTabChange}
+                          />
+                      </div>
 
-            <div className="mt-4 md:mt-6">
-                {activeTab === 'gate' && <GateTab />}
-                {activeTab === 'class' && <ClassTab />}
-                {activeTab === 'event' && <EventTab />}
-            </div>
-        </div>
+                      {/* Content Section */}
+                      <div className="flex-1 bg-white dark:bg-transparent min-w-0 overflow-hidden flex flex-col">
+                          <div className="mt-4 md:mt-0 p-4 md:p-6 flex-1 w-full flex flex-col overflow-y-auto no-scrollbar">
+                              {activeTab === 'gate' && <GateTab />}
+                              {activeTab === 'class' && <ClassTab />}
+                              {activeTab === 'event' && <EventTab />}
+                          </div>
+                      </div>
+                      
+                  </div>
+             </div>
+         </div>
       </div>
     </>
   );

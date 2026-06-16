@@ -1,8 +1,8 @@
 export interface DashboardOverview {
-  totalUsers: number;      // Total active students/staff
-  presentToday: number;    // Count of users present today
-  lateToday: number;       // Count of users late today
-  attendanceRate: number;  // Percentage (e.g., 95.5)
+  totalUsers: number;
+  presentToday: number;
+  lateToday: number;
+  attendanceRate: number;
 }
 
 export interface DashboardStats {
@@ -12,20 +12,20 @@ export interface DashboardStats {
 }
 
 export interface AttendanceTrend {
-  date: string;  // "2024-01-20"
-  day: string;   // "Mon"
-  count: number; // Daily attendance count
+  date: string;
+  day: string;
+  count: number;
 }
 
-export interface ClassLeaderboardItem {
-  name: string;  // "XMIPA-1"
-  count: number; // Present count
+export interface TopUserItem {
+  name: string;
+  count: number;
 }
 
 export interface RecentLog {
   userName: string;
-  time: string;   // "07:15 AM"
-  status: string; // "present" | "late"
+  time: string;
+  status: string;
   photo: string | null;
 }
 
@@ -33,7 +33,7 @@ export interface DashboardSummary {
   overview: DashboardOverview;
   stats: DashboardStats;
   trends: AttendanceTrend[];
-  classLeaderboard: ClassLeaderboardItem[];
+  topUsers: TopUserItem[];
   recentLogs: RecentLog[];
 }
 
@@ -54,6 +54,7 @@ export interface StudentDashboardSummary {
     date: string;
     time: string;
     status: string;
+    subject?: string;
   }[];
   subjectAttendance?: {
     metrics: {
@@ -66,4 +67,19 @@ export interface StudentDashboardSummary {
     };
     recentLogs: any[];
   };
+}
+export interface StudentRoadmapItem {
+  id: string;
+  type: 'scan_in' | 'scan_out' | 'class' | 'break';
+  title: string;
+  time: string;
+  location: string;
+  status: 'completed' | 'active' | 'upcoming' | 'missed' | 'holiday';
+  duration?: string;
+  sessionId?: string | number;
+  teacherName?: string;
+  classCode?: string;
+  attendanceTime?: string;
+  isOngoing?: boolean;
+  overrideReason?: string | null;
 }

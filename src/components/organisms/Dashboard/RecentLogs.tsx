@@ -8,9 +8,9 @@ interface RecentLogsProps {
 
 export default function RecentLogs({ logs }: RecentLogsProps) {
   return (
-    <div className="col-span-12 xl:col-span-7 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] sm:p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
+    <div className="relative overflow-hidden bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl rounded-[2rem] p-8 shadow-sm border border-white/40 dark:border-white/5 h-full w-full flex flex-col">
+      <div className="flex items-center justify-between mb-6 relative z-10">
+        <h3 className="text-2xl font-semibold text-gray-900 dark:text-white tracking-tight">
             Recent Activity
         </h3>
         <a href="/attendance/all" className="text-sm font-medium text-brand-500 hover:text-brand-600">

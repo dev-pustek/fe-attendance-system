@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { useAcademicYears, useBulkSyncClassSubjects, useSubjects, useBulkSyncTeachingAssignments } from "../../../api/hooks/useAcademic";
 import { academicService } from "../../../api/services/academicService";
 import { useCurriculumWizardStore } from "../../../store/curriculumWizardStore";
+import Button from "../../../components/atoms/Button";
 import { ChevronLeftIcon, CheckLineIcon, UserIcon, AlertIcon, BoltIcon as LoadingIcon } from "../../../components/atoms/Icons";
 import ComponentCard from "../../../components/molecules/ComponentCard";
 import { BulkSyncTeachingAssignmentsDto } from "../../../api/types/academic";
@@ -33,7 +34,7 @@ const Step3_TeacherAssignment: React.FC = () => {
     if (!selectedClassId || !activeYear) return;
     
     setIsSubmitting(true);
-    const loadingToast = toast.loading("Synchronizing curriculum...");
+    const loadingToast = toast.loading("Mensinkronisasi kurikulum...");
 
     try {
       // 1. Sync Subjects
@@ -89,10 +90,10 @@ const Step3_TeacherAssignment: React.FC = () => {
           }
       }
       
-      toast.success("Curriculum configured successfully!", { id: loadingToast });
+      toast.success("Kurikulum berhasil dikonfigurasi!", { id: loadingToast });
       // navigate("/academic/curriculum"); // Stay on page as requested
     } catch (err) {
-      toast.error("Failed to sync curriculum", { id: loadingToast });
+      toast.error("Gagal mensinkronisasi kurikulum", { id: loadingToast });
       console.error("Sync error:", err);
     } finally {
       setIsSubmitting(false);
@@ -113,15 +114,15 @@ const Step3_TeacherAssignment: React.FC = () => {
                 <UserIcon className="size-6" />
             </div>
             <div>
-                <p className="text-[10px] uppercase font-bold text-gray-400 tracking-widest mb-1">Finalizing Curriculum for</p>
+                <p className="text-[10px] uppercase font-bold text-gray-400 tracking-widest mb-1">Menyelesaikan Kurikulum untuk</p>
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white uppercase tracking-tighter">{selectedClassName}</h2>
             </div>
         </div>
       </div>
 
       <ComponentCard 
-        title="Owner Assignments" 
-        desc="Assign a primary teacher for each selected subject"
+        title="Penugasan Guru" 
+        desc="Tetapkan guru utama untuk setiap mata pelajaran yang dipilih"
       >
           <div className="space-y-4">
               {selectedSubjectIds.map((id: string | number) => (
@@ -135,34 +136,32 @@ const Step3_TeacherAssignment: React.FC = () => {
               {selectedSubjectIds.length === 0 && ( // Should not happen if guards work
                   <div className="py-20 text-center opacity-40">
                       <AlertIcon className="size-16 mx-auto mb-4 opacity-10" />
-                      <p className="text-sm font-bold">Please go back and select subjects first.</p>
+                      <p className="text-sm font-bold">Silakan kembali dan pilih mata pelajaran terlebih dahulu.</p>
                   </div>
               )}
           </div>
       </ComponentCard>
 
-      <div className="flex items-center justify-between pt-8 border-t border-gray-100 dark:border-white/5">
-          <button 
+      <div className="flex items-center justify-between pt-8 pb-10 mt-4 border-t border-gray-100 dark:border-white/5">
+          <Button 
+            variant="outline"
             disabled={isSubmitting}
             onClick={() => setStep(2)}
-            className="flex items-center gap-2 px-8 py-4 rounded-2xl bg-white dark:bg-white/[0.03] border border-gray-100 dark:border-white/5 text-sm font-bold uppercase tracking-widest text-gray-600 dark:text-gray-400 hover:bg-gray-50 transition-all shadow-sm active:scale-95"
+            startIcon={<ChevronLeftIcon className="size-5" />}
+            className="!rounded-xl !font-bold"
           >
-              <ChevronLeftIcon className="size-5" />
-              Back
-          </button>
+              Kembali
+          </Button>
 
-          <button 
+          <Button 
+            variant="primary"
             disabled={isSubmitting || !isComplete}
             onClick={handleFinish}
-            className={`flex items-center gap-2 px-12 py-4 rounded-2xl font-bold text-sm uppercase tracking-widest transition-all shadow-lg ${
-                isComplete && !isSubmitting
-                ? "bg-success-600 text-white shadow-success-600/20 hover:scale-[1.02] active:scale-[0.98]"
-                : "bg-gray-100 text-gray-400 dark:bg-white/5 dark:text-gray-500 cursor-not-allowed opacity-70"
-            }`}
+            startIcon={isSubmitting ? <LoadingIcon className="size-5 animate-spin" /> : <CheckLineIcon className="size-5" />}
+            className="!rounded-xl !font-bold !shadow-brand-500/20"
           >
-              {isSubmitting ? <LoadingIcon className="size-5 animate-spin" /> : <CheckLineIcon className="size-5" />}
-              {isSubmitting ? "Processing..." : "Finish & Sync"}
-          </button>
+              {isSubmitting ? "Memproses..." : "Selesai"}
+          </Button>
       </div>
     </div>
   );

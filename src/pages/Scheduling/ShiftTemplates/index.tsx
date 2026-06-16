@@ -196,7 +196,7 @@ const ShiftTemplates: React.FC = () => {
 
   return (
     <>
-      <PageMeta title="Shift Templates | Visia" description="Manage working hour templates and shift schedules." />
+      <PageMeta title="Shift Templates | SIAPUS" description="Manage working hour templates and shift schedules." />
       <PageBreadcrumb pageTitle="Shift Templates" />
 
       <div className="space-y-6">

@@ -1,45 +1,153 @@
-import React, { useState, useMemo } from "react";
-import { useMajors, useEducationLevels, useProgramStudies } from "../../../api/hooks/useAcademic";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+
+import { 
+  useMajors, 
+  useMajorsInfinite, 
+  useImportMajors,
+  useEducationLevels, 
+  useProgramStudies 
+} from "../../../api/hooks/useAcademic";
 import { Major, CreateMajorDto, UpdateMajorDto } from "../../../api/types/academic";
+import { academicService } from "../../../api/services/academicService";
+
 import PageMeta from "../../../components/atoms/PageMeta";
 import PageBreadcrumb from "../../../components/molecules/PageBreadcrumb";
+
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "../../../components/atoms/Table";
+import TableToolbar from "../../../components/molecules/TableToolbar";
+import { SkeletonTable } from "../../../components/molecules/SkeletonRow";
+
 import Modal from "../../../components/molecules/Modal";
 import CustomSelect from "../../../components/molecules/CustomSelect";
+import ImportModal from "../../../components/molecules/ImportModal";
+import Input from "../../../components/atoms/InputField";
+import Label from "../../../components/atoms/Label";
+import Checkbox from "../../../components/atoms/Checkbox";
+import Badge from "../../../components/atoms/Badge";
+import Switch from "../../../components/atoms/Switch";
+import Dropdown from "../../../components/molecules/Dropdown";
+import DropdownItem from "../../../components/atoms/DropdownItem";
+import DataActionsMenu from "../../../components/molecules/DataActionsMenu";
+
+import ConfirmDialog from "../../../components/molecules/ConfirmDialog";
+import { useConfirm } from "../../../hooks/useConfirm";
+import { showSuccess, showError } from "../../../utils/toast";
+
+import MajorCard from "./MajorCard";
+
+import { useDebounce } from "../../../hooks/useDebounce";
+
 import {
   PlusIcon,
   PencilIcon,
   TrashBinIcon,
-  AngleRightIcon,
   ChevronLeftIcon,
   ChevronUpIcon,
   ChevronDownIcon,
-  GridIcon,
-  InfoIcon as MajorIcon
+  AngleRightIcon,
+  SearchIcon,
+  FilterIcon,
+  InfoIcon as MajorIcon,
+  HorizontaLDots as MoreHorizontalIcon,
 } from "../../../components/atoms/Icons";
-import Badge from "../../../components/atoms/Badge";
-import { useDebounce } from "../../../hooks/useDebounce";
-import { showSuccess, showError } from "../../../utils/toast";
-import ConfirmDialog from "../../../components/molecules/ConfirmDialog";
-import { useConfirm } from "../../../hooks/useConfirm";
-import Switch from "../../../components/atoms/Switch";
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 640);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+  return isMobile;
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+const majorSchema = z.object({
+  code: z.string().min(1, "Kode jurusan wajib diisi"),
+  name: z.string().min(1, "Nama jurusan wajib diisi"),
+  educationLevelId: z.number({ invalid_type_error: "Tingkat pendidikan wajib dipilih" }).min(1, "Tingkat pendidikan wajib dipilih"),
+  programStudyId: z.number().optional().nullable(),
+  isActive: z.boolean().default(true),
+});
+
+type MajorFormValues = z.infer<typeof majorSchema>;
+
+const RowActionMenu = ({ onEdit, onDelete }: { onEdit: () => void, onDelete: () => void }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <div className="relative flex justify-center">
+      <button onClick={() => setIsOpen(!isOpen)}
+        className="flex size-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-white/[0.05] dark:hover:text-gray-200">
+        <MoreHorizontalIcon className="size-5" />
+      </button>
+      <Dropdown isOpen={isOpen} onClose={() => setIsOpen(false)}
+        className="absolute right-0 top-full z-20 mt-1 w-32 origin-top-right rounded-xl border border-gray-200 bg-white py-1.5 shadow-lg dark:border-white/[0.07] dark:bg-gray-900">
+        <DropdownItem onClick={() => { setIsOpen(false); onEdit(); }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/[0.04]">
+          <PencilIcon className="size-3.5" /> Edit
+        </DropdownItem>
+        <DropdownItem onClick={() => { setIsOpen(false); onDelete(); }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/10">
+          <TrashBinIcon className="size-3.5" /> Delete
+        </DropdownItem>
+      </Dropdown>
+    </div>
+  );
+};
 
 const Majors: React.FC = () => {
+  const isMobile = useIsMobile();
+
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [educationLevelFilter, setEducationLevelFilter] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<number | string>>(new Set());
+  
+  const [isExporting, setIsExporting] = useState(false);
   const debouncedSearch = useDebounce(searchQuery, 500);
   const { confirm, confirmState } = useConfirm();
 
-  const { data: response, isLoading, createMutation, updateMutation, deleteMutation } = useMajors({
-    search: debouncedSearch || undefined,
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [selectedMajor, setSelectedMajor] = useState<Major | null>(null);
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
+
+  useEffect(() => {
+    setSearchTerm(debouncedSearch);
+    setPage(1);
+  }, [debouncedSearch]);
+
+  const queryParams = {
+    search: searchTerm || undefined,
     educationLevelId: educationLevelFilter || undefined,
-    isActive: statusFilter === "" ? undefined : statusFilter === "true",
+    isActive: statusFilter === "" ? undefined : statusFilter === "ACTIVE",
     page,
     limit,
-  });
+  };
+
+  const { data: response, isLoading: isDesktopLoading, createMutation, updateMutation, deleteMutation } = useMajors(queryParams);
+  const { 
+    data: infiniteData, 
+    fetchNextPage, 
+    hasNextPage, 
+    isFetchingNextPage, 
+    isLoading: isMobileLoading 
+  } = useMajorsInfinite(queryParams);
+
+  const importMutation = useImportMajors();
 
   const { data: eduLevelsResponse } = useEducationLevels({ limit: 100, isActive: true });
   const eduLevels = useMemo(() => eduLevelsResponse?.data || [], [eduLevelsResponse]);
@@ -47,23 +155,36 @@ const Majors: React.FC = () => {
   const { data: programStudiesResponse } = useProgramStudies({ limit: 200, isActive: true });
   const allProgramStudies = useMemo(() => programStudiesResponse?.data || [], [programStudiesResponse]);
 
-  const majors = useMemo(() => response?.data || [], [response]);
+  const {
+    register,
+    handleSubmit,
+    control,
+    reset,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm<MajorFormValues>({
+    resolver: zodResolver(majorSchema),
+    defaultValues: { code: "", name: "", educationLevelId: 0, programStudyId: 0, isActive: true },
+  });
+
+  const selectedEduLevel = watch("educationLevelId");
+  const filteredProgramStudies = useMemo(() => {
+    if (!selectedEduLevel) return [];
+    return allProgramStudies.filter(ps => Number(ps.educationLevelId) === Number(selectedEduLevel));
+  }, [selectedEduLevel, allProgramStudies]);
+
+  const items = useMemo(() => {
+    if (isMobile) {
+      return infiniteData?.pages.flatMap((p) => p.data) || [];
+    }
+    return response?.data || [];
+  }, [isMobile, infiniteData, response]);
+
   const total = Number(response?.meta?.itemCount ?? response?.meta?.total ?? 0);
   const totalPages = Number(response?.meta?.pageCount ?? response?.meta?.totalPages ?? 1);
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedMajor, setSelectedMajor] = useState<Major | null>(null);
-  const [sortConfig, setSortConfig] = useState<{ key: keyof Major | string; direction: "asc" | "desc" } | null>(null);
-  
-  const [formData, setFormData] = useState<CreateMajorDto>({
-    educationLevelId: 0,
-    programStudyId: 0,
-    code: "",
-    name: "",
-    isActive: true,
-  });
-
-  const handleSort = (key: keyof Major | string) => {
+  const handleSort = (key: string) => {
     let direction: "asc" | "desc" = "asc";
     if (sortConfig && sortConfig.key === key && sortConfig.direction === "asc") {
       direction = "desc";
@@ -71,33 +192,31 @@ const Majors: React.FC = () => {
     setSortConfig({ key, direction });
   };
 
-  const sortedMajors = useMemo(() => {
-    if (!sortConfig) return majors;
-    return [...majors].sort((a, b) => {
-        const { key, direction } = sortConfig;
-        let valA: string = "";
-        let valB: string = "";
-
-        if (key === "educationLevel.name") {
-            valA = a.educationLevel?.name || "";
-            valB = b.educationLevel?.name || "";
-        } else if (key === "programStudy.name") {
-            valA = a.programStudy?.name || "";
-            valB = b.programStudy?.name || "";
-        } else {
-            // @ts-expect-error - dynamic key access
-            valA = String(a[key] || "");
-            // @ts-expect-error - dynamic key access
-            valB = String(b[key] || "");
-        }
-
-        if (valA < valB) return direction === "asc" ? -1 : 1;
-        if (valA > valB) return direction === "asc" ? 1 : -1;
-        return 0;
+  const sortedItems = useMemo(() => {
+    if (!sortConfig) return items;
+    return [...items].sort((a, b) => {
+      const { key, direction } = sortConfig;
+      let valA = "";
+      let valB = "";
+      if (key === "educationLevel.name") {
+          valA = a.educationLevel?.name || "";
+          valB = b.educationLevel?.name || "";
+      } else if (key === "programStudy.name") {
+          valA = a.programStudy?.name || "";
+          valB = b.programStudy?.name || "";
+      } else {
+          // @ts-ignore
+          valA = String(a[key] || "");
+          // @ts-ignore
+          valB = String(b[key] || "");
+      }
+      if (valA < valB) return direction === "asc" ? -1 : 1;
+      if (valA > valB) return direction === "asc" ? 1 : -1;
+      return 0;
     });
-  }, [majors, sortConfig]);
+  }, [items, sortConfig]);
 
-  const SortIcon = ({ column }: { column: keyof Major | string }) => {
+  const SortIcon = ({ column }: { column: string }) => {
     if (sortConfig?.key !== column) return <div className="size-3 opacity-20"><ChevronUpIcon /></div>;
     return sortConfig.direction === "asc" ? (
       <ChevronUpIcon className="size-3 text-brand-500" />
@@ -106,295 +225,535 @@ const Majors: React.FC = () => {
     );
   };
 
+  const allSelected = sortedItems.length > 0 && selectedIds.size === sortedItems.length;
+  
+  const toggleAll = () => {
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(sortedItems.map((i) => i.id)));
+    }
+  };
+
+  const toggleOne = (id: number | string) => {
+    const newSet = new Set(selectedIds);
+    if (newSet.has(id)) newSet.delete(id);
+    else newSet.add(id);
+    setSelectedIds(newSet);
+  };
+
   const handleOpenModal = (major?: Major) => {
     if (major) {
       setSelectedMajor(major);
-      setFormData({
-        educationLevelId: major.educationLevelId,
-        programStudyId: major.programStudyId,
+      reset({
         code: major.code,
         name: major.name,
+        educationLevelId: major.educationLevelId,
+        programStudyId: major.programStudyId || 0,
         isActive: major.isActive,
       });
     } else {
       setSelectedMajor(null);
-      setFormData({
-        educationLevelId: 0,
-        programStudyId: 0,
-        code: "",
-        name: "",
-        isActive: true,
-      });
+      reset({ code: "", name: "", educationLevelId: 0, programStudyId: 0, isActive: true });
     }
     setIsModalOpen(true);
   };
 
-  const filteredProgramStudies = useMemo(() => {
-    if (!formData.educationLevelId) return [];
-    return allProgramStudies.filter(ps => Number(ps.educationLevelId) === Number(formData.educationLevelId));
-  }, [formData.educationLevelId, allProgramStudies]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!formData.educationLevelId) {
-        showError(null, "Please select an education level");
-        return;
-    }
-
+  const onSubmitForm = async (data: MajorFormValues) => {
     const confirmed = await confirm({
-      variant: selectedMajor ? 'update' : 'create',
-      title: selectedMajor ? 'Update Major' : 'Register New Major',
-      message: `Are you sure you want to ${selectedMajor ? 'update' : 'register'} the major "${formData.name}"?`,
+      variant: selectedMajor ? "update" : "create",
+      title: selectedMajor ? "Ubah Jurusan" : "Registrasi Jurusan Baru",
+      message: `Apakah Anda yakin ingin ${selectedMajor ? "mengubah" : "mendaftarkan"} jurusan "${data.name}"?`,
     });
 
     if (!confirmed) return;
 
     const payload = {
-        ...formData,
-        educationLevelId: parseInt(String(formData.educationLevelId), 10),
-        programStudyId: parseInt(String(formData.programStudyId), 10),
+        ...data,
+        educationLevelId: Number(data.educationLevelId),
+        programStudyId: data.programStudyId ? Number(data.programStudyId) : undefined,
     };
 
     try {
       if (selectedMajor) {
         await updateMutation.mutateAsync({ id: selectedMajor.id, data: payload as UpdateMajorDto });
-        showSuccess(`Major "${formData.name}" updated successfully!`);
+        showSuccess(`Jurusan "${data.name}" berhasil diubah!`);
       } else {
         await createMutation.mutateAsync(payload as CreateMajorDto);
-        showSuccess(`Major "${formData.name}" created successfully!`);
+        showSuccess(`Jurusan "${data.name}" berhasil dibuat!`);
       }
       setIsModalOpen(false);
     } catch (error) {
-      showError(error, "Failed to save major");
+      showError(error, "Gagal menyimpan jurusan");
     }
   };
 
-  const handleToggleStatus = (major: Major) => {
-    updateMutation.mutate({
-        id: major.id,
-        data: { isActive: !major.isActive }
-    }, {
-        onSuccess: () => showSuccess(`Major ${major.name} status updated`),
-        onError: (err: Error) => showError(err, "Failed to update status")
-    });
-  };
-
   const handleDelete = async (id: number | string) => {
+    const major = items.find(i => i.id === id);
     const confirmed = await confirm({
-      variant: 'delete',
-      title: 'Delete Major',
-      message: 'Are you sure you want to delete this major? This action cannot be undone and may affect related data.',
+      variant: "delete",
+      title: "Hapus Jurusan",
+      message: `Apakah Anda yakin ingin menghapus jurusan "${major?.name || id}"? Tindakan ini tidak dapat dibatalkan.`,
     });
 
     if (confirmed) {
       try {
         await deleteMutation.mutateAsync(id);
-        showSuccess("Major deleted successfully!");
+        showSuccess("Jurusan berhasil dihapus!");
+        setSelectedIds(prev => {
+            const next = new Set(prev);
+            next.delete(id);
+            return next;
+        });
       } catch (error) {
-        showError(error, "Failed to delete major");
+        showError(error, "Gagal menghapus jurusan");
       }
     }
   };
 
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    const confirmed = await confirm({
+      variant: "delete",
+      title: "Hapus Jurusan Terpilih",
+      message: `Apakah Anda yakin ingin menghapus ${selectedIds.size} jurusan terpilih? Tindakan ini tidak dapat dibatalkan.`,
+    });
+
+    if (confirmed) {
+      try {
+        for (const id of Array.from(selectedIds)) {
+            await deleteMutation.mutateAsync(id);
+        }
+        showSuccess(`${selectedIds.size} jurusan berhasil dihapus!`);
+        setSelectedIds(new Set());
+      } catch (error) {
+        showError(error, "Gagal menghapus beberapa jurusan");
+      }
+    }
+  };
+
+  const handleExportExcel = async () => {
+    try {
+      setIsExporting(true);
+      const blob = await academicService.exportMajorsExcel(queryParams);
+      downloadBlob(blob, `Majors_Export_${new Date().getTime()}.xlsx`);
+      showSuccess("Data berhasil diekspor ke Excel!");
+    } catch (error) {
+      showError(error, "Gagal mengekspor data");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportPdf = async () => {
+    try {
+      setIsExporting(true);
+      const blob = await academicService.exportMajorsPdf(queryParams);
+      downloadBlob(blob, `Majors_Export_${new Date().getTime()}.pdf`);
+      showSuccess("Data berhasil diekspor ke PDF!");
+    } catch (error) {
+      showError(error, "Gagal mengekspor data");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleDownloadTemplate = async () => {
+    try {
+      const blob = await academicService.downloadMajorsTemplate();
+      downloadBlob(blob, "Majors_Template.xlsx");
+      showSuccess("Template berhasil diunduh!");
+    } catch (error) {
+      showError(error, "Gagal mengunduh template");
+    }
+  };
+
+  const handleResetFilter = () => {
+      setSearchQuery("");
+      setSearchTerm("");
+      setStatusFilter("");
+      setEducationLevelFilter("");
+      setPage(1);
+  };
+
+  const handleApplySearch = () => {
+      setSearchTerm(searchQuery);
+      setPage(1);
+  };
+
+  // Intersection Observer for Infinite Scroll
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!isMobile) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { rootMargin: "100px" }
+    );
+    if (sentinelRef.current) observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, [isMobile, hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  const isLoading = isMobile ? isMobileLoading : isDesktopLoading;
+
   return (
     <>
-      <PageMeta title="Majors | Management" description="Manage school majors/departments." />
-      <PageBreadcrumb pageTitle="Majors" />
+      <PageMeta title="Registri Jurusan | Manajemen" description="Kelola jurusan/departemen sekolah." />
+      <PageBreadcrumb pageTitle="Jurusan" />
 
       <div className="space-y-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Majors Registry</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Manage specialized fields of study per education level and program.</p>
+        {/* 2. Page Header - HIDDEN on mobile */}
+        <div className="hidden sm:flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-brand-50 text-brand-500 dark:bg-brand-500/10">
+              <MajorIcon className="size-5" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">Registri Jurusan</h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Kelola bidang studi khusus per tingkat pendidikan dan program.</p>
+            </div>
           </div>
-          <button
-            onClick={() => handleOpenModal()}
-            className="flex items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-brand-600 shadow-lg shadow-brand-500/20"
-          >
-            <PlusIcon className="fill-white text-xl text-white" />
-            Add New Major
-          </button>
+          <div className="flex items-center gap-3">
+            <DataActionsMenu
+              isExporting={isExporting}
+              isImporting={importMutation.isPending}
+              onExportExcel={handleExportExcel}
+              onExportPdf={handleExportPdf}
+              onImportClick={() => setIsImportModalOpen(true)}
+              onDownloadTemplate={handleDownloadTemplate}
+            />
+            <button
+              onClick={() => handleOpenModal()}
+              className="hidden sm:flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-brand-500/25 transition-all hover:bg-brand-600 active:scale-[.98]"
+            >
+              <PlusIcon className="fill-white size-4" /> Tambah Jurusan
+            </button>
+          </div>
         </div>
 
-        <div className="flex flex-col gap-4 md:flex-row md:items-end">
-            <div className="flex-1 space-y-1.5">
-              <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Search Major</label>
-              <div className="relative">
-                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">
-                  <GridIcon className="size-4" />
+        {/* 3. Mobile FAB */}
+        {isMobile && (
+          <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-3 items-end">
+            <DataActionsMenu
+              isMobileFab={true}
+              isExporting={isExporting}
+              isImporting={importMutation.isPending}
+              onExportExcel={handleExportExcel}
+              onExportPdf={handleExportPdf}
+              onImportClick={() => setIsImportModalOpen(true)}
+              onDownloadTemplate={handleDownloadTemplate}
+            />
+            <button
+              onClick={() => handleOpenModal()}
+              className="flex size-14 items-center justify-center rounded-full bg-brand-500 text-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] shadow-brand-500/30 transition-transform active:scale-95"
+            >
+              <PlusIcon className="size-6 fill-white" />
+            </button>
+          </div>
+        )}
+
+        {/* 4. Advanced Filter Card */}
+        <div className="mb-4 rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden dark:border-white/[0.05] dark:bg-white/[0.02]">
+          <button
+            onClick={() => setIsFilterOpen(!isFilterOpen)}
+            className="w-full flex items-center justify-between p-5 hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors"
+          >
+            <div className="text-left">
+              <div className="flex items-center gap-2 mb-1">
+                <FilterIcon className="size-5 text-brand-500" />
+                <h3 className="text-sm font-bold uppercase tracking-wider text-gray-800 dark:text-gray-200">
+                  Cari & Filter
+                </h3>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Gunakan kriteria di bawah ini untuk menyaring data berdasarkan status, tingkat pendidikan, dll.
+              </p>
+            </div>
+            <div className="shrink-0 ml-4">
+              <ChevronDownIcon
+                className={`size-5 text-gray-400 transition-transform duration-200 ${
+                  isFilterOpen ? "rotate-180" : ""
+                }`}
+              />
+            </div>
+          </button>
+
+          <div
+            className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${
+              isFilterOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+            }`}
+          >
+            <div className="overflow-hidden min-h-0">
+              <div className="px-5 pb-5">
+                <hr className="mb-5 border-gray-100 dark:border-white/[0.05]" />
+                <div className="grid grid-cols-1 gap-5 items-end sm:grid-cols-2 lg:grid-cols-12">
+                  <div className="space-y-1.5 sm:col-span-1 lg:col-span-3">
+                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Status</Label>
+                    <CustomSelect
+                      value={statusFilter === "all" ? "" : statusFilter}
+                      onChange={(val) => {
+                        setStatusFilter(val ? String(val) : "all");
+                        setPage(1);
+                      }}
+                      onClear={() => {
+                        setStatusFilter("all");
+                        setPage(1);
+                      }}
+                      placeholder="Semua Status"
+                      options={[
+                        { label: "Aktif", value: "ACTIVE" },
+                        { label: "Tidak Aktif", value: "INACTIVE" },
+                      ]}
+                      className="w-full [&>button]:w-full [&>button]:h-11 [&>button]:text-sm [&>button]:rounded-xl"
+                    />
+                  </div>
+                  <div className="space-y-1.5 sm:col-span-1 lg:col-span-3">
+                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Tingkat Pendidikan</Label>
+                    <CustomSelect
+                      value={educationLevelFilter === "all" ? "" : educationLevelFilter}
+                      onChange={(val) => {
+                        setEducationLevelFilter(val ? String(val) : "all");
+                        setPage(1);
+                      }}
+                      onClear={() => {
+                        setEducationLevelFilter("all");
+                        setPage(1);
+                      }}
+                      placeholder="Semua Tingkat"
+                      options={eduLevels.map((edu) => ({ label: edu.name, value: edu.id }))}
+                      className="w-full [&>button]:w-full [&>button]:h-11 [&>button]:text-sm [&>button]:rounded-xl"
+                    />
+                  </div>
+                  <div className="space-y-1.5 sm:col-span-2 lg:col-span-3">
+                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Pencarian</Label>
+                    <div className="relative">
+                      <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+                      <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleApplySearch();
+                        }}
+                        placeholder="Cari berdasarkan Kode, Nama..."
+                        className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-4 text-sm text-gray-900 transition-colors focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-white/[0.08] dark:bg-white/[0.02] dark:text-white dark:focus:border-brand-400 dark:focus:ring-brand-400"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 sm:col-span-2 lg:col-span-3">
+                    <button
+                      onClick={handleResetFilter}
+                      className="flex h-11 flex-1 items-center justify-center rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 dark:border-white/[0.08] dark:bg-transparent dark:text-gray-300 dark:hover:bg-white/[0.05]"
+                    >
+                      Atur Ulang
+                    </button>
+                    <button
+                      onClick={handleApplySearch}
+                      className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 text-sm font-semibold text-white transition-all hover:bg-brand-600"
+                    >
+                      <SearchIcon className="size-4" />
+                      Cari
+                    </button>
+                  </div>
                 </div>
-                <input
-                  type="text"
-                  placeholder="By code or name..."
-                  value={searchQuery}
-                  onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
-                  className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none transition-all focus:border-brand-500 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-white"
-                />
               </div>
             </div>
-
-            <div className="w-full sm:w-64">
-                <CustomSelect
-                    label="Education Level"
-                    value={educationLevelFilter}
-                    onChange={(val) => { setEducationLevelFilter(String(val)); setPage(1); }}
-                    options={[
-                        { label: "All Levels", value: "" },
-                        ...eduLevels.map(edu => ({ label: edu.name, value: edu.id }))
-                    ]}
-                />
-            </div>
-
-            <div className="w-full sm:w-48">
-                <CustomSelect
-                    label="Status"
-                    value={statusFilter}
-                    onChange={(val) => { setStatusFilter(String(val)); setPage(1); }}
-                    options={[
-                    { label: "All Status", value: "" },
-                    { label: "Active Only", value: "true" },
-                    { label: "Inactive Only", value: "false" },
-                    ]}
-                />
-            </div>
+          </div>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-white/[0.05] dark:bg-white/[0.03]">
-          <Table>
-            <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
-              <TableRow>
-                <TableCell isHeader className="px-5 py-4">
-                  <button onClick={() => handleSort("code")} className="flex items-center gap-2 text-theme-xs font-medium text-gray-500 dark:text-gray-400 hover:text-brand-500 transition-colors uppercase tracking-wider">
-                    Code <SortIcon column="code" />
-                  </button>
-                </TableCell>
-                <TableCell isHeader className="px-5 py-4">
-                  <button onClick={() => handleSort("name")} className="flex items-center gap-2 text-theme-xs font-medium text-gray-500 dark:text-gray-400 hover:text-brand-500 transition-colors uppercase tracking-wider">
-                    Name <SortIcon column="name" />
-                  </button>
-                </TableCell>
-                <TableCell isHeader className="px-5 py-4">
-                  <button onClick={() => handleSort("educationLevel.name")} className="flex items-center gap-2 text-theme-xs font-medium text-gray-500 dark:text-gray-400 hover:text-brand-500 transition-colors uppercase tracking-wider">
-                    Level <SortIcon column="educationLevel.name" />
-                  </button>
-                </TableCell>
-                <TableCell isHeader className="px-5 py-4">
-                  <button onClick={() => handleSort("programStudy.name")} className="flex items-center gap-2 text-theme-xs font-medium text-gray-500 dark:text-gray-400 hover:text-brand-500 transition-colors uppercase tracking-wider">
-                    Program Study <SortIcon column="programStudy.name" />
-                  </button>
-                </TableCell>
-                <TableCell isHeader className="px-5 py-4 text-right">Actions</TableCell>
-              </TableRow>
-            </TableHeader>
-            <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-              {isLoading ? (
+        {/* 5. Toolbar */}
+        <TableToolbar
+          selectedCount={selectedIds.size}
+          onClearSelection={() => setSelectedIds(new Set())}
+          bulkActions={[
+            {
+              label: "Hapus Terpilih",
+              icon: <TrashBinIcon className="size-3.5" />,
+              onClick: handleBulkDelete,
+              variant: "danger",
+            },
+          ]}
+        />
+
+        {/* 6. Content */}
+        {isMobile ? (
+          <div className="space-y-3">
+            {sortedItems.length > 0 && (
+              <div className="flex items-center gap-3 px-1">
+                <Checkbox checked={allSelected} onChange={toggleAll} />
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  {selectedIds.size > 0 ? `${selectedIds.size} terpilih` : "Pilih semua"}
+                </span>
+              </div>
+            )}
+            
+            {isLoading && items.length === 0 ? (
+               <div className="flex items-center justify-center py-10"><div className="size-8 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" /></div>
+            ) : sortedItems.length === 0 ? (
+               <div className="flex flex-col items-center justify-center py-10 bg-white dark:bg-white/[0.02] rounded-2xl border border-gray-200 dark:border-white/[0.05]">
+                 <MajorIcon className="size-10 text-gray-300 mb-3" />
+                 <p className="text-gray-500 text-sm">Tidak ada jurusan yang ditemukan.</p>
+               </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-3">
+                {sortedItems.map((item) => (
+                  <MajorCard
+                    key={item.id}
+                    entity={item}
+                    isSelected={selectedIds.has(item.id)}
+                    onToggle={() => toggleOne(item.id)}
+                    onEdit={() => handleOpenModal(item)}
+                    onDelete={() => handleDelete(item.id)}
+                  />
+                ))}
+              </div>
+            )}
+
+            <div ref={sentinelRef} className="py-2 flex items-center justify-center">
+              {isFetchingNextPage && (
+                <div className="size-5 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
+              )}
+              {!hasNextPage && items.length > 0 && (
+                <p className="text-xs text-gray-400">Semua data telah dimuat</p>
+              )}
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-white/[0.05] dark:bg-white/[0.03]">
+            <Table>
+              <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
                 <TableRow>
-                  <TableCell colSpan={5} className="py-12 text-center text-gray-400">
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="size-6 animate-spin rounded-full border-2 border-brand-500 border-t-transparent"></div>
-                      <span className="text-sm">Loading majors...</span>
-                    </div>
+                  <TableCell isHeader className="w-10 px-4 py-3.5">
+                    <Checkbox checked={allSelected} onChange={toggleAll} />
+                  </TableCell>
+                  <TableCell isHeader className="px-5 py-4">
+                    <button onClick={() => handleSort("code")} className="flex items-center gap-2 text-theme-xs font-medium text-gray-500 dark:text-gray-400 hover:text-brand-500 transition-colors uppercase tracking-wider">
+                      Kode <SortIcon column="code" />
+                    </button>
+                  </TableCell>
+                  <TableCell isHeader className="px-5 py-4">
+                    <button onClick={() => handleSort("name")} className="flex items-center gap-2 text-theme-xs font-medium text-gray-500 dark:text-gray-400 hover:text-brand-500 transition-colors uppercase tracking-wider">
+                      Nama <SortIcon column="name" />
+                    </button>
+                  </TableCell>
+                  <TableCell isHeader className="px-5 py-4">
+                    <button onClick={() => handleSort("educationLevel.name")} className="flex items-center gap-2 text-theme-xs font-medium text-gray-500 dark:text-gray-400 hover:text-brand-500 transition-colors uppercase tracking-wider">
+                      Tingkat <SortIcon column="educationLevel.name" />
+                    </button>
+                  </TableCell>
+                  <TableCell isHeader className="px-5 py-4">
+                    <button onClick={() => handleSort("programStudy.name")} className="flex items-center gap-2 text-theme-xs font-medium text-gray-500 dark:text-gray-400 hover:text-brand-500 transition-colors uppercase tracking-wider">
+                      Program Studi <SortIcon column="programStudy.name" />
+                    </button>
+                  </TableCell>
+                  <TableCell isHeader className="px-4 py-3.5 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Status
+                  </TableCell>
+                  <TableCell isHeader className="px-4 py-3.5 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Aksi
                   </TableCell>
                 </TableRow>
-              ) : sortedMajors.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="py-12 text-center text-gray-400">
-                    <div className="flex flex-col items-center gap-2">
-                      <div className="size-10 rounded-full bg-gray-50 dark:bg-white/5 flex items-center justify-center mb-1">
-                        <MajorIcon className="size-5 opacity-20" />
-                      </div>
-                      <p className="text-sm font-medium">No majors found.</p>
-                      <button onClick={() => handleOpenModal()} className="flex items-center gap-1.5 text-xs text-brand-500 hover:underline">
-                        <PlusIcon className="fill-white text-xl text-white" />
-                        Add your first major
-                      </button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                sortedMajors.map((major) => (
-                  <TableRow key={major.id} className="group hover:bg-gray-50/50 dark:hover:bg-white/[0.01] transition-colors">
-                    <TableCell className="px-5 py-4"><Badge>{major.code}</Badge></TableCell>
-                    <TableCell className="px-5 py-4 font-medium text-gray-900 dark:text-white text-theme-sm">{major.name}</TableCell>
-                    <TableCell className="px-5 py-4">
-                      <span className="text-theme-sm text-gray-600 dark:text-gray-400">{major.educationLevel?.name || "-"}</span>
-                    </TableCell>
-                    <TableCell className="px-5 py-4">
-                      <span className="text-theme-sm text-gray-600 dark:text-gray-400">{major.programStudy?.name || "-"}</span>
-                    </TableCell>
-                    <TableCell className="px-5 py-4 text-right">
-                      <div className="flex justify-end items-center gap-3">
-                        <button
-                          onClick={() => handleOpenModal(major)}
-                          className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-brand-50 hover:text-brand-500 dark:hover:bg-brand-500/10"
-                        >
-                          <PencilIcon className="size-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(major.id)}
-                          className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-error-50 hover:text-error-500 dark:hover:bg-error-500/10"
-                        >
-                          <TrashBinIcon className="size-4" />
-                        </button>
-                        <button 
-                            onClick={() => handleToggleStatus(major)}
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${major.isActive ? 'bg-brand-500' : 'bg-gray-200'}`}
-                        >
-                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${major.isActive ? 'translate-x-6' : 'translate-x-1'}`} />
+              </TableHeader>
+              <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
+                {isLoading ? (
+                  <SkeletonTable columns={7} rows={limit} />
+                ) : sortedItems.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="py-12 text-center text-gray-400">
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="size-10 rounded-full bg-gray-50 dark:bg-white/5 flex items-center justify-center mb-1">
+                          <MajorIcon className="size-5 opacity-20" />
+                        </div>
+                        <p className="text-sm font-medium">Tidak ada jurusan yang ditemukan.</p>
+                        <button onClick={() => handleOpenModal()} className="flex items-center gap-1.5 text-xs text-brand-500 hover:underline">
+                          <PlusIcon className="fill-white size-4 text-brand-500" />
+                          Tambah jurusan pertama Anda
                         </button>
                       </div>
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                ) : (
+                  sortedItems.map((major) => {
+                    const isSelected = selectedIds.has(major.id);
+                    return (
+                      <TableRow 
+                        key={major.id} 
+                        className={`group transition-colors ${isSelected ? "bg-brand-50/60 dark:bg-brand-500/5" : "hover:bg-gray-50/60 dark:hover:bg-white/[0.015]"}`}
+                      >
+                        <TableCell className="w-10 px-4 py-4">
+                          <Checkbox checked={isSelected} onChange={() => toggleOne(major.id)} />
+                        </TableCell>
+                        <TableCell className="px-5 py-4">
+                            <span className="inline-flex items-center rounded-lg bg-gray-100 px-2.5 py-1 text-xs font-bold tracking-wide text-gray-700 dark:bg-white/[0.06] dark:text-gray-200">
+                                {major.code}
+                            </span>
+                        </TableCell>
+                        <TableCell className="px-5 py-4 font-medium text-gray-900 dark:text-white text-theme-sm">{major.name}</TableCell>
+                        <TableCell className="px-5 py-4">
+                          <span className="text-theme-sm text-gray-600 dark:text-gray-400">{major.educationLevel?.name || "-"}</span>
+                        </TableCell>
+                        <TableCell className="px-5 py-4">
+                          <span className="text-theme-sm text-gray-600 dark:text-gray-400">{major.programStudy?.name || "-"}</span>
+                        </TableCell>
+                        <TableCell className="px-4 py-4 text-center">
+                          <Badge color={major.isActive ? "success" : "light"}>
+                            {major.isActive ? "Aktif" : "Tidak Aktif"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="px-4 py-4 text-center">
+                          <RowActionMenu onEdit={() => handleOpenModal(major)} onDelete={() => handleDelete(major.id)} />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
 
-        {/* Pagination */}
-        {total > 0 && (
-          <div className="flex flex-col gap-4 px-2 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Showing <span className="font-medium text-gray-700 dark:text-white">{(page - 1) * limit + 1}</span> to{" "}
-              <span className="font-medium text-gray-700 dark:text-white">{Math.min(page * limit, total)}</span> of{" "}
-              <span className="font-medium text-gray-700 dark:text-white">{total}</span> items
-            </p>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400 dark:hover:bg-white/[0.05]"
-              >
-                <ChevronLeftIcon className="size-4" />
-                Previous
-              </button>
-              
-              <div className="flex items-center gap-1.5 px-2">
-                <span className="text-sm font-semibold text-gray-900 dark:text-white">{page}</span>
-                <span className="text-sm text-gray-400">/</span>
-                <span className="text-sm text-gray-500 dark:text-gray-400">{totalPages || 1}</span>
+            {/* Pagination */}
+            {total > 0 && (
+              <div className="flex flex-col gap-4 border-t border-gray-100 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between dark:border-white/[0.05]">
+                <p className="text-xs text-gray-400 dark:text-gray-500">
+                  Showing{" "}
+                  <span className="font-semibold text-gray-600 dark:text-gray-300">
+                    {(page - 1) * limit + 1}–{Math.min(page * limit, total)}
+                  </span>{" "}
+                  of <span className="font-semibold text-gray-600 dark:text-gray-300">{total}</span>
+                </p>
+                <div className="flex items-center gap-1.5">
+                  <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50 disabled:pointer-events-none disabled:opacity-40 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400">
+                    <ChevronLeftIcon className="size-3.5" /> Prev
+                  </button>
+                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                    const p = i + 1;
+                    return (
+                      <button key={p} onClick={() => setPage(p)} className={`flex size-7 items-center justify-center rounded-lg text-xs font-medium transition ${page === p ? "bg-brand-500 text-white shadow-sm" : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400"}`}>
+                        {p}
+                      </button>
+                    );
+                  })}
+                  {totalPages > 5 && <span className="px-1 text-xs text-gray-400">…</span>}
+                  <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages || totalPages === 0} className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50 disabled:pointer-events-none disabled:opacity-40 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400">
+                    Next <AngleRightIcon className="size-3.5" />
+                  </button>
+                </div>
               </div>
-
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages || totalPages === 0}
-                className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400 dark:hover:bg-white/[0.05]"
-              >
-                Next
-                <AngleRightIcon className="size-4" />
-              </button>
-            </div>
+            )}
           </div>
-        )}
+        </>
+      )}
       </div>
 
       <Modal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
         className="max-w-xl"
-        title={selectedMajor ? "Update Major" : "Register New Major"}
-        description="Configure specific study majors and associate them with programs."
+        title={selectedMajor ? "Ubah Jurusan" : "Registrasi Jurusan Baru"}
+        description="Konfigurasi jurusan bidang studi tertentu dan hubungkan dengan program terkait."
         footer={
            <div className="flex justify-end gap-3">
               <button
@@ -402,90 +761,121 @@ const Majors: React.FC = () => {
                 onClick={() => setIsModalOpen(false)}
                 className="rounded-xl px-4 py-2 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.05]"
               >
-                Cancel
+                Batal
               </button>
               <button
                 type="submit"
                 form="major-form"
                 className="rounded-xl bg-brand-500 px-6 py-2 text-sm font-medium text-white transition-all hover:bg-brand-600 shadow-lg shadow-brand-500/20"
               >
-                {selectedMajor ? "Update" : "Create"}
+                {selectedMajor ? "Simpan Perubahan" : "Buat Jurusan"}
               </button>
            </div>
         }
       >
-          <form id="major-form" onSubmit={handleSubmit} className="space-y-6">
+          <form id="major-form" onSubmit={handleSubmit(onSubmitForm)} className="space-y-6">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Major Code (e.g. TKR)</label>
-                    <input
+                    <Input
+                        label="Kode Jurusan (cth: TKR)"
                         type="text"
-                        value={formData.code}
-                        onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                        placeholder="e.g. TKR"
-                        className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm transition-all focus:border-brand-500 focus:outline-none dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-white"
-                        required
+                        placeholder="cth: TKR"
+                        {...register("code")}
+                        error={errors.code?.message}
                     />
                 </div>
                 <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Major Name</label>
-                    <input
+                    <Input
+                        label="Nama Jurusan"
                         type="text"
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        placeholder="e.g. Teknik Kendaraan Ringan"
-                        className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm transition-all focus:border-brand-500 focus:outline-none dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-white"
-                        required
+                        placeholder="cth: Teknik Kendaraan Ringan"
+                        {...register("name")}
+                        error={errors.name?.message}
                     />
                 </div>
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <CustomSelect
-                    label="Education Level"
-                    value={formData.educationLevelId || ""}
-                    onChange={(val) => setFormData({ ...formData, educationLevelId: Number(val), programStudyId: 0 })}
-                    options={eduLevels.map(edu => ({ label: edu.name, value: edu.id }))}
-                    placeholder="Select Level"
-                />
-
-                <CustomSelect
-                    label="Program Study"
-                    value={formData.programStudyId || ""}
-                    onChange={(val) => setFormData({ ...formData, programStudyId: Number(val) })}
-                    options={filteredProgramStudies.map(ps => ({ label: ps.name, value: ps.id }))}
-                    placeholder="Select Program"
-                    disabled={!formData.educationLevelId}
-                />
-            </div>
-
-            <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Major Status</label>
-                <div 
-                    className={`flex items-center justify-between rounded-xl border px-4 py-3 transition-all ${
-                        formData.isActive 
-                        ? "border-green-200 bg-green-50/50 dark:border-green-500/20 dark:bg-green-500/10" 
-                        : "border-gray-200 bg-gray-50/50 dark:border-white/[0.08] dark:bg-white/[0.03]"
-                    }`}
-                >
-                    <div className="flex flex-col">
-                        <span className={`text-sm font-semibold ${
-                            formData.isActive ? "text-green-700 dark:text-green-400" : "text-gray-700 dark:text-gray-300"
-                        }`}>
-                            {formData.isActive ? "Active Major" : "Inactive Major"}
-                        </span>
-                        <span className="text-[10px] text-gray-500 dark:text-gray-500">
-                            {formData.isActive ? "Major is available for student registration." : "Major is currently disabled."}
-                        </span>
+                <Controller
+                  name="educationLevelId"
+                  control={control}
+                  render={({ field }) => (
+                    <div className="space-y-1.5">
+                      <Label>Tingkat Pendidikan</Label>
+                      <CustomSelect
+                          value={field.value || ""}
+                          onChange={(val) => {
+                            field.onChange(Number(val));
+                            setValue("programStudyId", 0);
+                          }}
+                          options={eduLevels.map(edu => ({ label: edu.name, value: edu.id }))}
+                          placeholder="Pilih Tingkat"
+                      />
+                      {errors.educationLevelId && <p className="text-xs text-error-500">{errors.educationLevelId.message}</p>}
                     </div>
-                    <Switch 
-                        checked={formData.isActive}
-                        onChange={(val) => setFormData({ ...formData, isActive: val })}
-                    />
-                </div>
+                  )}
+                />
+
+                <Controller
+                  name="programStudyId"
+                  control={control}
+                  render={({ field }) => (
+                    <div className="space-y-1.5">
+                      <Label>Program Studi</Label>
+                      <CustomSelect
+                          value={field.value || ""}
+                          onChange={(val) => field.onChange(Number(val))}
+                          options={filteredProgramStudies.map(ps => ({ label: ps.name, value: ps.id }))}
+                          placeholder="Pilih Program (Opsional)"
+                          disabled={!selectedEduLevel}
+                      />
+                    </div>
+                  )}
+                />
             </div>
+
+            <Controller
+              name="isActive"
+              control={control}
+              render={({ field }) => (
+                <div className="space-y-1.5">
+                    <Label>Status Jurusan</Label>
+                    <div 
+                        className={`flex items-center justify-between rounded-xl border px-4 py-3 transition-all ${
+                            field.value 
+                            ? "border-green-200 bg-green-50/50 dark:border-green-500/20 dark:bg-green-500/10" 
+                            : "border-gray-200 bg-gray-50/50 dark:border-white/[0.08] dark:bg-white/[0.03]"
+                        }`}
+                    >
+                        <div className="flex flex-col">
+                            <span className={`text-sm font-semibold ${
+                                field.value ? "text-green-700 dark:text-green-400" : "text-gray-700 dark:text-gray-300"
+                            }`}>
+                                {field.value ? "Jurusan Aktif" : "Jurusan Tidak Aktif"}
+                            </span>
+                            <span className="text-[10px] text-gray-500 dark:text-gray-500">
+                                {field.value ? "Jurusan tersedia untuk pendaftaran siswa." : "Jurusan saat ini dinonaktifkan."}
+                            </span>
+                        </div>
+                        <Switch 
+                            checked={field.value}
+                            onChange={(val) => field.onChange(val)}
+                        />
+                    </div>
+                </div>
+              )}
+            />
           </form>
       </Modal>
+
+      <ImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImport={(file) => importMutation.mutateAsync(file)}
+        onDownloadTemplate={handleDownloadTemplate}
+        title="Impor Jurusan"
+        description="Unggah file Excel yang berisi daftar jurusan."
+      />
 
       <ConfirmDialog {...confirmState} />
     </>

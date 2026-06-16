@@ -408,7 +408,7 @@ export default function ParentManagement() {
 
   return (
     <>
-      <PageMeta title="Parent Management | Visia" description="Manage system parents." />
+      <PageMeta title="Parent Management | SIAPUS" description="Manage system parents." />
       <PageBreadcrumb pageTitle="Parent Management" />
 
       <div className="space-y-5">

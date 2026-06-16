@@ -200,7 +200,7 @@ export default function StudentEvents() {
 
   return (
     <>
-      <PageMeta title="My Events | Visia" description="View your event invitations" />
+      <PageMeta title="My Events | SIAPUS" description="View your event invitations" />
       
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

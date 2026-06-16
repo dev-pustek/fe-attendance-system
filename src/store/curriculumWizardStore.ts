@@ -19,18 +19,20 @@ interface CurriculumWizardState {
   currentStep: number;
   selectedClassId: number | string | null;
   selectedClassName: string;
+  selectedMajorId: number | string | null;
+  selectedGradeId: number | string | null;
   selectedSubjectIds: (number | string)[];
   teacherAssignments: TeacherAssignmentDraft[];
   subjectConfigs: Record<string, SubjectConfig>;
   
   // Actions
   setStep: (step: number) => void;
-  setClass: (id: number | string | null, name: string) => void;
+  setClass: (id: number | string | null, name: string, majorId?: number | string | null, gradeId?: number | string | null) => void;
   setSubjects: (ids: (number | string)[]) => void;
   setTeacherAssignments: (assignments: TeacherAssignmentDraft[]) => void;
-  toggleSubject: (id: number | string) => void;
-  updateTeacherAssignment: (assignment: TeacherAssignmentDraft) => void;
+  toggleTeacherAssignment: (assignment: TeacherAssignmentDraft) => void;
   removeTeacherAssignment: (subjectId: number | string) => void;
+  removeTeacherFromSubject: (subjectId: number | string, teacherId: string) => void;
   setSubjectConfig: (subjectId: number | string, config: Partial<SubjectConfig>) => void;
   setSubjectConfigs: (configs: Record<string, SubjectConfig>) => void;
   reset: () => void;
@@ -45,15 +47,19 @@ export const useCurriculumWizardStore = create<CurriculumWizardState>()(
       currentStep: 1,
       selectedClassId: null,
       selectedClassName: "",
+      selectedMajorId: null,
+      selectedGradeId: null,
       selectedSubjectIds: [],
       teacherAssignments: [],
       subjectConfigs: {},
 
       setStep: (step) => set({ currentStep: step }),
       
-      setClass: (id, name) => set({ 
+      setClass: (id, name, majorId = null, gradeId = null) => set({ 
         selectedClassId: id, 
         selectedClassName: name,
+        selectedMajorId: majorId,
+        selectedGradeId: gradeId,
         selectedSubjectIds: [], 
         teacherAssignments: [],
         subjectConfigs: {}
@@ -100,21 +106,33 @@ export const useCurriculumWizardStore = create<CurriculumWizardState>()(
         }
       },
 
-      updateTeacherAssignment: (assignment) => {
+      toggleTeacherAssignment: (assignment) => {
         const current = get().teacherAssignments;
-        const index = current.findIndex(a => a.subjectId === assignment.subjectId);
-        
-        if (index >= 0) {
+        const existingIndex = current.findIndex(
+          (a) => a.subjectId === assignment.subjectId && a.teacherId === assignment.teacherId
+        );
+
+        if (existingIndex >= 0) {
+          // If exists, remove it
           const updated = [...current];
-          updated[index] = assignment;
+          updated.splice(existingIndex, 1);
           set({ teacherAssignments: updated });
         } else {
+          // If not exists, add it
           set({ teacherAssignments: [...current, assignment] });
         }
       },
 
       removeTeacherAssignment: (subjectId) => {
         set({ teacherAssignments: get().teacherAssignments.filter(a => a.subjectId !== subjectId) });
+      },
+
+      removeTeacherFromSubject: (subjectId, teacherId) => {
+        set({ 
+            teacherAssignments: get().teacherAssignments.filter(
+                a => !(a.subjectId === subjectId && a.teacherId === teacherId)
+            ) 
+        });
       },
 
       setSubjectConfig: (subjectId, config) => {
@@ -139,6 +157,7 @@ export const useCurriculumWizardStore = create<CurriculumWizardState>()(
         currentStep: 1, 
         selectedClassId: null, 
         selectedClassName: "", 
+        selectedMajorId: null,
         selectedSubjectIds: [], 
         teacherAssignments: [],
         subjectConfigs: {}
@@ -148,7 +167,12 @@ export const useCurriculumWizardStore = create<CurriculumWizardState>()(
         const { currentStep, selectedClassId, selectedSubjectIds, teacherAssignments } = get();
         if (currentStep === 1) return !!selectedClassId;
         if (currentStep === 2) return selectedSubjectIds.length > 0;
-        if (currentStep === 3) return teacherAssignments.length === selectedSubjectIds.length;
+        if (currentStep === 3) {
+            // Check if every selected subject has AT LEAST one teacher assigned
+            return selectedSubjectIds.every(id => 
+                teacherAssignments.some(a => a.subjectId === id)
+            );
+        }
         return false;
       }
     }),

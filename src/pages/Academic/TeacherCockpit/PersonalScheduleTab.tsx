@@ -15,6 +15,7 @@ const PersonalScheduleTab = () => {
     // Fetch Schedule
     const { data: scheduleResponse, isLoading } = useTeachingScheduleTemplates({
         teacherId: employeeDetails?.userId,
+        isActive: true,
         limit: 1000
     });
     

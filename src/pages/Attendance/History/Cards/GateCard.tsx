@@ -11,17 +11,18 @@ interface GateCardProps {
   isSelected: boolean;
   onToggle: () => void;
   onDelete?: () => void;
+  onViewDetails?: () => void;
 }
 
 const getStatusBadge = (status: string, isLate?: boolean) => {
-  if (isLate) return <Badge color="error">Late</Badge>;
-  if (status === 'present' || status === 'on-time') return <Badge color="success">Present</Badge>;
-  if (status === 'absent') return <Badge color="error">Absent</Badge>;
-  if (status === 'excused') return <Badge color="warning">Excused</Badge>;
+  if (isLate) return <Badge color="error">Terlambat</Badge>;
+  if (status === 'present' || status === 'on-time') return <Badge color="success">Hadir</Badge>;
+  if (status === 'absent') return <Badge color="error">Tidak Hadir</Badge>;
+  if (status === 'excused') return <Badge color="warning">Izin</Badge>;
   return <Badge color="primary">{status}</Badge>;
 };
 
-export default function GateCard({ record, isSelected, onToggle, onDelete }: GateCardProps) {
+export default function GateCard({ record, isSelected, onToggle, onDelete, onViewDetails }: GateCardProps) {
   const isStudent = record.user?.role === 'student' || record.studentProfile;
   const identifier = isStudent 
     ? (record.studentProfile?.nis || record.user?.profile?.nis || '-') 
@@ -50,7 +51,7 @@ export default function GateCard({ record, isSelected, onToggle, onDelete }: Gat
           <Avatar src={record.user?.photo || record.user?.profile?.photo} alt={record.user?.name} size="small" />
           <div>
             <p className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white leading-tight">
-              {record.user?.name || 'Unknown'}
+              {record.user?.name || 'Tidak Diketahui'}
             </p>
             <p className="text-xs text-gray-500">{identifier}</p>
           </div>
@@ -58,21 +59,21 @@ export default function GateCard({ record, isSelected, onToggle, onDelete }: Gat
 
         <div className="grid grid-cols-2 gap-y-2 pt-2 border-t border-gray-50 dark:border-white/[0.02]">
             <div className="col-span-2">
-               <p className="text-xs text-gray-500 mb-0.5">Date</p>
+               <p className="text-xs text-gray-500 mb-0.5">Tanggal</p>
                <p className="font-medium text-gray-900 dark:text-white text-sm">
                   {record.date ? format(parseISO(record.date), 'dd MMM yyyy') : '-'}
                </p>
             </div>
             <div className="flex gap-4 col-span-2 mt-1 bg-gray-50 dark:bg-white/5 p-2 rounded-lg">
                <div className="flex-1">
-                  <p className="text-[10px] text-green-600 dark:text-green-400 font-bold uppercase">Clock In</p>
+                  <p className="text-[10px] text-green-600 dark:text-green-400 font-bold uppercase">Masuk</p>
                   <p className="text-sm font-semibold text-gray-900 dark:text-white">
                      {record.clockIn ? format(parseISO(record.clockIn), 'HH:mm') : '--:--'}
                   </p>
                </div>
                <div className="w-px bg-gray-200 dark:bg-white/10"></div>
                <div className="flex-1 text-right">
-                  <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase">Clock Out</p>
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase">Keluar</p>
                   <p className="text-sm font-semibold text-gray-900 dark:text-white">
                      {record.clockOut ? format(parseISO(record.clockOut), 'HH:mm') : '--:--'}
                   </p>
@@ -82,14 +83,24 @@ export default function GateCard({ record, isSelected, onToggle, onDelete }: Gat
       </div>
 
       {/* Footer */}
-      {onDelete && (
-        <div className="flex items-center justify-end border-t border-gray-100 bg-gray-50/30 px-4 py-3 sm:px-5 dark:border-white/[0.05] dark:bg-white/[0.01]">
+      <div className="flex items-center justify-between border-t border-gray-100 bg-gray-50/30 px-4 py-3 sm:px-5 dark:border-white/[0.05] dark:bg-white/[0.01]">
+        {onViewDetails && (
+          <button onClick={(e) => { e.stopPropagation(); onViewDetails(); }}
+            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-500/10">
+            <svg className="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+            Lihat Detail
+          </button>
+        )}
+        {onDelete && (
           <button onClick={(e) => { e.stopPropagation(); onDelete(); }}
             className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/10">
-            <TrashBinIcon className="size-3.5" /> Delete
+            <TrashBinIcon className="size-3.5" /> Hapus
           </button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

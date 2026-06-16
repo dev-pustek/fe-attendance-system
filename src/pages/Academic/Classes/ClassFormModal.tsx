@@ -108,14 +108,14 @@ const ClassFormModal: React.FC<ClassFormModalProps> = ({ isOpen, onClose, select
         reset({
           code: selectedEntity.code,
           name: selectedEntity.name,
-          educationLevelId: selectedEntity.educationLevelId || "",
+          educationLevelId: selectedEntity.educationLevelId || (selectedEntity as any).grade?.educationLevelId || "",
           gradeId: selectedEntity.gradeId || "",
           majorId: selectedEntity.majorId || "",
           academicYearId: selectedEntity.academicYearId || "",
           homeroomTeacherId: selectedEntity.homeroomTeacherId || "",
           roomNumber: selectedEntity.roomNumber || "",
           maxCapacity: selectedEntity.maxCapacity || 36,
-          isActive: selectedEntity.isActive,
+          isActive: selectedEntity.isActive ?? true,
         });
       } else {
         reset({

@@ -40,7 +40,7 @@ const DataActionsMenu = ({
                 onMouseDown={(e) => e.stopPropagation()}
                 disabled={isExporting || isImporting}
                 className={isMobileFab 
-                    ? "flex size-[52px] items-center justify-center rounded-full bg-white text-brand-600 shadow-[0_4px_20px_rgb(0,0,0,0.1)] border-2 border-brand-500 transition-transform active:scale-95 dark:bg-gray-800 dark:border-brand-400 dark:text-brand-400 disabled:opacity-50"
+                    ? "flex size-12 items-center justify-center rounded-full bg-white text-brand-600 shadow-[0_4px_20px_rgb(0,0,0,0.1)] border border-brand-500 transition-transform active:scale-95 dark:bg-gray-800 dark:border-brand-400 dark:text-brand-400 disabled:opacity-50"
                     : "flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50 dark:border-white/[0.08] dark:bg-white/[0.02] dark:text-white dark:hover:bg-white/[0.05]"
                 }
             >

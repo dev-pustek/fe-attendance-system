@@ -1,7 +1,7 @@
-
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { useAuthStore } from '../../../store/authStore';
-import { useTeachingScheduleTemplates } from '../../../api/hooks/useAcademic';
+import { useTeachingScheduleTemplates, useAcademicYears } from '../../../api/hooks/useAcademic';
 import { academicService } from '../../../api/services/academicService';
 import { ruleService } from '../../../api/services/ruleService';
 import { useQuery } from '@tanstack/react-query';
@@ -11,6 +11,7 @@ import {
     TableCellsIcon 
 } from '@heroicons/react/24/outline';
 import { FileIcon, TableIcon } from '../../../components/atoms/Icons'; 
+import CustomSelect from '../../../components/molecules/CustomSelect';
 import { showSuccess, showError, showLoading } from '../../../utils/toast';
 import { format } from 'date-fns';
 import ScheduleMatrix from '../../Academic/TeachingScheduleTemplates/ScheduleMatrix';
@@ -24,19 +25,47 @@ type ScheduleMatrixRule = import('../../../api/types/rules').ScheduleRule;
 
 const StudentWeeklySchedule = () => {
     const { user } = useAuthStore();
+    const isTeacher = user?.roles?.some(r => ['guru', 'teacher'].includes(r.name.toLowerCase())) || user?.userTypes?.some(t => ['guru', 'teacher'].includes(t.toLowerCase()));
+    const isStudent = !isTeacher; // Assuming if not teacher, treat as student logic for schedule
     
-    // User's active class ID should be in their profile. 
-    // Types might be tricky, checking flexible access
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     // User's active class ID should be in their profile. 
     // Types might be tricky, checking flexible access
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const userClassId = user?.activeClass?.id || (user?.profile as any)?.activeClass?.id || (user as any)?.activeClass?.id || (user?.profile as any)?.class?.id || (user as any)?.class_id;
     
-    // 1. Fetch Templates
-    const { data: weeklyScheduleResponse, isLoading: isLoadingWeekly } = useTeachingScheduleTemplates({
-        classId: userClassId,
-        limit: 100 // Ensure we get all sessions
-    });
+    // 1. Fetch Academic Years & state
+    const [selectedAcademicYearId, setSelectedAcademicYearId] = useState<string>('');
+    const { data: academicYearsResponse } = useAcademicYears({ limit: 100 });
+    const academicYears = useMemo(() => academicYearsResponse?.data || [], [academicYearsResponse]);
+
+    useEffect(() => {
+        if (academicYears.length > 0 && !selectedAcademicYearId) {
+            const activeYear = academicYears.find(y => y.isActive);
+            if (activeYear) {
+                setSelectedAcademicYearId(activeYear.id.toString());
+            } else {
+                setSelectedAcademicYearId(academicYears[0].id.toString());
+            }
+        }
+    }, [academicYears, selectedAcademicYearId]);
+
+    // 2. Fetch Templates
+    const fetchParams: any = { isActive: true, limit: 100 };
+    if (selectedAcademicYearId) fetchParams.academicYearId = selectedAcademicYearId;
+    if (isTeacher) {
+        fetchParams.defaultTeacherId = user.public_id || user.id;
+    } else {
+        fetchParams.classId = userClassId;
+    }
+
+    const { data: weeklyScheduleResponse, isLoading: isLoadingWeekly } = useTeachingScheduleTemplates(fetchParams);
     const weeklyTemplates = useMemo(() => weeklyScheduleResponse?.data || [], [weeklyScheduleResponse]);
 
     // 2. Fetch Rules
@@ -75,39 +104,58 @@ const StudentWeeklySchedule = () => {
     // 3. Fetch Policy (Minutes per Unit)
     const { data: policyData } = useQuery({
         queryKey: ['academic', 'teaching-unit-policies', 'active'],
-        queryFn: () => academicService.getActiveTeachingUnitPolicy(),
+        queryFn: async () => {
+            try {
+                return await academicService.getActiveTeachingUnitPolicy();
+            } catch (error: any) {
+                if (error?.response?.status === 404 || error?.status === 404 || error?.response?.data?.statusCode === 404) {
+                    return null; // Graceful fallback if no active policy is set
+                }
+                throw error;
+            }
+        },
     });
     const minutesPerUnit = policyData?.data?.minutesPerUnit || 45;
 
     // Export Handlers
     const handleExport = async (type: 'pdf' | 'excel') => {
-        if (!userClassId) {
-            showError("No class assigned to download schedule for.");
+        if (!userClassId && !isTeacher) {
+            showError("Tidak ada jadwal yang ditetapkan untuk diunduh.");
             return;
         }
         
-        const toastId = showLoading(`Generating ${type.toUpperCase()}...`);
+        const toastId = showLoading(`Membuat ${type.toUpperCase()}...`);
         try {
             let blob;
             let filename;
             
-            if (type === 'pdf') {
-                blob = await academicService.printClassSchedule(userClassId);
-                filename = `My_Schedule_${user?.name}_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+            if (isTeacher) {
+                if (type === 'pdf') {
+                    blob = await academicService.printTeacherSchedule(user?.public_id || user?.id || "");
+                    filename = `Teacher_Schedule_${user?.name}_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+                } else {
+                    blob = await academicService.exportExcelTeacherSchedule(user?.public_id || user?.id || "");
+                    filename = `Teacher_Schedule_${user?.name}_${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
+                }
             } else {
-                blob = await academicService.exportExcelClassSchedule(userClassId);
-                filename = `My_Schedule_${user?.name}_${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
+                if (type === 'pdf') {
+                    blob = await academicService.printClassSchedule(userClassId);
+                    filename = `My_Schedule_${user?.name}_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+                } else {
+                    blob = await academicService.exportExcelClassSchedule(userClassId);
+                    filename = `My_Schedule_${user?.name}_${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
+                }
             }
             
             if (blob) {
                 saveAs(blob, filename);
                 toast.dismiss(toastId);
-                showSuccess("Download started!");
+                showSuccess("Unduhan dimulai!");
             }
         } catch (error) {
             console.error(error);
             toast.dismiss(toastId);
-            showError("Failed to download schedule.");
+            showError("Gagal mengunduh jadwal.");
         }
     };
 
@@ -116,6 +164,7 @@ const StudentWeeklySchedule = () => {
         queryKey: ['academic', 'class-subjects', userClassId],
         queryFn: () => userClassId ? academicService.getClassSubjects({
             classId: userClassId,
+            academicYearId: selectedAcademicYearId || undefined,
             limit: 100,
             isActive: true
         }) : null,
@@ -138,84 +187,111 @@ const StudentWeeklySchedule = () => {
     }, 0);
     const percent = totalTarget > 0 ? (totalScheduled / totalTarget) * 100 : 0;
 
+    const allAvailableDays = useMemo(() => [
+        { label: "Senin", value: "MONDAY" },
+        { label: "Selasa", value: "TUESDAY" },
+        { label: "Rabu", value: "WEDNESDAY" },
+        { label: "Kamis", value: "THURSDAY" },
+        { label: "Jumat", value: "FRIDAY" },
+        { label: "Sabtu", value: "SATURDAY" },
+        { label: "Minggu", value: "SUNDAY" },
+    ], []);
+
+    const activeAvailableDays = useMemo(() => {
+        if (!isMobile || !weeklyTemplates) return allAvailableDays;
+        const activeDays = new Set(weeklyTemplates.map(t => t.dayOfWeek));
+        const filtered = allAvailableDays.filter(d => activeDays.has(d.value));
+        return filtered.length > 0 ? filtered : allAvailableDays;
+    }, [isMobile, weeklyTemplates, allAvailableDays]);
+
     return (
         <DndProvider backend={HTML5Backend}>
-            <PageMeta title="Weekly Schedule | Student" description="View your weekly class schedule." />
-            <PageBreadcrumb pageTitle="Weekly Schedule" />
+            <div className="hidden md:block">
+                <PageMeta title="Jadwal Mingguan" description="Lihat jadwal kelas mingguan Anda." />
+                <PageBreadcrumb pageTitle="Jadwal Mingguan" />
+            </div>
 
-            <div className="relative flex flex-col h-[calc(100vh-220px)] min-h-[600px] max-w-7xl mx-auto pb-20 mt-6">
+            <div className="relative flex flex-col md:h-[calc(100vh-250px)] md:min-h-[600px] max-w-7xl -m-4 md:m-0 md:mx-auto md:pb-20 pb-24">
                  {/* Main Content Area */}
                 <div className="flex-1 w-full relative min-w-0">
-                     <div className="space-y-6 w-full h-full flex flex-col">
+                     <div className="md:space-y-6 w-full h-full flex flex-col">
                         {/* Header Panel */}
-                        <div className="bg-white dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-2xl overflow-hidden shadow-sm flex flex-col min-w-0 w-full max-w-full flex-1">
+                        <div className="bg-white dark:bg-white/[0.02] md:border border-gray-100 dark:border-white/5 md:rounded-2xl md:shadow-sm flex flex-col min-w-0 w-full max-w-full flex-1 min-h-[calc(100vh-80px)] md:min-h-0">
                              {/* Header Section */}
-                            <div className="p-6 pb-6 relative border-b border-gray-100 dark:border-white/5">
+                            <div className="hidden md:block p-6 pb-6 relative border-b border-gray-100 dark:border-white/5">
                                  <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
                                      <div>
-                                         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Class Schedule</h1>
+                                         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Jadwal Kelas</h1>
                                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                                            {user?.activeClass?.name || "Your Class Schedule"}
+                                            {user?.activeClass?.name || "Jadwal Kelas Anda"}
                                          </p>
                                      </div>
-
-                                     {/* Action Buttons */}
-                                     {userClassId && (
-                                        <div className="flex items-center gap-2">
-                                             <button
-                                                onClick={() => handleExport('pdf')}
-                                                className="flex items-center gap-2 px-4 h-[42px] bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm"
-                                             >
-                                                <FileIcon className="size-3.5" />
-                                                <span>PDF</span>
-                                             </button>
-                                             
-                                             <button
-                                                onClick={() => handleExport('excel')}
-                                                className="flex items-center gap-2 px-4 h-[42px] bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm"
-                                             >
-                                                <TableIcon className="size-3.5" />
-                                                <span>Excel</span>
-                                             </button>
-                                        </div>
-                                    )}
                                  </div>
+                            </div>
+
+                            {/* STICKY TABS */}
+                            <div className="sticky top-0 z-40 bg-white/90 dark:bg-[#0B0B0F]/90 backdrop-blur-md border-b border-gray-200 dark:border-white/10 px-4 md:px-6 pt-2">
+                                <div className="flex items-center gap-8 overflow-x-auto no-scrollbar relative">
+                                     {academicYears.map(year => {
+                                         const isActive = selectedAcademicYearId === year.id.toString();
+                                         return (
+                                             <button
+                                                 key={year.id}
+                                                 onClick={() => setSelectedAcademicYearId(year.id.toString())}
+                                                 className={`relative whitespace-nowrap pb-3 text-sm font-bold transition-colors ${
+                                                     isActive
+                                                     ? "text-brand-600 dark:text-brand-400"
+                                                     : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                                                 }`}
+                                             >
+                                                 {year.code || year.name}
+                                                 {isActive && (
+                                                     <motion.div
+                                                         layoutId="activeTabUnderline"
+                                                         className="absolute left-0 right-0 bottom-0 h-0.5 bg-brand-500 rounded-t-full"
+                                                         transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                                     />
+                                                 )}
+                                             </button>
+                                         );
+                                     })}
+                                </div>
                             </div>
 
                             {/* Content Section */}
                             <div className="flex-1 bg-white dark:bg-transparent min-w-0 overflow-hidden flex flex-col">
-                                 <div className="p-6 flex-1 w-full flex flex-col overflow-hidden">
+                                 <div className="md:p-6 p-0 flex-1 w-full flex flex-col overflow-hidden">
                                       
                                       {/* Matrix Container */}
-                                      <div className="border border-gray-100 dark:border-white/5 rounded-xl overflow-hidden w-full max-w-full flex flex-col min-w-0 flex-1">
+                                      <div className="md:border border-gray-100 dark:border-white/5 md:rounded-xl overflow-hidden w-full max-w-full flex flex-col min-w-0 flex-1">
                                           
                                           {/* Summary Header */}
-                                          <div className="px-6 py-4 bg-gray-50/50 dark:bg-white/[0.02] border-b border-gray-100 dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-0">
+                                          <div className="px-4 md:px-6 py-4 bg-white md:bg-gray-50/50 dark:bg-white/[0.02] border-b border-gray-100 dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                                <div className="flex items-center gap-4">
-                                                   <div className="size-10 rounded-xl bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                                                   <div className="size-10 rounded-xl bg-brand-50 dark:bg-brand-500/10 flex items-center justify-center text-brand-600 dark:text-brand-400">
                                                        {/* Using TableCellsIcon as generic icon for now */}
                                                        <TableCellsIcon className="size-5" />
                                                    </div>
                                                    <div>
-                                                       <h3 className="font-bold text-gray-900 dark:text-white">Schedule Summary</h3>
-                                                       <p className="text-xs text-gray-500">Total Progress for all Subjects</p>
+                                                       <h3 className="font-bold text-gray-900 dark:text-white">Ringkasan Jadwal</h3>
+                                                       <p className="text-xs text-gray-500">Total Progres untuk semua Mata Pelajaran</p>
                                                    </div>
                                                </div>
                                                
-                                               <div className="flex items-center gap-4 w-full sm:w-auto min-w-0 sm:min-w-[200px]">
-                                                   <div className="flex-1 flex flex-col gap-1.5">
-                                                        <div className="flex justify-between text-xs font-medium">
-                                                            <span className="text-gray-500">Total Scheduled</span>
-                                                            <span className={
-                                                                totalScheduled > totalTarget ? "text-red-600" : totalScheduled === totalTarget ? "text-green-600" : "text-brand-600"
-                                                            }>
-                                                                {parseFloat(totalScheduled.toFixed(1))} / {totalTarget} Units
-                                                            </span>
-                                                        </div>
+                                               <div className="flex items-center gap-4 w-full sm:w-auto min-w-0 sm:min-w-[300px]">
+                                                    <div className="flex-1 w-full flex flex-col gap-1.5 min-w-[150px]">
+                                                         <div className="flex justify-between items-center gap-3 text-xs font-medium">
+                                                             <span className="text-gray-500">Total Terjadwal</span>
+                                                             <span className={
+                                                                 totalScheduled > totalTarget ? "text-error-600" : totalScheduled === totalTarget && totalTarget > 0 ? "text-success-600" : "text-brand-600"
+                                                             }>
+                                                                 {parseFloat(totalScheduled.toFixed(1))} / {totalTarget} Unit
+                                                             </span>
+                                                         </div>
                                                         <div className="h-2 w-full bg-gray-100 dark:bg-white/10 rounded-full overflow-hidden">
                                                             <div 
                                                                 className={`h-full rounded-full transition-all duration-500 ${
-                                                                    totalScheduled > totalTarget ? "bg-red-500" : totalScheduled === totalTarget ? "bg-green-500" : "bg-brand-500"
+                                                                    totalScheduled > totalTarget ? "bg-error-500" : totalScheduled === totalTarget && totalTarget > 0 ? "bg-success-500" : "bg-brand-500"
                                                                 }`}
                                                                 style={{ width: `${Math.min(100, percent)}%` }}
                                                             />
@@ -228,19 +304,22 @@ const StudentWeeklySchedule = () => {
                                           <div className="bg-gray-50 dark:bg-[#0B0B0F] flex-1 min-w-0 grid grid-cols-1">
                                               <div className="w-full">
                                                   {isLoadingWeekly ? (
-                                                       <div className="text-center py-12">Loading weekly schedule...</div>
-                                                  ) : !userClassId ? (
-                                                       <div className="text-center py-12 text-red-500">You are not assigned to any class. Please contact administrator.</div>
+                                                       <div className="text-center py-12">Memuat jadwal mingguan...</div>
+                                                  ) : (isStudent && !userClassId) ? (
+                                                       <div className="text-center py-12 text-red-500">Anda belum dimasukkan ke kelas mana pun. Silakan hubungi administrator.</div>
+                                                  ) : (!weeklyTemplates || weeklyTemplates.length === 0) ? (
+                                                       <div className="text-center py-12 text-gray-500">Tidak ada jadwal yang ditetapkan untuk Anda.</div>
                                                   ) : (
                                                     <ScheduleMatrix 
                                                         templates={weeklyTemplates}
-                                                        viewMode="subject"
+                                                        viewMode={isTeacher ? "teacher" : "subject"}
+                                                        availableDays={activeAvailableDays}
                                                         onAddSession={() => {}}
                                                         onEditSession={() => {}}
                                                         onDeleteSession={() => {}}
                                                         onMoveSession={() => {}}
                                                         onDropSubject={() => {}}
-                                                        effectiveRules={effectiveRules}
+                                                        effectiveRules={isTeacher ? undefined : effectiveRules}
                                                         minutesPerUnit={minutesPerUnit}
                                                         readOnly={true}
                                                     />
@@ -254,6 +333,29 @@ const StudentWeeklySchedule = () => {
                      </div>
                 </div>
             </div>
+
+            {/* Floating Action Buttons */}
+            {(!isStudent || userClassId) && (
+                <div className="fixed bottom-24 right-4 md:bottom-8 md:right-8 flex flex-col gap-3 z-50">
+                     <button
+                        onClick={() => handleExport('pdf')}
+                        className="flex items-center justify-center size-12 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-lg transition-all hover:scale-105 active:scale-95 group"
+                        title="Export PDF"
+                     >
+                        <FileIcon className="size-5" />
+                        <span className="sr-only">PDF</span>
+                     </button>
+                     
+                     <button
+                        onClick={() => handleExport('excel')}
+                        className="flex items-center justify-center size-12 bg-green-600 hover:bg-green-700 text-white rounded-full shadow-lg transition-all hover:scale-105 active:scale-95 group"
+                        title="Export Excel"
+                     >
+                        <TableIcon className="size-5" />
+                        <span className="sr-only">Excel</span>
+                     </button>
+                </div>
+            )}
         </DndProvider>
     );
 };

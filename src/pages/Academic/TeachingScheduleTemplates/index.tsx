@@ -8,6 +8,7 @@ import React, {
 import {
   useTeachingScheduleTemplates,
   useClasses,
+  useAcademicYears,
 } from "../../../api/hooks/useAcademic";
 import { academicService } from "../../../api/services/academicService";
 import { profilesService } from "../../../api/services/profilesService";
@@ -55,16 +56,15 @@ import {
 
 interface DraggableItemProps {
   data: ClassSubject | TeacherSubject;
-  isSelected: boolean;
-  onSelect: (data: ClassSubject | TeacherSubject) => void;
 }
 
 const DraggableSubject: React.FC<
   DraggableItemProps & {
     unitUsage?: number;
     unitTotal?: number;
+    scheduledDays?: string[];
   }
-> = ({ data, isSelected, onSelect, unitUsage = 0, unitTotal = 0 }) => {
+> = ({ data, unitUsage = 0, unitTotal = 0, scheduledDays = [] }) => {
   const [{ isDragging }, drag] = useDrag(() => ({
     type: ItemTypes.SUBJECT,
     item: data,
@@ -112,10 +112,9 @@ const DraggableSubject: React.FC<
   return (
     <div
       ref={drag as unknown as React.LegacyRef<HTMLDivElement>}
-      onClick={() => onSelect(data)}
       className={`group relative overflow-hidden rounded-lg p-3 transition-all duration-200 cursor-grab active:cursor-grabbing hover:shadow-md ${
         isDragging ? "opacity-40 grayscale scale-95" : "opacity-100 scale-100"
-      } ${isSelected ? "ring-2 ring-brand-500 shadow-lg" : ""}`}
+      }`}
       style={{
         backgroundColor: bgColor,
         borderColor: borderColor,
@@ -228,6 +227,22 @@ const DraggableSubject: React.FC<
               </span>
             )}
         </div>
+
+        {/* Scheduled Days */}
+        {scheduledDays && scheduledDays.length > 0 && (
+          <div className="mt-1 flex flex-wrap gap-1">
+            {scheduledDays.map(day => (
+              <span 
+                key={day} 
+                className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-black/5 dark:bg-white/10" 
+                style={{ color: textColor }}
+                title={`Already scheduled on ${day}`}
+              >
+                {day.substring(0, 3)}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -521,6 +536,7 @@ const dayOptions = [
   { label: "Thursday", value: "THURSDAY" },
   { label: "Friday", value: "FRIDAY" },
   { label: "Saturday", value: "SATURDAY" },
+  { label: "Sunday", value: "SUNDAY" },
 ];
 
 const TeachingScheduleTemplates: React.FC = () => {
@@ -539,9 +555,59 @@ const TeachingScheduleTemplates: React.FC = () => {
     subLabel?: string;
   } | null>(null);
 
+  // Academic Year Filter
+  const { data: activeYearRes } = useAcademicYears({ isActive: true });
+  const [selectedAcademicYear, setSelectedAcademicYear] = useState<{
+    label: string;
+    value: string;
+    subLabel?: string;
+  } | null>(null);
+  const [yearOptions, setYearOptions] = useState<{ label: string; value: string; subLabel?: string }[]>([]);
+  const [isSearchingYears, setIsSearchingYears] = useState(false);
+
+  const hasSetInitialYearRef = useRef(false);
+
+  useEffect(() => {
+    if (activeYearRes?.data && activeYearRes.data.length > 0 && !hasSetInitialYearRef.current) {
+      const active = activeYearRes.data[0];
+      const opt = {
+        label: active.code,
+        value: String(active.id),
+      };
+      setSelectedAcademicYear(opt);
+      setYearOptions([opt]);
+      hasSetInitialYearRef.current = true;
+    }
+  }, [activeYearRes]);
+
+  const searchAcademicYears = useCallback(async (query: string) => {
+    setIsSearchingYears(true);
+    try {
+      const res = await academicService.getAcademicYears({
+        search: query,
+        limit: 20,
+      });
+      if (res?.data) {
+        setYearOptions(
+          res.data.map((y: any) => ({
+            label: y.code,
+            value: String(y.id),
+          })),
+        );
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSearchingYears(false);
+    }
+  }, []);
+
   // Class Filter (for effective rules visualization and sidebar filtering in Teacher Mode)
   const [selectedSidebarClassFilter, setSelectedSidebarClassFilter] =
     useState<string>("");
+
+  const [selectedViewClassLabel, setSelectedViewClassLabel] = useState<string>("");
+  const [classSearchTerm, setClassSearchTerm] = useState("");
 
   // Handle URL Params (e.g.redirect from Personal Schedule)
   const initialLoadRef = useRef(false);
@@ -676,7 +742,10 @@ const TeachingScheduleTemplates: React.FC = () => {
   const { confirm, confirmState } = useConfirm();
 
   // Fetch Classes for Filter
-  const { data: classesData } = useClasses({ limit: 100 });
+  const { data: classesData } = useClasses({ 
+    limit: 100,
+    academicYearId: selectedAcademicYear ? Number(selectedAcademicYear.value) : undefined
+  });
   const classOptions: { label: string; value: string }[] = useMemo(
     () =>
       classesData?.data.map((c: Class) => ({
@@ -685,6 +754,16 @@ const TeachingScheduleTemplates: React.FC = () => {
       })) || [],
     [classesData],
   );
+
+  const filteredClassOptions = useMemo(() => {
+    if (!classSearchTerm) return classOptions;
+    const lower = classSearchTerm.toLowerCase();
+    return classOptions.filter((o) => o.label.toLowerCase().includes(lower));
+  }, [classOptions, classSearchTerm]);
+
+  const searchClasses = useCallback((term: string) => {
+    setClassSearchTerm(term);
+  }, []);
 
   // Find selected class info (grade, etc.)
   const selectedClassInfo = useMemo(() => {
@@ -709,6 +788,7 @@ const TeachingScheduleTemplates: React.FC = () => {
               ? selectedViewClass
               : undefined,
           search: subjectSearch || undefined,
+          academicYearId: selectedAcademicYear ? selectedAcademicYear.value : undefined,
           limit: 100,
         }),
       enabled: viewMode === "subject",
@@ -730,6 +810,7 @@ const TeachingScheduleTemplates: React.FC = () => {
     classId:
       viewMode === "subject" ? selectedViewClass || undefined : undefined,
     teacherId: viewMode === "teacher" ? selectedTeacher?.value : undefined,
+    academicYearId: selectedAcademicYear ? selectedAcademicYear.value : undefined,
     limit: 100,
   });
 
@@ -921,7 +1002,7 @@ const TeachingScheduleTemplates: React.FC = () => {
         setAvailableClassSubjects(resp.data);
         setClassSubjectOptions(
           resp.data.map((cs) => ({
-            label: `${cs.class?.name} - ${cs.academicYear?.name}`,
+            label: `${cs.class?.name || "Unknown"} - ${cs.subject?.name || "Unknown"}`,
             value: String(cs.id),
           })),
         );
@@ -1022,18 +1103,23 @@ const TeachingScheduleTemplates: React.FC = () => {
     }));
   };
 
-  // Fetch Teacher Subjects (for sidebar)
-  const { data: teacherSubjectsResponse, isLoading: isLoadingTeacherSubjects } =
+  // Fetch Teaching Assignments (for sidebar)
+  const { data: teachingAssignmentsResponse, isLoading: isLoadingTeacherSubjects } =
     useQuery({
-      queryKey: ["academic", "teacher-subjects", selectedTeacher?.value],
+      queryKey: ["academic", "teaching-assignments", selectedTeacher?.value],
       queryFn: () =>
-        academicService.getTeacherSubjects({
+        academicService.getTeachingAssignments({
           teacherId: selectedTeacher?.value,
           limit: 100,
           isActive: true,
         }),
       enabled: !!selectedTeacher?.value && viewMode === "teacher",
     });
+
+  const teachingAssignments = useMemo(
+    () => teachingAssignmentsResponse?.data || [],
+    [teachingAssignmentsResponse],
+  );
 
   // Fetch Teacher Workload (for Progress Bar)
   const { data: teacherWorkloadResponse } = useQuery({
@@ -1055,11 +1141,6 @@ const TeachingScheduleTemplates: React.FC = () => {
   const teacherWorkload = useMemo(
     () => teacherWorkloadResponse?.data?.[0],
     [teacherWorkloadResponse],
-  );
-
-  const teacherSubjects = useMemo(
-    () => teacherSubjectsResponse?.data || [],
-    [teacherSubjectsResponse],
   );
 
   const searchTeachers = useCallback(
@@ -1236,6 +1317,9 @@ const TeachingScheduleTemplates: React.FC = () => {
         showSuccess("Session created successfully");
       }
       setIsModalOpen(false);
+      if (viewMode === "teacher") {
+        setSelectedClassSubject(null);
+      }
     } catch (error) {
       console.error(error);
       showError("Failed to save schedule");
@@ -1363,12 +1447,9 @@ const TeachingScheduleTemplates: React.FC = () => {
                             <DraggableSubject
                               key={`class-subject-${subject.id}`}
                               data={subject}
-                              isSelected={
-                                selectedClassSubject?.id === subject.id
-                              }
-                              onSelect={() => setSelectedClassSubject(subject)}
                               unitUsage={subjectUsageMap[subject.id] || 0}
                               unitTotal={subject.plannedUnitsPerWeek || 0}
+                              scheduledDays={Array.from(new Set(templates.filter(t => String(t.classSubjectId) === String(subject.id)).map(t => t.dayOfWeek)))}
                             />
                           ))
                       ) : (
@@ -1385,31 +1466,39 @@ const TeachingScheduleTemplates: React.FC = () => {
                         </div>
                       )
                     ) : // Teacher Mode
-                    teacherSubjects.length > 0 ? (
-                      teacherSubjects
-                        .filter((s) =>
-                          s.subject?.name
-                            .toLowerCase()
+                    teachingAssignments.length > 0 ? (
+                      teachingAssignments
+                        .filter((ta) =>
+                          ta.classSubject?.subject?.name
+                            ?.toLowerCase()
                             .includes(subjectSearch.toLowerCase()),
                         )
                         .filter(
-                          (s) =>
+                          (ta) =>
                             !selectedSidebarClassFilter ||
-                            classSubjects.find(
-                              (cs) =>
-                                cs.subjectId === s.subjectId &&
-                                String(cs.classId) ===
-                                  selectedSidebarClassFilter,
-                            ),
+                            String(ta.classSubject?.classId) ===
+                              selectedSidebarClassFilter,
                         )
-                        .map((subject) => (
-                          <DraggableSubject
-                            key={`teacher-subject-${subject.id}`}
-                            data={subject}
-                            isSelected={droppedSubject?.id === subject.id}
-                            onSelect={() => setDroppedSubject(subject)}
-                          />
-                        ))
+                        .map((ta) => {
+                          const baseSubject = ta.classSubject;
+                          if (!baseSubject) return null;
+                          
+                          // Inject the teaching assignment so DraggableSubject can render the teacher
+                          const subject = {
+                            ...baseSubject,
+                            teachingAssignments: baseSubject.teachingAssignments || [ta],
+                          } as ClassSubject;
+
+                          return (
+                            <DraggableSubject
+                              key={`teacher-assignment-${ta.id}`}
+                              data={subject}
+                              unitUsage={subjectUsageMap[subject.id] || 0}
+                              unitTotal={subject.plannedUnitsPerWeek || 0}
+                              scheduledDays={Array.from(new Set(templates.filter(t => String(t.classSubjectId) === String(subject.id)).map(t => t.dayOfWeek)))}
+                            />
+                          );
+                        })
                     ) : (
                       <div className="flex flex-col items-center justify-center py-10 text-center px-4">
                         <p className="text-sm text-gray-500">
@@ -1496,21 +1585,55 @@ const TeachingScheduleTemplates: React.FC = () => {
                 <div className="flex-1 bg-white dark:bg-transparent min-w-0 overflow-hidden flex flex-col">
                   <div className="p-6 flex-1 w-full flex flex-col overflow-hidden">
                     {/* Context Selector */}
-                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-6">
+                    <div className="flex flex-col md:flex-row md:items-end gap-6 mb-6">
+                      <div className="w-full md:w-48 space-y-1">
+                        <Label>Academic Year</Label>
+                        <div className="relative z-[60]">
+                          <SearchableAsyncSelect
+                            placeholder="Select Academic Year..."
+                            onSearch={searchAcademicYears}
+                            options={yearOptions}
+                            isLoading={isSearchingYears}
+                            value={selectedAcademicYear?.value || ""}
+                            initialLabel={selectedAcademicYear?.label}
+                            onChange={(_v, _l, opt) =>
+                              setSelectedAcademicYear(
+                                opt as {
+                                  label: string;
+                                  value: string;
+                                  subLabel?: string;
+                                } | null,
+                              )
+                            }
+                          />
+                        </div>
+                      </div>
+
                       <div className="flex-1 max-w-sm">
                         {viewMode === "subject" ? (
-                          <CustomSelect
-                            placeholder="Select Class..."
-                            options={classOptions}
-                            value={selectedViewClass}
-                            onChange={(v) => setSelectedViewClass(String(v))}
-                            label="Target Class"
-                          />
+                          <div className="space-y-1">
+                            <Label>Target Class</Label>
+                            <div className="relative z-50">
+                              <SearchableAsyncSelect
+                                key="class-select"
+                                placeholder="Select Class..."
+                                onSearch={searchClasses}
+                                options={filteredClassOptions}
+                                value={selectedViewClass}
+                                initialLabel={selectedViewClassLabel}
+                                onChange={(v, l) => {
+                                  setSelectedViewClass(String(v));
+                                  setSelectedViewClassLabel(l);
+                                }}
+                              />
+                            </div>
+                          </div>
                         ) : (
                           <div className="space-y-1">
                             <Label>Target Teacher</Label>
                             <div className="relative z-50">
                               <SearchableAsyncSelect
+                                key="teacher-select"
                                 placeholder="Select Teacher..."
                                 onSearch={searchTeachers}
                                 options={teacherOptions}
@@ -1971,7 +2094,7 @@ const TeachingScheduleTemplates: React.FC = () => {
                               loading={isLoadingTemplates}
                               viewMode={viewMode}
                               availableDays={availableDayOptions}
-                              effectiveRules={effectiveRules || undefined}
+                              effectiveRules={viewMode === "teacher" ? undefined : (effectiveRules || undefined)}
                               onAddSession={(day) => handleOpenModal(day)}
                               onDropSubject={(subject, day) => {
                                 if ("class" in subject) {
@@ -1987,6 +2110,7 @@ const TeachingScheduleTemplates: React.FC = () => {
                                     );
                                   } else {
                                     setDroppedSubject(null);
+                                    setSelectedClassSubject(subject as ClassSubject);
                                     setFormData({
                                       classSubjectId: String(subject.id),
                                       defaultTeacherId:
@@ -2005,7 +2129,7 @@ const TeachingScheduleTemplates: React.FC = () => {
                                   setDroppedSubject(ts);
                                   setSelectedTemplate(null);
                                   setFormData({
-                                    classSubjectId: "",
+                                    classSubjectId: String(ts.classSubjectId || ""),
                                     defaultTeacherId:
                                       ts.teacher?.public_id ||
                                       selectedTeacher?.value ||
@@ -2038,6 +2162,27 @@ const TeachingScheduleTemplates: React.FC = () => {
                                         {
                                           label: teacherName,
                                           value: teacherId,
+                                        },
+                                      ];
+                                    }
+                                    return prev;
+                                  });
+                                }
+                                if (session.classSubject) {
+                                  setClassSubjectOptions((prev) => {
+                                    const csId = String(
+                                      session.classSubject?.id ||
+                                        session.classSubjectId,
+                                    );
+                                    const csLabel = `${session.classSubject?.class?.name || "Unknown"} - ${session.classSubject?.subject?.name || "Unknown"}`;
+                                    if (
+                                      !prev.some((o) => o.value === csId)
+                                    ) {
+                                      return [
+                                        ...prev,
+                                        {
+                                          label: csLabel,
+                                          value: csId,
                                         },
                                       ];
                                     }
@@ -2101,14 +2246,24 @@ const TeachingScheduleTemplates: React.FC = () => {
 
       <Modal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          if (viewMode === "teacher") {
+            setSelectedClassSubject(null);
+          }
+        }}
         className="max-w-xl"
         title={selectedTemplate ? "Update Session" : "Add Session"}
         description={`Configure schedule for ${selectedClassSubject?.subject?.name} on ${formData.dayOfWeek}`}
         footer={
           <div className="flex justify-end gap-3 w-full">
             <button
-              onClick={() => setIsModalOpen(false)}
+              onClick={() => {
+                setIsModalOpen(false);
+                if (viewMode === "teacher") {
+                  setSelectedClassSubject(null);
+                }
+              }}
               className="rounded-xl px-4 py-2 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.05]"
             >
               Cancel
@@ -2178,7 +2333,7 @@ const TeachingScheduleTemplates: React.FC = () => {
               </div>
             </div>
 
-            {(droppedSubject || !selectedClassSubject) && (
+            {(!droppedSubject && !selectedClassSubject) && (
               <div className="mt-4 pt-4 border-t border-gray-100 dark:border-white/5">
                 <SearchableAsyncSelect
                   label="Target Class/Subject"
@@ -2193,27 +2348,74 @@ const TeachingScheduleTemplates: React.FC = () => {
                 />
               </div>
             )}
+            
+            {/* Restricted Day Warning */}
+            {(() => {
+              const rule = effectiveRules?.[formData.dayOfWeek] || effectiveRules?.[formData.dayOfWeek.toUpperCase()];
+              if (rule && !rule.isActive) {
+                return (
+                  <div className="mt-4 px-4 py-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl flex items-start gap-2.5 relative z-10 animate-fade-in">
+                    <span className="text-lg leading-none">⚠️</span>
+                    <div>
+                      <h5 className="text-[11px] font-bold text-red-700 dark:text-red-400 uppercase tracking-wider">Policy Restriction</h5>
+                      <p className="text-[11px] text-red-600 dark:text-red-400/90 mt-0.5 leading-snug">
+                        <strong>{formData.dayOfWeek}</strong> is marked as a <strong>Day Off</strong> in the schedule policy for this class. You cannot schedule sessions on this day.
+                      </p>
+                    </div>
+                  </div>
+                );
+              }
+              return null;
+            })()}
           </div>
 
           <div className="grid grid-cols-2 gap-5">
-            <CustomSelect
-              label="Schedule Day"
-              value={formData.dayOfWeek}
-              onChange={(val) => handleDayChange(String(val))}
-              options={availableDayOptions}
-            />
+            {/* Locked Schedule Day Badge */}
+            <div className="space-y-1.5">
+              <Label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-gray-500">
+                Schedule Day
+                <div className="size-1 rounded-full bg-brand-500" />
+              </Label>
+              <div className="flex items-center gap-2 h-12 px-4 rounded-xl border border-brand-100 bg-brand-50/50 dark:border-brand-500/20 dark:bg-brand-500/5 transition-all">
+                <span className="text-sm font-bold text-brand-700 dark:text-brand-400 capitalize">
+                  {formData.dayOfWeek.toLowerCase()}
+                </span>
+                <span className="ml-auto text-[10px] font-bold uppercase px-2 py-0.5 bg-brand-100 text-brand-700 rounded dark:bg-brand-500/20 dark:text-brand-400 tracking-wider">
+                  Locked
+                </span>
+              </div>
+            </div>
 
-            <SearchableAsyncSelect
-              label="Assigned Teacher"
-              placeholder="Select teacher..."
-              value={formData.defaultTeacherId}
-              onChange={(val) =>
-                setFormData({ ...formData, defaultTeacherId: String(val) })
-              }
-              onSearch={searchTeachers}
-              options={teacherOptions}
-              isLoading={isSearchingTeachers}
-            />
+            {/* Locked Teacher Badge (Teacher Mode) OR Restricted Teacher Select (Subject Mode) */}
+            {viewMode === "teacher" ? (
+              <div className="space-y-1.5">
+                <Label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-gray-500">
+                  Assigned Teacher
+                  <div className="size-1 rounded-full bg-brand-500" />
+                </Label>
+                <div className="flex items-center gap-2 h-12 px-4 rounded-xl border border-brand-100 bg-brand-50/50 dark:border-brand-500/20 dark:bg-brand-500/5 transition-all overflow-hidden">
+                  <UserIcon className="size-4 text-brand-500 shrink-0" />
+                  <span className="text-sm font-bold text-brand-700 dark:text-brand-400 truncate">
+                    {selectedTeacher?.label || "Current Teacher"}
+                  </span>
+                  <span className="ml-auto shrink-0 text-[10px] font-bold uppercase px-2 py-0.5 bg-brand-100 text-brand-700 rounded dark:bg-brand-500/20 dark:text-brand-400 tracking-wider">
+                    Locked
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <SearchableAsyncSelect
+                label="Assigned Teacher"
+                placeholder="Select teacher..."
+                value={formData.defaultTeacherId}
+                onChange={(val) =>
+                  setFormData({ ...formData, defaultTeacherId: String(val) })
+                }
+                onSearch={searchTeachers}
+                options={teacherOptions}
+                isLoading={isSearchingTeachers}
+              />
+            )}
           </div>
 
           <AvailabilityTimeline

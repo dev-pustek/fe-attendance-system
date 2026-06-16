@@ -8,7 +8,7 @@ import { useAuthStore } from "../../../store/authStore";
 import { showSuccess } from "../../../utils/toast";
 import { User, UserTypeAssignment } from "../../../api/types/user";
 
-export default function UserDropdown() {
+export default function UserDropdown({ isMobilePremium }: { isMobilePremium?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const { data: userResponse } = useMe();
   const logout = useAuthStore((state) => state.logout);
@@ -52,37 +52,51 @@ export default function UserDropdown() {
   return (
     <div className="relative">
       <button
-        onClick={toggleDropdown}
-        className="flex items-center text-gray-700 dropdown-toggle dark:text-gray-400"
+        onClick={isMobilePremium ? () => navigate("/profile") : toggleDropdown}
+        onMouseDown={(e) => e.stopPropagation()}
+        className={`flex items-center text-gray-700 dropdown-toggle dark:text-gray-400 ${isMobilePremium ? 'hover:opacity-80 transition-opacity' : ''}`}
       >
-        <span className="mr-3 overflow-hidden rounded-full h-11 w-11 flex items-center justify-center bg-gray-100 dark:bg-gray-800 text-gray-400">
-          <UserCircleIcon className="size-8" />
-        </span>
+        {isMobilePremium ? (
+          <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white/30 bg-brand-400 shadow-lg">
+            <img 
+              src={user?.photo || "https://i.pravatar.cc/150"} 
+              alt="Profile" 
+              className="w-full h-full object-cover"
+            />
+          </div>
+        ) : (
+          <span className="mr-0 sm:mr-3 overflow-hidden rounded-full h-11 w-11 flex items-center justify-center bg-gray-100 dark:bg-gray-800 text-gray-400">
+            <UserCircleIcon className="size-8" />
+          </span>
+        )}
 
-        <span className="block mr-1 font-medium text-theme-sm">
+        <span className="hidden sm:block mr-1 font-medium text-theme-sm">
           {user?.name || "Loading..."}
         </span>
-        <svg
-          className={`stroke-gray-500 dark:stroke-gray-400 transition-transform duration-200 ${
-            isOpen ? "rotate-180" : ""
-          }`}
-          width="18"
-          height="20"
-          viewBox="0 0 18 20"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M4.3125 8.65625L9 13.3437L13.6875 8.65625"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+        {!isMobilePremium && (
+          <svg
+            className={`hidden sm:block stroke-gray-500 dark:stroke-gray-400 transition-transform duration-200 ${
+              isOpen ? "rotate-180" : ""
+            }`}
+            width="18"
+            height="20"
+            viewBox="0 0 18 20"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M4.3125 8.65625L9 13.3437L13.6875 8.65625"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        )}
       </button>
 
-      <Dropdown
+      {!isMobilePremium && (
+        <Dropdown
         isOpen={isOpen}
         onClose={closeDropdown}
         className="absolute right-0 mt-[17px] flex w-[260px] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark"
@@ -207,7 +221,8 @@ export default function UserDropdown() {
           </svg>
           Sign out
         </div>
-      </Dropdown>
+        </Dropdown>
+      )}
     </div>
   );
 }

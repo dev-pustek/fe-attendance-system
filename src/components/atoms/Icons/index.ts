@@ -58,8 +58,12 @@ import { ReactComponent as SearchIcon } from "./search.svg?react";
 import { ReactComponent as FilterIcon } from "./filter.svg?react";
 import { ReactComponent as SortIcon } from "./sort.svg?react";
 import { ReactComponent as MapPinIcon } from "./map-pin.svg?react";
+import { ReactComponent as HomeIcon } from "./home.svg?react";
+import { ReactComponent as QrScanIcon } from "./qr-scan.svg?react";
 
 export {
+  HomeIcon,
+  QrScanIcon,
   ErrorHexaIcon,
   AlertHexaIcon,
   MoreDotIcon,

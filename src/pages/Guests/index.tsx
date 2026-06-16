@@ -312,7 +312,7 @@ const Guests: React.FC = () => {
 
   return (
     <>
-      <PageMeta title="Guest Visitors | Visia" description="Manage visitor list." />
+      <PageMeta title="Guest Visitors | SIAPUS" description="Manage visitor list." />
       <PageBreadcrumb pageTitle="Guest Visitors" />
 
       <div className="space-y-6">

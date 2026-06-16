@@ -171,12 +171,12 @@ const Step1_ClassSelector: React.FC = () => {
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
       <div className="lg:col-span-2">
-        <ComponentCard title="Discovery Tree" desc="Browse and select a class to configure its curriculum">
+        <ComponentCard title="Pohon Struktur" desc="Telusuri dan pilih kelas untuk mengonfigurasi kurikulumnya">
             <div className="mb-6 relative">
                 <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
                 <input 
                     type="text"
-                    placeholder="Search classes, majors, or program studies..."
+                    placeholder="Cari kelas, jurusan, atau program studi..."
                     className="w-full pl-11 pr-4 py-3 rounded-2xl border border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/5 text-sm focus:ring-2 focus:ring-brand-500/20 outline-none transition-all placeholder:text-gray-400"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
@@ -242,7 +242,7 @@ const Step1_ClassSelector: React.FC = () => {
                                                         >
                                                             <div className="size-1.5 rounded-full bg-gray-300 group-hover/major:bg-brand-400 transition-colors" />
                                                             <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover/major:text-brand-600 transition-colors">{major.name}</span>
-                                                            <span className="ml-auto text-[10px] text-gray-400 font-medium">{major.classes?.length || 0} classes</span>
+                                                            <span className="ml-auto text-[10px] text-gray-400 font-medium">{major.classes?.length || 0} kelas</span>
                                                         </button>
                                                         
                                                         {(expandedNodes.has(`mj-${major.id}`) || search) && (
@@ -250,7 +250,7 @@ const Step1_ClassSelector: React.FC = () => {
                                                                 {major.classes?.map((cls) => (
                                                                     <button
                                                                         key={cls.id}
-                                                                        onClick={() => setClass(cls.id, cls.name)}
+                                                                        onClick={() => setClass(cls.id, cls.name, major.id, level.id)}
                                                                         className={`relative group/card flex items-start gap-3 p-4 rounded-xl border transition-all text-left ${
                                                                             selectedClassId === cls.id 
                                                                             ? "border-brand-500 bg-brand-50 dark:bg-brand-500/10 shadow-md shadow-brand-500/10" 
@@ -270,7 +270,12 @@ const Step1_ClassSelector: React.FC = () => {
                                                                             }`}>
                                                                                 {cls.name}
                                                                             </p>
-                                                                            <p className="text-[10px] font-mono text-gray-400 mt-0.5">{cls.code}</p>
+                                                                            <div className="flex flex-col gap-0.5 mt-0.5">
+                                                                                <p className="text-[10px] font-mono text-gray-400">{cls.code}</p>
+                                                                                <p className="text-[10px] text-brand-600 dark:text-brand-400 font-medium mt-0.5">
+                                                                                    {cls.subjectsCount > 0 ? `${cls.subjectsCount} mata pelajaran terkonfigurasi` : "Belum ada mata pelajaran"}
+                                                                                </p>
+                                                                            </div>
                                                                         </div>
                                                                         {selectedClassId === cls.id && (
                                                                             <div className="absolute top-3 right-3 text-brand-600 animate-scale-in">
@@ -281,7 +286,7 @@ const Step1_ClassSelector: React.FC = () => {
                                                                 ))}
                                                                 {(!major.classes || major.classes.length === 0) && (
                                                                     <div className="col-span-full py-4 text-center text-xs text-gray-400 italic">
-                                                                        No active classes found in this major.
+                                                                        Tidak ada kelas aktif yang ditemukan di jurusan ini.
                                                                     </div>
                                                                 )}
                                                             </div>
@@ -302,10 +307,10 @@ const Step1_ClassSelector: React.FC = () => {
 
       <div className="lg:col-span-1">
           <div className="sticky top-24 space-y-6">
-              <ComponentCard title="Summary" desc="Selection Progress">
+              <ComponentCard title="Ringkasan" desc="Progres Pemilihan">
                   <div className="space-y-4">
                       <div className="p-4 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5">
-                          <p className="text-[10px] uppercase font-bold text-gray-400 tracking-widest mb-1">Target Class</p>
+                          <p className="text-[10px] uppercase font-bold text-gray-400 tracking-widest mb-1">Kelas Target</p>
                           {selectedClassId ? (
                               <div className="flex items-center gap-3">
                                   <div className="size-10 rounded-lg bg-brand-100 dark:bg-brand-500/20 flex items-center justify-center text-brand-600">
@@ -315,7 +320,7 @@ const Step1_ClassSelector: React.FC = () => {
                                       <p className="text-sm font-bold text-brand-900 dark:text-white">
                                           {useCurriculumWizardStore.getState().selectedClassName}
                                       </p>
-                                      <p className="text-xs text-brand-600/70 dark:text-brand-400">Ready to configure</p>
+                                      <p className="text-xs text-brand-600/70 dark:text-brand-400">Siap dikonfigurasi</p>
                                   </div>
                               </div>
                           ) : (
@@ -338,7 +343,7 @@ const Step1_ClassSelector: React.FC = () => {
                             : "bg-gray-100 text-gray-400 dark:bg-white/5 cursor-not-allowed border border-transparent"
                         }`}
                       >
-                          <span>Continue</span>
+                          <span>Lanjutkan</span>
                           <ArrowRightIcon className={`size-5 transition-transform ${selectedClassId ? "group-hover:translate-x-1" : ""}`} />
                       </button>
                   </div>
@@ -352,9 +357,9 @@ const Step1_ClassSelector: React.FC = () => {
                       <DocsIcon className="size-5 text-white" />
                   </div>
                   
-                  <p className="text-lg font-bold mb-2 relative z-10">Pro Tip 💡</p>
+                  <p className="text-lg font-bold mb-2 relative z-10">Tips Pro 💡</p>
                   <p className="text-xs leading-relaxed opacity-90 relative z-10 font-medium">
-                      The hierarchy helps you find classes faster. You can assign the same curriculum to multiple classes later using the "Copy from Class" feature in the next step.
+                      Hierarki membantu Anda menemukan kelas lebih cepat. Anda dapat menetapkan kurikulum yang sama ke beberapa kelas nanti menggunakan fitur "Salin dari Kelas" pada langkah berikutnya.
                   </p>
               </div>
           </div>

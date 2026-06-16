@@ -23,6 +23,7 @@ import ConfirmDialog from "../../../components/molecules/ConfirmDialog";
 import { useConfirm } from "../../../hooks/useConfirm";
 import { showSuccess, showError } from "../../../utils/toast";
 import DataActionsMenu from "../../../components/molecules/DataActionsMenu";
+import TableActionMenu from "../../../components/molecules/TableActionMenu";
 import ImportModal from "../../../components/molecules/ImportModal";
 import Dropdown from "../../../components/molecules/Dropdown";
 import DropdownItem from "../../../components/atoms/DropdownItem";
@@ -210,20 +211,20 @@ const LeaveRequests: React.FC = () => {
     const handleDelete = async (id: string) => {
         const confirmed = await confirm({
             variant: "delete",
-            title: "Delete Leave Request",
-            message: "Are you sure you want to delete this leave request? This action cannot be undone."
+            title: "Hapus Pengajuan Cuti",
+            message: "Apakah Anda yakin ingin menghapus pengajuan cuti ini? Tindakan ini tidak dapat dibatalkan."
         });
         if (confirmed) {
             try {
                 await deleteMutation.mutateAsync(id);
-                showSuccess("Leave request deleted successfully");
+                showSuccess("Pengajuan cuti berhasil dihapus");
                 setSelectedIds(prev => {
                     const next = new Set(prev);
                     next.delete(id);
                     return next;
                 });
             } catch (error) {
-                showError(error, "Failed to delete request");
+                showError(error, "Gagal menghapus pengajuan");
             }
         }
     };
@@ -242,7 +243,7 @@ const LeaveRequests: React.FC = () => {
                 showSuccess(`Successfully deleted ${count} requests`);
                 setSelectedIds(new Set());
             } catch (error) {
-                showError(error, "Failed to delete some requests");
+                showError(error, "Gagal menghapus beberapa pengajuan");
             }
         }
     };
@@ -282,9 +283,9 @@ const LeaveRequests: React.FC = () => {
             a.click();
             a.remove();
             window.URL.revokeObjectURL(url);
-            showSuccess("Exported to Excel successfully");
+            showSuccess("Berhasil diekspor ke Excel");
         } catch (error) {
-            showError(error, "Failed to export Excel");
+            showError(error, "Gagal mengekspor Excel");
         } finally {
             setIsExporting(false);
         }
@@ -305,9 +306,9 @@ const LeaveRequests: React.FC = () => {
             a.click();
             a.remove();
             window.URL.revokeObjectURL(url);
-            showSuccess("Exported to PDF successfully");
+            showSuccess("Berhasil diekspor ke PDF");
         } catch (error) {
-            showError(error, "Failed to export PDF");
+            showError(error, "Gagal mengekspor PDF");
         } finally {
             setIsExporting(false);
         }
@@ -325,7 +326,7 @@ const LeaveRequests: React.FC = () => {
             a.remove();
             window.URL.revokeObjectURL(url);
         } catch (error) {
-            showError(error, "Failed to download template");
+            showError(error, "Gagal mengunduh template");
         }
     };
 
@@ -340,7 +341,7 @@ const LeaveRequests: React.FC = () => {
             showSuccess(`Successfully imported! Created: ${res.data?.created || 0}, Errors: ${res.data?.errors?.length || 0}`);
             
             if (res.data?.errors?.length) {
-                console.warn("Import errors:", res.data.errors);
+                console.warn("Kesalahan impor:", res.data.errors);
                 alert(`Some rows failed to import:\n${res.data.errors.slice(0, 5).join('\n')}${res.data.errors.length > 5 ? '\n...' : ''}`);
             }
 
@@ -353,7 +354,7 @@ const LeaveRequests: React.FC = () => {
             }
             setIsImportModalOpen(false);
         } catch (error) {
-            showError(error, "Failed to import leave submissions");
+            showError(error, "Gagal mengimpor pengajuan cuti");
         } finally {
             setIsImporting(false);
         }
@@ -386,22 +387,18 @@ const LeaveRequests: React.FC = () => {
 
     return (
         <>
-            <PageMeta title="Leave Requests | Visia" description="Manage employee leave submissions." />
-            <PageBreadcrumb pageTitle="Leave Requests" />
+            <PageMeta title="Pengajuan Cuti | SIAPUS" description="Kelola pengajuan cuti pegawai." />
+            <div className="hidden sm:block">
+                <PageBreadcrumb pageTitle="Pengajuan Cuti" />
+            </div>
 
-            <div className="space-y-6">
-                {/* Desktop Header */}
-                <div className="hidden sm:flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                        <div className="flex size-10 items-center justify-center rounded-xl bg-brand-50 text-brand-500 dark:bg-brand-500/10">
-                            <CalenderIcon className="size-5" />
-                        </div>
-                        <div>
-                            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Leave Submissions</h1>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">Review and manage time-off requests.</p>
-                        </div>
+            <div className="space-y-3 sm:space-y-6">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Pengajuan Cuti</h1>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Tinjau dan kelola permintaan cuti.</p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="hidden sm:flex items-center gap-3">
                         <DataActionsMenu
                             isExporting={isExporting}
                             isImporting={isImporting}
@@ -419,7 +416,7 @@ const LeaveRequests: React.FC = () => {
 
                 {/* Mobile FAB */}
                 {isMobile && (
-                    <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-3 items-end">
+                    <div className="fixed bottom-24 right-4 md:bottom-8 md:right-8 z-50 flex flex-col gap-3 items-end">
                         <DataActionsMenu 
                             isMobileFab={true} 
                             isExporting={isExporting} 
@@ -430,7 +427,7 @@ const LeaveRequests: React.FC = () => {
                             onDownloadTemplate={handleDownloadTemplate}
                         />
                         <button onClick={() => handleOpenModal()} 
-                            className="flex size-14 items-center justify-center rounded-full bg-brand-500 text-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] shadow-brand-500/30 transition-transform active:scale-95">
+                            className="flex size-12 items-center justify-center rounded-full bg-brand-500 text-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] shadow-brand-500/30 transition-transform active:scale-95">
                             <PlusIcon className="size-6 fill-white" />
                         </button>
                     </div>
@@ -470,35 +467,35 @@ const LeaveRequests: React.FC = () => {
                                             value={statusFilter}
                                             onChange={(val) => { setStatusFilter(val as LeaveStatus | "ALL"); setPage(1); }}
                                             options={[
-                                                { label: "All Statuses", value: "ALL" },
-                                                { label: "Pending", value: "pending" },
-                                                { label: "Partially Approved", value: "partially_approved" },
-                                                { label: "Approved", value: "approved" },
-                                                { label: "Rejected", value: "rejected" },
+                                                { label: "Semua Status", value: "ALL" },
+                                                { label: "Menunggu", value: "pending" },
+                                                { label: "Disetujui Sebagian", value: "partially_approved" },
+                                                { label: "Disetujui", value: "approved" },
+                                                { label: "Ditolak", value: "rejected" },
                                             ]}
                                         />
                                     </div>
                                     <div className="flex-1 space-y-1.5">
-                                        <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Leave Type</Label>
+                                        <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Tipe Cuti</Label>
                                         <CustomSelect
                                             value={typeFilter}
                                             onChange={(val) => { setTypeFilter(String(val)); setPage(1); }}
                                             options={[
-                                                { label: "All Types", value: "ALL" },
+                                                { label: "Semua Tipe", value: "ALL" },
                                                 ...leaveTypes.map(t => ({ label: t.displayName || t.code, value: t.code }))
                                             ]}
                                         />
                                     </div>
 
                                     <div className="flex-[2] space-y-1.5">
-                                        <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Search</Label>
+                                        <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Cari</Label>
                                         <div className="relative">
                                             <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
                                             <input
                                                 type="text"
                                                 value={searchQuery}
                                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                                placeholder="Search by Employee..."
+                                                placeholder="Cari berdasarkan Pegawai..."
                                                 className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-4 text-sm text-gray-900 transition-colors focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-white/[0.08] dark:bg-white/[0.02] dark:text-white"
                                             />
                                         </div>
@@ -520,12 +517,12 @@ const LeaveRequests: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Bulk Actions Toolbar */}
+                {/* Bulk Aksi Toolbar */}
                 <TableToolbar 
                     selectedCount={selectedIds.size} 
                     onClearSelection={() => setSelectedIds(new Set())} 
-                    bulkActions={[
-                        { label: "Delete Selected", icon: <TrashBinIcon className="size-3.5"/>, onClick: handleBulkDelete, variant: "danger" }
+                    bulkAksi={[
+                        { label: "Hapus Terpilih", icon: <TrashBinIcon className="size-3.5"/>, onClick: handleBulkDelete, variant: "danger" }
                     ]} 
                 />
 
@@ -536,7 +533,7 @@ const LeaveRequests: React.FC = () => {
                             <div className="flex items-center gap-3 px-1">
                                 <Checkbox checked={allSelected} onChange={toggleAll} />
                                 <span className="text-xs text-gray-500 dark:text-gray-400">
-                                    {selectedIds.size > 0 ? `${selectedIds.size} selected` : "Select all"}
+                                    {selectedIds.size > 0 ? `${selectedIds.size} selected` : "Pilih semua"}
                                 </span>
                             </div>
                         )}
@@ -545,7 +542,7 @@ const LeaveRequests: React.FC = () => {
                                 {[1, 2, 3].map(i => <div key={i} className="h-32 bg-gray-100 dark:bg-white/5 animate-pulse rounded-2xl" />)}
                             </div>
                         ) : items.length === 0 ? (
-                            <div className="py-12 text-center text-sm text-gray-500">No requests found.</div>
+                            <div className="py-12 text-center text-sm text-gray-500">Tidak ada pengajuan ditemukan.</div>
                         ) : (
                             <div className="grid grid-cols-1 gap-3">
                                 {sortedItems.filter(item => typeFilter === 'ALL' || item.leaveTypeCode === typeFilter || item.leaveType?.code === typeFilter).map((item) => (
@@ -574,22 +571,22 @@ const LeaveRequests: React.FC = () => {
                                     <TableCell isHeader className="w-10 px-4 py-3.5"><Checkbox checked={allSelected} onChange={toggleAll} /></TableCell>
                                     <TableCell isHeader className="px-4 py-3.5">
                                         <button onClick={() => handleSort("user.name")} className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-brand-500 uppercase tracking-wider">
-                                            Employee <SortIcon column="user.name" />
+                                            Pegawai <SortIcon column="user.name" />
                                         </button>
                                     </TableCell>
                                     <TableCell isHeader className="px-4 py-3.5">
                                         <button onClick={() => handleSort("leaveType.displayName")} className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-brand-500 uppercase tracking-wider">
-                                            Leave Type <SortIcon column="leaveType.displayName" />
+                                            Tipe Cuti <SortIcon column="leaveType.displayName" />
                                         </button>
                                     </TableCell>
                                     <TableCell isHeader className="px-4 py-3.5">
                                         <button onClick={() => handleSort("totalDays")} className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-brand-500 uppercase tracking-wider">
-                                            Duration <SortIcon column="totalDays" />
+                                            Durasi <SortIcon column="totalDays" />
                                         </button>
                                     </TableCell>
-                                    <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Reason</TableCell>
+                                    <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Alasan</TableCell>
                                     <TableCell isHeader className="px-4 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</TableCell>
-                                    <TableCell isHeader className="px-4 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</TableCell>
+                                    <TableCell isHeader className="px-4 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Aksi</TableCell>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -597,7 +594,7 @@ const LeaveRequests: React.FC = () => {
                                     <SkeletonTable rows={5} columns={7} />
                                 ) : items.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={7} className="py-10 text-center text-gray-500">No requests found.</TableCell>
+                                        <TableCell colSpan={7} className="py-10 text-center text-gray-500">Tidak ada pengajuan ditemukan.</TableCell>
                                     </TableRow>
                                 ) : (
                                     sortedItems.filter(item => typeFilter === 'ALL' || item.leaveTypeCode === typeFilter || item.leaveType?.code === typeFilter).map(item => (
@@ -622,7 +619,7 @@ const LeaveRequests: React.FC = () => {
                                                 </span>
                                             </TableCell>
                                             <TableCell className="px-4 py-4">
-                                                <p className="font-semibold text-sm text-gray-900 dark:text-white">{item.totalDays} Days</p>
+                                                <p className="font-semibold text-sm text-gray-900 dark:text-white">{item.totalDays} Hari</p>
                                                 <p className="text-xs text-gray-500 font-mono mt-0.5">{formatDate(item.startDate)} - {formatDate(item.endDate)}</p>
                                             </TableCell>
                                             <TableCell className="px-4 py-4 max-w-[200px]">
@@ -680,7 +677,11 @@ const LeaveRequests: React.FC = () => {
             {/* Modals */}
             <LeaveFormModal
                 isOpen={isCreateModalOpen || isEditModalOpen}
-                onClose={() => handleOpenModal()}
+                onClose={() => {
+                    setIsCreateModalOpen(false);
+                    setIsEditModalOpen(false);
+                    setSelectedEntity(null);
+                }}
                 selectedEntity={selectedEntity}
                 leaveTypes={leaveTypes}
             />
@@ -694,8 +695,8 @@ const LeaveRequests: React.FC = () => {
             <ImportModal
                 isOpen={isImportModalOpen}
                 onClose={() => setIsImportModalOpen(false)}
-                title="Import Leave Submissions"
-                description="Upload an Excel file to bulk import leave submissions."
+                title="Impor Pengajuan Cuti"
+                description="Unggah file Excel untuk mengimpor pengajuan cuti secara massal."
                 onDownloadTemplate={handleDownloadTemplate}
                 onImport={handleImport}
                 isImporting={isImporting}

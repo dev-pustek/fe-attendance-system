@@ -128,7 +128,7 @@ const AuditLogs: React.FC = () => {
   return (
     <>
       <PageMeta
-        title="Audit Logs | Visia"
+        title="Audit Logs | SIAPUS"
         description="Comprehensive system activity and user action logs."
       />
 

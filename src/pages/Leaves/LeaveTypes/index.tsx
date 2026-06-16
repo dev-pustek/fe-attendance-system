@@ -223,7 +223,7 @@ const LeaveTypes: React.FC = () => {
 
     return (
         <>
-            <PageMeta title="Leave Types | Visia" description="Manage leave categories and policies." />
+            <PageMeta title="Leave Types | SIAPUS" description="Manage leave categories and policies." />
             <PageBreadcrumb pageTitle="Leave Types" />
 
             <div className="space-y-6">
@@ -256,7 +256,7 @@ const LeaveTypes: React.FC = () => {
 
                 {/* Mobile FAB */}
                 {isMobile && (
-                    <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-3 items-end">
+                    <div className="fixed bottom-24 right-4 md:bottom-8 md:right-8 z-50 flex flex-col gap-3 items-end">
                         <DataActionsMenu
                             isMobileFab={true}
                             onExportExcel={handleExportExcel}
@@ -266,7 +266,7 @@ const LeaveTypes: React.FC = () => {
                             isExporting={isExporting}
                             isImporting={isImporting}
                         />
-                        <button onClick={() => handleOpenFormModal()} className="flex size-14 items-center justify-center rounded-full bg-brand-500 text-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] shadow-brand-500/30 transition-transform active:scale-95">
+                        <button onClick={() => handleOpenFormModal()} className="flex size-12 items-center justify-center rounded-full bg-brand-500 text-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] shadow-brand-500/30 transition-transform active:scale-95">
                             <PlusIcon className="size-6 fill-white" />
                         </button>
                     </div>

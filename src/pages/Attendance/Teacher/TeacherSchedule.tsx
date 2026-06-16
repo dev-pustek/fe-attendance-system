@@ -34,12 +34,16 @@ const TeacherSchedule: React.FC = () => {
   const handleRestartSession = async (item: TodayScheduleItem) => {
       if (!item.session || !user?.public_id) return;
       try {
-          await createSubjectAttendance.mutateAsync({
+          await attendanceService.bulkCreateSubjectAttendance({
               teachingSessionId: item.session.id,
-              studentId: user.public_id,
-              status: 'present',
-              remarks: 'Teacher re-started session',
-              method: 'manual'
+              records: [
+                  {
+                      studentId: user.public_id,
+                      status: 'present',
+                      remarks: 'Teacher re-started session',
+                      method: 'manual'
+                  }
+              ]
           });
           
           await validateSession({
@@ -151,7 +155,8 @@ const TeacherSchedule: React.FC = () => {
   }, [isAttendanceModalOpen, selectedSessionItem?.sessionId]);
 
 
-  const getClassStatus = (item: TodayScheduleItem): 'active' | 'now' | 'upcoming' | 'passed' => {
+  const getClassStatus = (item: TodayScheduleItem): 'active' | 'now' | 'upcoming' | 'passed' | 'holiday' => {
+      if (item.template?.isHolidayOverride) return 'holiday';
       // Prioritize explicit session status from backend
       if (item.sessionStatus === 'COMPLETED' || item.isCompleted) return 'passed';
       if (item.sessionStatus === 'ONGOING') return 'now'; // Map ONGOING to 'now' logic for active/brand coloring
@@ -562,10 +567,14 @@ const TeacherSchedule: React.FC = () => {
                     // 1. Mark presence
                     if (sessionItem?.sessionId) {
                           try {
-                              await attendanceService.createSubjectAttendance({
+                              await attendanceService.bulkCreateSubjectAttendance({
                                    teachingSessionId: sessionItem.sessionId,
-                                   studentId: studentId,
-                                   status: "present"
+                                   records: [
+                                       {
+                                           studentId: studentId,
+                                           status: "present"
+                                       }
+                                   ]
                               });
                               
                               if (!isMounted.current) return;
@@ -727,7 +736,7 @@ const TeacherSchedule: React.FC = () => {
 
   return (
     <>
-      <PageMeta title="My Schedule | Visia" description="View today's teaching schedule and record attendance." />
+      <PageMeta title="My Schedule | SIAPUS" description="View today's teaching schedule and record attendance." />
       <PageBreadcrumb pageTitle="My Schedule" />
 
       <div className="space-y-8">
@@ -755,7 +764,9 @@ const TeacherSchedule: React.FC = () => {
                      
                      return (
                           <div key={idx} className={`relative overflow-hidden rounded-3xl p-4 sm:p-6 transition-all duration-300 group ${
-                              status === 'active' 
+                              status === 'holiday'
+                                ? 'bg-amber-50/80 border-amber-200 dark:bg-amber-900/10 dark:border-amber-500/30 ring-1 ring-amber-500/20 shadow-lg shadow-amber-500/5'
+                                : status === 'active' 
                                 ? 'bg-gradient-to-br from-green-50 to-white border-green-200 dark:from-green-500/10 dark:to-transparent dark:border-green-500/30 ring-1 ring-green-500/20 shadow-lg shadow-green-500/5' 
                                 : status === 'now'
                                 ? 'bg-gradient-to-br from-brand-50 to-white border-brand-200 shadow-xl shadow-brand-500/10 ring-1 ring-brand-500/50 dark:from-brand-500/10 dark:to-transparent dark:border-brand-500/30'
@@ -784,6 +795,11 @@ const TeacherSchedule: React.FC = () => {
                                  {status === 'passed' && (
                                       <div className="bg-gray-200 text-gray-500 dark:bg-white/10 dark:text-gray-400 text-xs font-bold px-4 py-1.5 rounded-bl-2xl uppercase tracking-wider">
                                           Finished
+                                      </div>
+                                 )}
+                                 {status === 'holiday' && (
+                                      <div className="bg-amber-500 text-white text-xs font-bold px-4 py-1.5 rounded-bl-2xl uppercase tracking-wider shadow-sm flex items-center gap-1.5">
+                                          Libur
                                       </div>
                                  )}
                              </div>
@@ -817,34 +833,39 @@ const TeacherSchedule: React.FC = () => {
                                               Finished
                                           </div>
                                      )}
+                                     {status === 'holiday' && (
+                                          <div className="bg-amber-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg uppercase tracking-wider shadow-sm">
+                                              Libur
+                                          </div>
+                                     )}
                                  </div>
                              </div>
 
                              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 lg:gap-6 relative z-10">
                                  <div className="flex gap-4 sm:gap-6 items-start">
                                      {/* Time Column (Hidden on Mobile) */}
-                                     <div className={`hidden sm:flex flex-col items-center justify-center w-20 h-20 rounded-2xl shrink-0 ${
-                                         status === 'now' || status === 'active' 
-                                            ? 'bg-white dark:bg-white/10 shadow-inner' 
-                                            : 'bg-gray-100 dark:bg-white/5'
-                                     }`}>
-                                         <span className={`text-sm font-bold ${
-                                             status === 'now' || status === 'active' ? 'text-brand-600 dark:text-brand-400' : 'text-gray-500'
-                                         }`}>
-                                             {item.startTime.substring(0,5)}
-                                         </span>
-                                         <div className="w-8 h-[1px] bg-gray-300 dark:bg-white/20 my-1"></div>
-                                         <span className={`text-sm font-bold ${
-                                             status === 'now' || status === 'active' ? 'text-brand-600 dark:text-brand-400' : 'text-gray-500'
-                                         }`}>
-                                             {item.endTime.substring(0,5)}
-                                         </span>
-                                     </div>
+                                      <div className={`hidden sm:flex flex-col items-center justify-center w-20 h-20 rounded-2xl shrink-0 ${
+                                          status === 'now' || status === 'active' || status === 'holiday'
+                                             ? 'bg-white dark:bg-white/10 shadow-inner' 
+                                             : 'bg-gray-100 dark:bg-white/5'
+                                      }`}>
+                                          <span className={`text-sm font-bold ${
+                                              status === 'now' || status === 'active' || status === 'holiday' ? 'text-brand-600 dark:text-brand-400' : 'text-gray-500'
+                                          }`}>
+                                              {item.startTime.substring(0,5)}
+                                          </span>
+                                          <div className="w-8 h-[1px] bg-gray-300 dark:bg-white/20 my-1"></div>
+                                          <span className={`text-sm font-bold ${
+                                              status === 'now' || status === 'active' || status === 'holiday' ? 'text-brand-600 dark:text-brand-400' : 'text-gray-500'
+                                          }`}>
+                                              {item.endTime.substring(0,5)}
+                                          </span>
+                                      </div>
 
                                      <div className="space-y-2 w-full">
                                          <div className="flex flex-wrap items-center gap-2">
                                              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
-                                                 status === 'now' || status === 'active'
+                                                 status === 'now' || status === 'active' || status === 'holiday'
                                                     ? 'bg-brand-500 text-white shadow-brand-500/20 shadow-lg'
                                                     : 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300'
                                              }`}>
@@ -856,7 +877,11 @@ const TeacherSchedule: React.FC = () => {
                                          }`}>
                                              {item.subjectName}
                                          </h3>
-                                         
+                                         {item.template?.overrideReason && (
+                                            <p className="text-sm font-medium text-amber-600 dark:text-amber-400 mt-2 mb-2 bg-amber-50 dark:bg-amber-500/10 p-2 rounded-lg border border-amber-100 dark:border-amber-500/20">
+                                                <span className="font-bold">Keterangan:</span> {item.template.overrideReason}
+                                            </p>
+                                         )}
                                          {/* Enhanced details with icons */}
                                          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 dark:text-gray-400 mt-2">
                                             <div className="flex items-center gap-1.5">

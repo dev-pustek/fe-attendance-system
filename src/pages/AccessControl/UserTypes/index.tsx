@@ -204,7 +204,7 @@ const UserTypes: React.FC = () => {
 
   return (
     <>
-      <PageMeta title="User Types | Visia" description="Manage user categories and assignments." />
+      <PageMeta title="User Types | SIAPUS" description="Manage user categories and assignments." />
       <PageBreadcrumb pageTitle="User Types" />
 
       <div className="space-y-8">

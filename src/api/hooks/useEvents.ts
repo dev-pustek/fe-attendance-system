@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import { eventService } from "../services/eventService";
 import { 
   EventParams, 
@@ -13,6 +13,18 @@ export const useEvents = (params?: EventParams) => {
   return useQuery({
     queryKey: ["events", params],
     queryFn: () => eventService.getEvents(params),
+  });
+};
+
+export const useEventsInfinite = (params?: EventParams) => {
+  return useInfiniteQuery({
+    queryKey: ["events", "infinite", params],
+    queryFn: ({ pageParam = 1 }) => eventService.getEvents({ ...params, page: pageParam, limit: 10 }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const meta = lastPage?.meta;
+      return meta?.page < meta?.totalPages ? meta.page + 1 : undefined;
+    },
   });
 };
 

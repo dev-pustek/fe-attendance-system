@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router";
 import SignIn from "./pages/AuthPages/SignIn";
-import StudentSignIn from "./pages/AuthPages/StudentSignIn";
+import { Navigate } from "react-router";
 import SignUp from "./pages/AuthPages/SignUp";
 import NotFound from "./pages/OtherPage/NotFound";
 // Actually lint said UserProfiles is unused. But I removed the route using it.
@@ -22,6 +22,11 @@ import AuditMetrics from "./pages/AuditLogs/AuditMetrics";
 import AcademicYears from "./pages/Academic/AcademicYears";
 import Classes from "./pages/Academic/Classes";
 import ClassEnrollments from "./pages/Academic/ClassEnrollments";
+
+// Gate Passes & Reimbursements
+import GatePasses from "./pages/GatePasses";
+import Reimbursements from "./pages/Reimbursements";
+
 import EducationLevels from "./pages/Academic/EducationLevels";
 import Majors from "./pages/Academic/Majors";
 import Grades from "./pages/Academic/Grades";
@@ -40,7 +45,7 @@ const CurriculumWizard = lazy(() => import("./pages/Academic/CurriculumConfigura
 const ClassroomCommand = lazy(() => import("./pages/Teacher/Classroom"));
 const StudentProfile = lazy(() => import("./pages/Student/StudentProfile"));
 const MyProfile = lazy(() => import("./pages/MyProfile/index"));
-const ClassScheduleOverrides = lazy(() => import("./pages/Academic/ClassSchedules/Overrides"));
+const ClassScheduleOverrides = lazy(() => import("./pages/Academic/ClassSchedules/Overrides/index"));
 const StudentManagement = lazy(() => import("./pages/Profiles/Students"));
 const ClassPromotion = lazy(() => import("./pages/Academic/ClassPromotion"));
 const EmployeeManagement = lazy(() => import("./pages/Profiles/Employees"));
@@ -70,6 +75,7 @@ const StudentLeaveRequest = lazy(() => import("./pages/Student/LeaveRequest"));
 const GateScan = lazy(() => import("./pages/Attendance/Student/GateScan"));
 const AttendancePolicies = lazy(() => import("./pages/Attendance/AttendancePolicies"));
 const PiketMonitor = lazy(() => import("./pages/Attendance/PiketMonitor"));
+const AttendanceMetrics = lazy(() => import("./pages/Attendance/AttendanceMetrics"));
 
 const AttendanceHistory = lazy(() => import("./pages/Attendance/History"));
 const NotificationTemplateList = lazy(() => import("./pages/Notifications/Templates/NotificationTemplateList"));
@@ -96,6 +102,7 @@ import GuestVisits from "./pages/Guests/Visits";
 import AppLayout from "./components/templates/AppTemplate";
 import { ScrollToTop } from "./components/atoms/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
+import MobileMenu from "./pages/MobileMenu/MobileMenu";
 import ProtectedRoute from "./components/organisms/ProtectedRoute";
 import PublicRoute from "./components/organisms/PublicRoute";
 import { Toaster } from "react-hot-toast";
@@ -107,12 +114,12 @@ export default function App() {
   return (
     <>
       <Toaster 
-        position="bottom-right"
+        position="top-right"
         reverseOrder={false}
         gutter={8}
         containerClassName=""
         containerStyle={{
-          bottom: 40,
+          top: 40,
           right: 20,
           zIndex: 999999,
         }}
@@ -120,9 +127,49 @@ export default function App() {
           className: '',
           duration: 4000,
           style: {
-            background: '#363636',
-            color: '#fff',
+            background: '#ffffff',
+            color: '#1f2937',
+            fontWeight: '500',
+            borderRadius: '12px',
+            padding: '12px 16px',
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+            border: '1px solid #f3f4f6',
           },
+          success: {
+            duration: 3000,
+            style: {
+              background: '#10b981',
+              color: '#fff',
+              border: 'none',
+            },
+            iconTheme: {
+              primary: '#fff',
+              secondary: '#10b981',
+            },
+          },
+          error: {
+            duration: 5000,
+            style: {
+              background: '#ef4444',
+              color: '#fff',
+              border: 'none',
+            },
+            iconTheme: {
+              primary: '#fff',
+              secondary: '#ef4444',
+            },
+          },
+          loading: {
+            style: {
+              background: '#3b82f6',
+              color: '#fff',
+              border: 'none',
+            },
+            iconTheme: {
+              primary: '#fff',
+              secondary: '#3b82f6',
+            },
+          }
         }}
       />
       <Router>
@@ -134,7 +181,9 @@ export default function App() {
              <Route path="/attendance/gate-scan" element={<GateScan />} />
 
             <Route element={<AppLayout />}>
+              {/* ── Dashboards & Menu ── */}
               <Route index path="/" element={<Home />} />
+              <Route path="/menu" element={<MobileMenu />} />
 
               {/* Others Page */}
               <Route path="/profile" element={<MyProfile />} />
@@ -198,6 +247,7 @@ export default function App() {
               <Route path="/student/id-card" element={<MyIdCardPage />} />
               <Route path="/student/leaves" element={<StudentLeaveRequest />} />
               <Route path="/attendance/events" element={<AttendanceEvents />} />
+              <Route path="/attendance/metrics" element={<AttendanceMetrics />} />
               <Route path="/attendance/rules" element={<AttendancePolicies />} />
               <Route path="/attendance/policies" element={<AttendancePolicies />} />
               <Route path="/attendance/piket" element={<PiketMonitor />} />
@@ -213,6 +263,8 @@ export default function App() {
 
               <Route path="leaves/requests" element={<LeaveRequests />} />
               <Route path="leaves/types" element={<LeaveTypes />} />
+              <Route path="/gate-passes" element={<GatePasses />} />
+              <Route path="/reimbursements" element={<Reimbursements />} />
               <Route path="/scheduling/templates" element={<ShiftTemplates />} />
               <Route path="/scheduling/assignments" element={<ShiftAssignments />} />
               <Route path="/schedules" element={<WorkSchedules />} />
@@ -245,7 +297,7 @@ export default function App() {
 
           {/* Auth Layout - Public Only */}
           <Route path="/signin" element={<PublicRoute><SignIn /></PublicRoute>} />
-          <Route path="/student/login" element={<PublicRoute><StudentSignIn /></PublicRoute>} />
+          <Route path="/student/login" element={<Navigate to="/signin" replace />} />
           <Route path="/signup" element={<PublicRoute><SignUp /></PublicRoute>} />
 
           {/* Fallback Route */}

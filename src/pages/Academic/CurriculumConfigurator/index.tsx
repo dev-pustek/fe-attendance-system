@@ -22,7 +22,7 @@ const StepIndicator: React.FC<{
       {isCompleted ? <CheckLineIcon className="size-5" /> : icon}
     </div>
     <div className="hidden sm:block">
-      <p className="text-[10px] uppercase font-bold tracking-widest leading-none mb-1 opacity-50">Step</p>
+      <p className="text-[10px] uppercase font-bold tracking-widest leading-none mb-1 opacity-50">Langkah</p>
       <p className="text-sm font-bold truncate">{title}</p>
     </div>
   </div>
@@ -53,14 +53,14 @@ const CurriculumConfigurator: React.FC = () => {
 
   return (
     <div className="mx-auto max-w-7xl">
-      <PageBreadcrumb pageTitle="Curriculum Configurator" />
+      <PageBreadcrumb pageTitle="Konfigurator Kurikulum" />
 
       {/* Stepper Header */}
-      <div className="mb-8 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm dark:border-white/5 dark:bg-white/[0.03]">
+      <div className="hidden md:block mb-8 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm dark:border-white/5 dark:bg-white/[0.03]">
         <div className="flex items-center justify-between gap-4 overflow-x-auto pb-2 scrollbar-none">
           <StepIndicator 
             step={1} 
-            title="Class Selection" 
+            title="Pemilihan Kelas" 
             icon={<GroupIcon className="size-5" />} 
             isActive={currentStep === 1} 
             isCompleted={currentStep > 1} 
@@ -68,7 +68,7 @@ const CurriculumConfigurator: React.FC = () => {
           <div className="h-px flex-1 bg-gray-100 dark:bg-white/5 mx-4 min-w-[30px]" />
           <StepIndicator 
             step={2} 
-            title="Subject Mixer" 
+            title="Penyusunan Mata Pelajaran" 
             icon={<DocsIcon className="size-5" />} 
             isActive={currentStep === 2} 
             isCompleted={currentStep > 2} 
@@ -76,7 +76,7 @@ const CurriculumConfigurator: React.FC = () => {
           <div className="h-px flex-1 bg-gray-100 dark:bg-white/5 mx-4 min-w-[30px]" />
           <StepIndicator 
             step={3} 
-            title="Teacher Assignment" 
+            title="Penugasan Guru" 
             icon={<UserIcon className="size-5" />} 
             isActive={currentStep === 3} 
             isCompleted={currentStep > 3} 

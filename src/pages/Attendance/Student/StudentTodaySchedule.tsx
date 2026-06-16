@@ -1,15 +1,18 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useAuthStore } from '../../../store/authStore';
-import { useStudentTodaySchedule, useAttendancePolicy } from '../../../api/hooks/useAttendance';
-import { TodayScheduleItem } from '../../../api/types/attendance';
+import { useAttendancePolicy } from '../../../api/hooks/useAttendance';
+import { StudentRoadmapItem } from '../../../api/types/dashboard';
+import { dashboardService } from '../../../api/services/dashboardService';
 import { AttendanceRuleType } from '../../../api/types/rules';
 import { attendanceService } from '../../../api/services/attendanceService';
 import PageMeta from '../../../components/atoms/PageMeta';
 import PageBreadcrumb from '../../../components/molecules/PageBreadcrumb';
 import { 
     CheckCircleIcon, 
-    QrCodeIcon 
+    QrCodeIcon,
+    MapPinIcon,
+    CameraIcon
 } from '@heroicons/react/24/outline';
 import Button from '../../../components/atoms/Button';
 import toast from 'react-hot-toast';
@@ -18,18 +21,45 @@ import FullPageScanner from '../../../components/organisms/FullPageScanner';
 
 const StudentTodaySchedule = () => {
     const { user } = useAuthStore();
-    const { data: schedule, isLoading, refetch } = useStudentTodaySchedule(user?.public_id);
-    const { data: policyData } = useAttendancePolicy(user?.public_id);
+    const { data: policyDataRaw } = useAttendancePolicy(user?.public_id || user?.id);
+    const policyData = (policyDataRaw as any)?.data || policyDataRaw;
     
+    // Schedule State
+    const [schedule, setSchedule] = useState<StudentRoadmapItem[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    const fetchRoadmap = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const data = await dashboardService.getUserRoadmap();
+            setSchedule(data.roadmap || []);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (user?.public_id) fetchRoadmap();
+    }, [user?.public_id, fetchRoadmap]);
+
+    const refetch = fetchRoadmap;
+
     // Scanning State
     const [isScanModalOpen, setIsScanModalOpen] = useState(false);
-    const [selectedSession, setSelectedSession] = useState<TodayScheduleItem | null>(null);
+    const [selectedSession, setSelectedSession] = useState<StudentRoadmapItem | null>(null);
     const [scanStatus, setScanStatus] = useState<'idle' | 'scanning' | 'verifying' | 'success' | 'error'>('idle');
     const [scanMessage, setScanMessage] = useState<string | null>(null);
     const isProcessingScanRef = useRef(false);
 
     // --- Actions ---
-    const handleCheckIn = (item: TodayScheduleItem) => {
+    const handleCheckIn = (item: StudentRoadmapItem) => {
+        if (!policyData?.todayStatus?.clockIn) {
+            toast.error("You must clock in at the gate first before scanning for a class.");
+            return;
+        }
+
         setSelectedSession(item);
         setScanStatus('idle');
         setScanMessage(null);
@@ -135,29 +165,64 @@ const StudentTodaySchedule = () => {
         return new Date(timeStr);
     };
 
+    // --- Gate Card Component ---
+    const GateCard = ({ item }: { item: StudentRoadmapItem }) => {
+        const isCompleted = item.status === 'completed';
+        const isScanIn = item.type === 'scan_in';
+        return (
+            <div className={`relative h-full flex flex-col rounded-2xl border transition-all duration-300 group hover:shadow-xl overflow-hidden ${isCompleted ? "bg-green-50/30 border-green-200 dark:bg-green-900/10 dark:border-green-500/20" : "bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"}`}>
+                <div className={`absolute top-0 left-0 right-0 h-1.5 ${isCompleted ? "bg-green-500" : "bg-gray-300 dark:bg-white/20"}`} />
+                <div className="p-5 flex-1 flex flex-col relative">
+                    <div className="flex justify-between items-start mb-4">
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-md w-fit ${isCompleted ? "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400" : "bg-gray-100 text-gray-500 dark:bg-white/10 dark:text-gray-400"}`}>
+                            {isScanIn ? "Arrival Scan" : "Departure Scan"}
+                        </span>
+                        {isCompleted && (
+                            <div className="size-8 rounded-full bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400 flex items-center justify-center shadow-sm">
+                                <CheckCircleIcon className="size-5" />
+                            </div>
+                        )}
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white leading-tight mb-3">
+                        {item.title}
+                    </h3>
+                    <div className="mt-auto grid grid-cols-1 gap-4 py-3 border-t border-gray-100 dark:border-white/5">
+                        <div>
+                            <span className="block text-[10px] text-gray-400 uppercase tracking-wide font-semibold mb-0.5">Scanned Time</span>
+                            <span className="text-lg font-mono font-bold text-gray-900 dark:text-white">
+                                {item.time}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     // --- Card Component ---
-    const SessionCard = ({ item }: { item: TodayScheduleItem }) => {
-        const isCompleted = item.status === 'COMPLETED' || item.isCompleted || item.sessionStatus === 'COMPLETED';
-        const isOngoing = item.sessionStatus === 'ONGOING';
-        const startTime = parseTime(item.startTime);
-        const endTime = parseTime(item.endTime);
+    const SessionCard = ({ item }: { item: StudentRoadmapItem }) => {
+        const isCompleted = item.status === 'completed';
+        const isOngoing = item.isOngoing;
+        const [startTimeStr, endTimeStr] = item.time.split(' - ');
+        const startTime = parseTime(startTimeStr);
+        const endTime = endTimeStr ? parseTime(endTimeStr) : startTime;
         
-        const myStatus = item.myAttendanceStatus?.toLowerCase();
-        const isPresent = myStatus === 'present' || myStatus === 'late';
-        const attendanceTime = item.myAttendanceTime ? new Date(item.myAttendanceTime) : null;
+        const isHoliday = item.status === 'holiday';
+        const isPresent = isCompleted;
+        const attendanceTime = item.attendanceTime ? new Date(item.attendanceTime) : null;
 
         const diffMinutes = differenceInMinutes(endTime, startTime);
         const hours = Math.floor(diffMinutes / 60);
         const mins = diffMinutes % 60;
         const durationString = `${hours > 0 ? `${hours} hr ` : ''}${mins > 0 ? `${mins} min` : ''}`.trim();
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const rawItem = item as any;
-        const teacherName = item.teacherName || rawItem.session?.actualTeacher?.name || rawItem.template?.defaultTeacher?.name || 'No Teacher Assigned';
-        const classCode = rawItem.session?.classSubject?.class?.code || rawItem.template?.classSubject?.class?.code || item.className; 
+        const teacherName = item.teacherName || 'No Teacher Assigned';
+        const classCode = item.classCode || 'CLASS'; 
         
         let cardStyles = "bg-white dark:bg-white/5 border-gray-200 dark:border-white/10";
-        if (isPresent) {
+        if (isHoliday) {
+            cardStyles = "bg-amber-50/50 border-amber-200 dark:bg-amber-900/10 dark:border-amber-500/20";
+        } else if (isPresent) {
             cardStyles = "bg-green-50/30 border-green-200 dark:bg-green-900/10 dark:border-green-500/20";
         } else if (isOngoing) {
              cardStyles = "bg-gradient-to-br from-white to-brand-50 border-brand-200 dark:from-white/5 dark:to-brand-900/20 dark:border-brand-500/30 shadow-lg shadow-brand-500/5 ring-1 ring-brand-500/20";
@@ -165,10 +230,19 @@ const StudentTodaySchedule = () => {
              cardStyles = "bg-gray-50 border-gray-200 dark:bg-white/5 dark:border-white/5 opacity-70 grayscale-[0.8]";
         }
 
+        const rules = policyData?.rules || [];
+        const requireQrCode = rules.some((r: any) => r.ruleType === "REQUIRE_QR_CODE" && (r.ruleValue === "true" || r.ruleValue === "1" || r.ruleValue === true));
+        const requireGeoLocation = rules.some((r: any) => r.ruleType === "REQUIRE_GEO_LOCATION" && (r.ruleValue === "true" || r.ruleValue === "1" || r.ruleValue === true));
+        const requirePhotoEvidence = rules.some((r: any) => r.ruleType === "REQUIRE_PHOTO_EVIDENCE" && (r.ruleValue === "true" || r.ruleValue === "1" || r.ruleValue === true));
+
+        const ScanIcon = requireQrCode ? QrCodeIcon : requireGeoLocation ? MapPinIcon : requirePhotoEvidence ? CameraIcon : CheckCircleIcon;
+        const scanText = requireQrCode ? "Scan QR to Check In" : requireGeoLocation ? "Check In (GPS)" : requirePhotoEvidence ? "Take Selfie" : "Record Check In";
+
         return (
             <div className={`relative h-full flex flex-col rounded-2xl border transition-all duration-300 group hover:shadow-xl overflow-hidden ${cardStyles}`}>
                 
                 <div className={`absolute top-0 left-0 right-0 h-1.5 ${
+                    isHoliday ? "bg-amber-500" :
                     isPresent ? "bg-green-500" :
                     isOngoing ? "bg-brand-500 animate-pulse" :
                     isCompleted ? "bg-gray-300 dark:bg-white/20" :
@@ -182,12 +256,14 @@ const StudentTodaySchedule = () => {
                                 {classCode}
                             </span>
                             <span className={`text-xs font-bold px-2 py-0.5 rounded-md w-fit ${
+                                isHoliday ? "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400" :
                                 isPresent ? "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400" :
                                 isOngoing ? "bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-400" :
                                 isCompleted ? "bg-gray-100 text-gray-500 dark:bg-white/10 dark:text-gray-400" :
                                 "bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-400"
                             }`}>
-                                {isPresent ? "Present" : 
+                                {isHoliday ? "Libur" : 
+                                 isPresent ? "Present" : 
                                  isOngoing ? "Happening Now" : 
                                  isCompleted ? "Finished" : "Scheduled"}
                             </span>
@@ -201,9 +277,14 @@ const StudentTodaySchedule = () => {
                     </div>
 
                     <h3 className="text-xl font-bold text-gray-900 dark:text-white leading-tight mb-3">
-                        {item.subjectName}
+                        {item.title}
                     </h3>
-                        
+                    
+                    {item.overrideReason && (
+                        <p className="text-sm font-medium text-amber-600 dark:text-amber-400 mb-3 bg-amber-50 dark:bg-amber-500/10 p-2 rounded-lg border border-amber-100 dark:border-amber-500/20">
+                            <span className="font-bold">Keterangan:</span> {item.overrideReason}
+                        </p>
+                    )}
                      <div className="flex items-center gap-2 mb-6 text-sm text-gray-600 dark:text-gray-300 font-medium">
                         <div className="size-6 rounded-full bg-gray-200 dark:bg-white/10 flex items-center justify-center text-[10px] font-bold text-gray-500 dark:text-gray-300 uppercase">
                             {teacherName.charAt(0)}
@@ -216,11 +297,13 @@ const StudentTodaySchedule = () => {
                             <span className="block text-[10px] text-gray-400 uppercase tracking-wide font-semibold mb-0.5">Time</span>
                             <div className="flex items-baseline gap-1">
                                 <span className={`text-lg font-mono font-bold ${isOngoing ? 'text-brand-600 dark:text-brand-400' : 'text-gray-900 dark:text-white'}`}>
-                                    {format(startTime, 'HH:mm')}
+                                    {startTimeStr}
                                 </span>
-                                <span className="text-xs text-gray-400 font-normal">
-                                    - {format(endTime, 'HH:mm')}
-                                </span>
+                                {endTimeStr && (
+                                    <span className="text-xs text-gray-400 font-normal">
+                                        - {endTimeStr}
+                                    </span>
+                                )}
                             </div>
                         </div>
                         <div className="text-right">
@@ -253,10 +336,74 @@ const StudentTodaySchedule = () => {
                             }`}
                             disabled={!isOngoing || isCompleted}
                         >
-                            <QrCodeIcon className="size-5 mr-2" />
-                            {isOngoing ? "Scan QR to Check In" : isCompleted ? "Class Ended" : "Not Started Yet"}
+                            <ScanIcon className="size-5 mr-2" />
+                            {isOngoing ? scanText : isCompleted ? "Class Ended" : "Not Started Yet"}
                         </Button>
                     )}
+                </div>
+            </div>
+        );
+    };
+
+    // --- Break Card Component ---
+    const BreakCard = ({ item }: { item: StudentRoadmapItem }) => {
+        const isCompleted = item.status === 'completed';
+        const isActive = item.status === 'active';
+        const [startTimeStr, endTimeStr] = item.time.split(' - ');
+        const startTime = parseTime(startTimeStr);
+        const endTime = endTimeStr ? parseTime(endTimeStr) : startTime;
+        const diffMinutes = differenceInMinutes(endTime, startTime);
+        const durationString = `${diffMinutes} min`;
+
+        return (
+            <div className={`relative h-full flex flex-col rounded-2xl border transition-all duration-300 group hover:shadow-xl overflow-hidden ${
+                isActive 
+                    ? "bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200 dark:from-amber-900/10 dark:to-orange-900/10 dark:border-amber-500/20 ring-1 ring-amber-500/20" 
+                    : isCompleted 
+                        ? "bg-gray-50/50 border-gray-200 dark:bg-white/5 dark:border-white/10 opacity-70"
+                        : "bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+            }`}>
+                <div className={`absolute top-0 left-0 right-0 h-1.5 ${
+                    isActive ? "bg-amber-400 animate-pulse" : isCompleted ? "bg-gray-300 dark:bg-white/20" : "bg-amber-200 dark:bg-amber-500/20"
+                }`} />
+                <div className="p-5 flex-1 flex flex-col relative">
+                    <div className="flex justify-between items-start mb-4">
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-md w-fit ${
+                            isActive ? "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400" 
+                            : isCompleted ? "bg-gray-100 text-gray-500 dark:bg-white/10 dark:text-gray-400" 
+                            : "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400"
+                        }`}>
+                            {isActive ? "Break Time" : isCompleted ? "Break Over" : "Upcoming Break"}
+                        </span>
+                        <div className={`size-8 rounded-full flex items-center justify-center shadow-sm ${
+                            isActive ? "bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400" 
+                            : "bg-gray-100 text-gray-400 dark:bg-white/10 dark:text-gray-500"
+                        }`}>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="size-5">
+                                <path d="M12 2.25a.75.75 0 01.75.75v9a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM18.894 6.166a.75.75 0 00-1.06-1.06l-6.364 6.364a.75.75 0 101.06 1.06l6.364-6.364zM6.75 12a5.25 5.25 0 1010.335 1.29.75.75 0 011.174.936A6.75 6.75 0 116.75 12z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white leading-tight mb-3">
+                        {item.title}
+                    </h3>
+                    <div className="mt-auto grid grid-cols-2 gap-4 py-3 border-t border-gray-100 dark:border-white/5">
+                        <div>
+                            <span className="block text-[10px] text-gray-400 uppercase tracking-wide font-semibold mb-0.5">Time</span>
+                            <div className="flex items-baseline gap-1">
+                                <span className={`text-lg font-mono font-bold ${isActive ? 'text-amber-600 dark:text-amber-400' : 'text-gray-900 dark:text-white'}`}>
+                                    {startTimeStr}
+                                </span>
+                                {endTimeStr && (
+                                    <span className="text-xs text-gray-400 font-normal">- {endTimeStr}</span>
+                                )}
+                            </div>
+                        </div>
+                        <div className="text-right">
+                            <span className="block text-[10px] text-gray-400 uppercase tracking-wide font-semibold mb-0.5">Duration</span>
+                            <span className="text-sm font-medium text-gray-600 dark:text-gray-300">{durationString}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         );
@@ -287,7 +434,7 @@ const StudentTodaySchedule = () => {
                                     Subject
                                 </span>
                                 <span className="text-sm font-medium text-white block truncate">
-                                    {selectedSession.subjectName}
+                                    {selectedSession.title}
                                 </span>
                             </div>
                             <div className="h-8 w-px bg-white/10 mx-2" />
@@ -298,7 +445,7 @@ const StudentTodaySchedule = () => {
                                     Room
                                 </span>
                                 <span className="text-sm font-medium text-white block">
-                                    {selectedSession.className}
+                                    {selectedSession.classCode || 'CLASS'}
                                 </span>
                             </div>
                             <div className="h-8 w-px bg-white/10 mx-2" />
@@ -317,16 +464,35 @@ const StudentTodaySchedule = () => {
                 />
             )}
 
-            <div className="max-w-7xl mx-auto space-y-6 pb-20">
+            <div className="flex flex-col flex-1 px-4 sm:px-6 md:px-8 py-8 w-full max-w-7xl mx-auto overflow-y-auto">
+                <div className="mb-8">
+                    <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Today's Schedule</h1>
+                    <p className="text-gray-500 dark:text-gray-400 mt-2 font-medium">Your daily roadmap of classes and scans.</p>
+                </div>
+
                 {isLoading ? (
-                    <div className="text-center py-12">Loading schedule...</div>
-                ) : !schedule?.data || schedule.data.length === 0 ? (
-                    <div className="text-center py-12 text-gray-500">No classes scheduled for today.</div>
+                    <div className="flex-1 flex justify-center items-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500"></div>
+                    </div>
+                ) : !schedule || schedule.length === 0 ? (
+                    <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-white dark:bg-white/5 rounded-3xl border border-dashed border-gray-300 dark:border-white/10">
+                        <div className="size-20 bg-gray-50 dark:bg-white/5 rounded-full flex items-center justify-center mb-6">
+                            <CheckCircleIcon className="size-10 text-gray-400" />
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No Schedule Today</h3>
+                        <p className="text-gray-500 dark:text-gray-400 max-w-md">You don't have any classes scheduled for today.</p>
+                    </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {schedule.data.map((item, idx) => (
-                            <SessionCard key={idx} item={item} />
-                        ))}
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                        {schedule.map((item: StudentRoadmapItem, index: number) => {
+                            if (item.type === 'scan_in' || item.type === 'scan_out') {
+                                return <GateCard key={`gate-${index}`} item={item} />;
+                            }
+                            if (item.type === 'break') {
+                                return <BreakCard key={`break-${index}`} item={item} />;
+                            }
+                            return <SessionCard key={`class-${index}`} item={item} />;
+                        })}
                     </div>
                 )}
             </div>

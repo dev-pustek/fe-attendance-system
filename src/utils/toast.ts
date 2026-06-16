@@ -49,20 +49,7 @@ export const extractErrorMessage = (error: any): string => {
  * Show success toast notification
  */
 export const showSuccess = (message: string) => {
-  toast.success(message, {
-    duration: 3000,
-    position: 'top-right',
-    style: {
-      background: '#10b981',
-      color: '#fff',
-      fontWeight: '500',
-      zIndex: 999999,
-    },
-    iconTheme: {
-      primary: '#fff',
-      secondary: '#10b981',
-    },
-  });
+  toast.success(message);
 };
 
 /**
@@ -71,20 +58,7 @@ export const showSuccess = (message: string) => {
 export const showError = (error: any, fallbackMessage?: string) => {
   const message = extractErrorMessage(error) || fallbackMessage || 'An error occurred';
   
-  toast.error(message, {
-    duration: 5000,
-    position: 'top-right',
-    style: {
-      background: '#ef4444',
-      color: '#fff',
-      fontWeight: '500',
-      zIndex: 999999,
-    },
-    iconTheme: {
-      primary: '#fff',
-      secondary: '#ef4444',
-    },
-  });
+  toast.error(message);
 };
 
 /**
@@ -92,14 +66,7 @@ export const showError = (error: any, fallbackMessage?: string) => {
  * Returns toast ID for updating/dismissing later
  */
 export const showLoading = (message: string = 'Loading...') => {
-  return toast.loading(message, {
-    position: 'top-right',
-    style: {
-      background: '#3b82f6',
-      color: '#fff',
-      fontWeight: '500',
-    },
-  });
+  return toast.loading(message);
 };
 
 /**
@@ -107,14 +74,7 @@ export const showLoading = (message: string = 'Loading...') => {
  */
 export const showInfo = (message: string) => {
   toast(message, {
-    duration: 3000,
-    position: 'top-right',
     icon: 'ℹ️',
-    style: {
-      background: '#3b82f6',
-      color: '#fff',
-      fontWeight: '500',
-    },
   });
 };
 
@@ -147,32 +107,6 @@ export const showPromiseToast = <T,>(
           return messages.error(err);
         }
         return extractErrorMessage(err) || messages.error || 'Operation failed';
-      },
-    },
-    {
-      position: 'top-right',
-      style: {
-        fontWeight: '500',
-      },
-      success: {
-        style: {
-          background: '#10b981',
-          color: '#fff',
-        },
-        iconTheme: {
-          primary: '#fff',
-          secondary: '#10b981',
-        },
-      },
-      error: {
-        style: {
-          background: '#ef4444',
-          color: '#fff',
-        },
-        iconTheme: {
-          primary: '#fff',
-          secondary: '#ef4444',
-        },
       },
     }
   );

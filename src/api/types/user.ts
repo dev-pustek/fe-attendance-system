@@ -78,3 +78,8 @@ export interface ImageAdjustment {
   x: number; // horizontal offset in pixels
   y: number; // vertical offset in pixels
 }
+
+export interface ChangePasswordDto {
+  currentPassword?: string;
+  newPassword?: string;
+}

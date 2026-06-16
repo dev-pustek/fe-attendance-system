@@ -447,7 +447,7 @@ export default function StudentManagement() {
 
     return (
         <>
-            <PageMeta title="Student Management | Visia" description="Manage system students." />
+            <PageMeta title="Student Management | SIAPUS" description="Manage system students." />
             <PageBreadcrumb pageTitle="Student Management" />
 
             <div className="space-y-6">

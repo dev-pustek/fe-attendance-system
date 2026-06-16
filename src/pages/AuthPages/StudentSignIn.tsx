@@ -80,19 +80,17 @@ export default function StudentSignIn() {
             className="w-full max-w-sm bg-white dark:bg-gray-800 rounded-[32px] shadow-2xl border border-gray-100 dark:border-white/5 overflow-hidden relative z-10"
         >
             {/* Header / Brand */}
-            <div className="pt-12 pb-8 px-8 text-center bg-gradient-to-b from-brand-50/50 dark:from-brand-900/10 to-transparent">
-                <div className="mb-6 inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-white dark:bg-gray-700 shadow-xl shadow-brand-500/10 border border-gray-100 dark:border-white/10 group">
-                    <img 
-                        src="/logo-pwa.png" 
-                        alt="Visia" 
-                        className="w-12 h-12 object-contain group-hover:scale-110 transition-transform duration-500" 
-                    />
-                </div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight font-outfit">
+            <div className="pt-8 pb-8 px-8 text-center bg-gradient-to-b from-brand-50/50 dark:from-brand-900/10 to-transparent">
+                <img 
+                    src="/logo-pwa.png" 
+                    alt="SIAPUS" 
+                    className="w-24 h-auto object-contain mx-auto" 
+                />
+                <h1 className="text-3xl font-semibold text-gray-900 dark:text-white tracking-tight font-outfit">
                     Student Portal
                 </h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 font-medium">
-                    Access your classes & attendance
+                <p className="mt-1 text-sm sm:text-base text-gray-500 dark:text-gray-400">
+                    Sistem Informasi Absensi Pustek
                 </p>
             </div>
 
@@ -127,42 +125,39 @@ export default function StudentSignIn() {
                         <button
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-4 top-[42px] text-gray-400 hover:text-brand-500 transition-colors"
+                            className="absolute right-4 top-[38px] text-gray-400 hover:text-brand-500 transition-colors"
                         >
                             {showPassword ? <EyeIcon className="size-5" /> : <EyeCloseIcon className="size-5" />}
                         </button>
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="space-y-4">
+                    <div className="space-y-2">
                         <Button
                             type="submit"
                             disabled={loginMutation.isPending}
                             className="w-full shadow-lg shadow-brand-500/25"
                         >
-                            {loginMutation.isPending ? "Signing In..." : "Sign In"}
+                            {loginMutation.isPending ? "Sedang Masuk..." : "Masuk"}
                         </Button>
 
-                        {isInstallable && (
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={install}
-                                className="w-full"
-                                startIcon={<DownloadIcon className="size-5" />}
-                            >
-                                Install Application PWA
-                            </Button>
-                        )}
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                                if (isInstallable) {
+                                    install();
+                                } else {
+                                    alert("Instalasi PWA tidak didukung di browser ini, atau aplikasi sudah terinstal. Pada iOS Safari, ketuk 'Bagikan' lalu 'Tambah ke Layar Utama'.");
+                                }
+                            }}
+                            className="w-full"
+                            startIcon={<DownloadIcon className="size-5" />}
+                        >
+                            Instal Aplikasi PWA
+                        </Button>
                     </div>
                 </form>
-                
-                {/* Footer Links */}
-                <div className="mt-5  border-gray-100 dark:border-white/5 text-center space-y-5">
-                     <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-                        Forgot credentials? <a href="#" className="text-brand-500 hover:text-brand-600 font-bold">Contact Admin</a>
-                     </p>
-                </div>
             </div>
         </motion.div>
       </div>

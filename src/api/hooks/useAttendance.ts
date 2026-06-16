@@ -318,7 +318,7 @@ export const useClassroomCommand = () => {
 export const useValidateSession = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, status, notes }: { id: number | string; status: 'valid' | 'invalid'; notes?: string }) => 
+    mutationFn: ({ id, status, notes }: { id: number | string; status: 'valid' | 'invalid' | 'pending'; notes?: string }) => 
       attendanceService.validateSession(id, status, notes),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['classroom-command'] });

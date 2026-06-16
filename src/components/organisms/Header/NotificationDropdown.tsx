@@ -3,40 +3,34 @@ import Dropdown from "../../molecules/Dropdown";
 import { Link, useNavigate } from "react-router";
 import notificationService from "../../../api/services/notificationService";
 import { Notification } from "../../../api/types/notification";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
-import { MailIcon } from "../../atoms/Icons"; // Assuming ClockIcon exists or use generic SVGs
+import { MailIcon } from "../../atoms/Icons"; 
 
-export default function NotificationDropdown() {
+export default function NotificationDropdown({ isMobilePremium }: { isMobilePremium?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
-  const fetchNotifications = async () => {
-      try {
-          setIsLoading(true);
-          const res = await notificationService.getNotifications({ limit: 5 });
-          setNotifications(res.data.data);
-          
-          const unreadRes = await notificationService.getNotifications({ status: 'unread', limit: 1 });
-          setUnreadCount(unreadRes.data.meta.total);
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ['notifications', 'dropdown'],
+    queryFn: async () => {
+      const recentRes = await notificationService.getNotifications({ limit: 5 });
+      return {
+        items: recentRes.data.data,
+        unreadCount: recentRes.data.meta.unreadCount || 0
+      };
+    },
+    staleTime: 60000, // Cache for 1 minute
+  });
 
-      } catch (error) {
-          console.error("Failed to fetch notifications", error);
-      } finally {
-          setIsLoading(false);
-      }
-  };
-
-  useEffect(() => {
-      fetchNotifications();
-  }, []);
+  const notifications = data?.items || [];
+  const unreadCount = data?.unreadCount || 0;
 
   function toggleDropdown() {
     setIsOpen(!isOpen);
-    if (!isOpen) fetchNotifications(); // Refresh on open
+    if (!isOpen) refetch(); // Refresh on open
   }
 
   function closeDropdown() {
@@ -48,8 +42,13 @@ export default function NotificationDropdown() {
           try {
               await notificationService.markAsRead(notification.id);
               // Optimistic update
-              setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, readAt: new Date().toISOString() } : n));
-              setUnreadCount(prev => Math.max(0, prev - 1));
+              queryClient.setQueryData(['notifications', 'dropdown'], (old: any) => {
+                  if (!old) return old;
+                  return {
+                      items: old.items.map((n: Notification) => n.id === notification.id ? { ...n, readAt: new Date().toISOString() } : n),
+                      unreadCount: Math.max(0, old.unreadCount - 1)
+                  };
+              });
           } catch (e) {
               console.error(e);
           }
@@ -63,8 +62,14 @@ export default function NotificationDropdown() {
   const handleMarkAllRead = async () => {
       try {
           await notificationService.markAllAsRead();
-          setNotifications(prev => prev.map(n => ({ ...n, readAt: new Date().toISOString() })));
-          setUnreadCount(0);
+          // Optimistic update
+          queryClient.setQueryData(['notifications', 'dropdown'], (old: any) => {
+              if (!old) return old;
+              return {
+                  items: old.items.map((n: Notification) => ({ ...n, readAt: new Date().toISOString() })),
+                  unreadCount: 0
+              };
+          });
       } catch (e) {
           console.error(e);
       }
@@ -73,13 +78,18 @@ export default function NotificationDropdown() {
   return (
     <div className="relative" ref={dropdownRef}>
       <button
-        className="relative flex items-center justify-center text-gray-500 transition-colors bg-white border border-gray-200 rounded-full dropdown-toggle hover:text-gray-700 h-11 w-11 hover:bg-gray-100 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
-        onClick={toggleDropdown}
+        className={`relative flex items-center justify-center rounded-full transition-colors dropdown-toggle ${
+          isMobilePremium
+            ? "w-10 h-10 bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm shadow-sm border border-white/5"
+            : "text-gray-500 bg-white border border-gray-200 hover:text-gray-700 h-11 w-11 hover:bg-gray-100 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+        }`}
+        onClick={isMobilePremium ? () => navigate("/notifications") : toggleDropdown}
+        onMouseDown={(e) => e.stopPropagation()}
       >
         <span
-          className={`absolute right-0 top-0.5 z-10 h-2 w-2 rounded-full bg-error-500 ring-2 ring-white dark:ring-gray-900 ${
-            unreadCount === 0 ? "hidden" : "flex"
-          }`}
+          className={`absolute right-0 top-0.5 z-10 h-2 w-2 rounded-full ring-2 ${
+            isMobilePremium ? "ring-brand-500 bg-red-400" : "bg-error-500 ring-white dark:ring-gray-900"
+          } ${unreadCount === 0 ? "hidden" : "flex"}`}
         ></span>
         <svg
           className="fill-current"
@@ -97,11 +107,12 @@ export default function NotificationDropdown() {
         </svg>
       </button>
 
-      <Dropdown
-        isOpen={isOpen}
-        onClose={closeDropdown}
-        className="absolute -right-[70px] mt-[17px] flex h-[480px] w-[350px] flex-col rounded-2xl border border-gray-200 bg-white shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark sm:w-[400px] lg:right-0"
-      >
+      {!isMobilePremium && (
+        <Dropdown
+          isOpen={isOpen}
+          onClose={closeDropdown}
+          className="absolute -right-27 mt-[17px] flex h-90 w-[300px] sm:w-[350px] flex-col rounded-2xl border border-gray-200 bg-white shadow-theme-lg sm:right-0 sm:w-80 dark:border-gray-800 dark:bg-gray-dark overflow-hidden"
+        >
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
           <h5 className="text-sm font-semibold text-gray-800 dark:text-white">
             Notifications {unreadCount > 0 && <span className="ml-1 text-xs font-medium text-brand-500 bg-brand-50 px-2 py-0.5 rounded-full dark:bg-brand-500/10 dark:text-brand-400">{unreadCount} new</span>}
@@ -183,6 +194,7 @@ export default function NotificationDropdown() {
             </Link>
         </div>
       </Dropdown>
+      )}
     </div>
   );
 }

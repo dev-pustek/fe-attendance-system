@@ -1,31 +1,37 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { Html5Qrcode } from "html5-qrcode";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { attendanceService } from "../../../api/services/attendanceService";
 import { settingsService } from "../../../api/services/settingsService";
 import { UserPolicyResponse } from "../../../api/types/attendance";
 import {
   ChevronLeftIcon,
+  LockIcon,
 } from "../../../components/atoms/Icons";
 import { AnimatePresence, motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../../../store/authStore";
 import { useAttendanceRules } from "../../../api/hooks/useRules";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createPortal } from "react-dom";
+import { Modal } from "../../../components/molecules/Modal";
+import Button from "../../../components/atoms/Button";
 
 const GateScan = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const isStudent = user?.userTypes?.includes("student") || false;
+  const [searchParams] = useSearchParams();
+  const isSelfScan = !searchParams.get("kiosk");
+  const queryClient = useQueryClient();
 
   const [scanResult, setScanResult] = useState<{
     status: "success" | "error" | "idle";
     message?: string;
     studentName?: string;
-    role?: string;
+    role?: "kiosk" | "self";
     policy?: UserPolicyResponse;
     attendanceStatus?: string;
+    record?: any;
   }>({ status: "idle" });
   
   const [isProcessing, setIsProcessing] = useState(false);
@@ -40,6 +46,8 @@ const GateScan = () => {
   const [policyError, setPolicyError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"landing" | "scanner">("landing");
   const [requireSelfie, setRequireSelfie] = useState(false);
+  const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [pendingScanCode, setPendingScanCode] = useState<string | null>(null);
   const lastFetchedIdRef = useRef<string | null>(null);
   const lastScannedDataRef = useRef<string | null>(null);
@@ -59,6 +67,16 @@ const GateScan = () => {
     }
     return globalRulesResponse?.data?.some(
       (r) => r.ruleType === "REQUIRE_QR_CODE" && (r.ruleValue === "true" || r.ruleValue === "1" || r.ruleValue === true)
+    ) ?? false;
+  }, [userPolicy?.rules, globalRulesResponse?.data]);
+
+  const requirePhotoEvidence = useMemo(() => {
+    const userRule = userPolicy?.rules?.find((r: any) => r.ruleType === "REQUIRE_PHOTO_EVIDENCE");
+    if (userRule) {
+      return userRule.ruleValue === "true" || userRule.ruleValue === "1" || userRule.ruleValue === true;
+    }
+    return globalRulesResponse?.data?.some(
+      (r) => r.ruleType === "REQUIRE_PHOTO_EVIDENCE" && (r.ruleValue === "true" || r.ruleValue === "1" || r.ruleValue === true)
     ) ?? false;
   }, [userPolicy?.rules, globalRulesResponse?.data]);
 
@@ -83,7 +101,7 @@ const GateScan = () => {
       setIsProcessing(true);
 
       try {
-        const deviceId = isStudent ? `mobile_${user?.id}` : "gate_kiosk_1";
+        const deviceId = isSelfScan ? `mobile_${user?.id}` : "gate_kiosk_1";
 
         // Cooldown Check: Prevent scanning the same code within 5 seconds
         const now = Date.now();
@@ -95,27 +113,7 @@ const GateScan = () => {
         lastScannedDataRef.current = code;
         lastScanTimeRef.current = now;
 
-        // First, check policy for this specific user code
-        let needsPhoto = false;
-        try {
-            const validLocations = ['SCHOOL_ENTRY', 'GATE_1', 'GATE_2'];
-            let policyTargetId = code;
-            
-            // If scanning a location code (Mode A), use the logged-in student's ID
-            if (validLocations.includes(code)) {
-                policyTargetId = user?.id || user?.public_id || "";
-            }
-
-            if (policyTargetId) {
-                const policyRes = await attendanceService.getAttendancePolicy(policyTargetId);
-                const policyData = (policyRes as any).data || policyRes;
-                needsPhoto = policyData?.rules?.some((r: any) => r.ruleType === "REQUIRE_PHOTO_EVIDENCE" && (r.ruleValue === "true" || r.ruleValue === "1" || r.ruleValue === true));
-            }
-        } catch (e) {
-            console.error("Failed to fetch policy before scan", e);
-        }
-
-        if (needsPhoto) {
+        if (requirePhotoEvidence) {
             setPendingScanCode(code);
             setRequireSelfie(true);
             setIsProcessing(false);
@@ -127,12 +125,12 @@ const GateScan = () => {
         handleScanError(error);
       }
     },
-    [isProcessing, isStudent, user, requireSelfie, pendingScanCode] // submitScan and handleScanError don't change
+    [isProcessing, isSelfScan, user, requireSelfie, pendingScanCode, requirePhotoEvidence] // submitScan and handleScanError don't change
   );
 
   const submitScan = async (code: string, explicitPhoto?: string) => {
       try {
-        const deviceId = isStudent ? `mobile_${user?.id}` : "gate_kiosk_1";
+        const deviceId = isSelfScan ? `mobile_${user?.id}` : "gate_kiosk_1";
         let latitude: number | undefined;
         let longitude: number | undefined;
 
@@ -158,6 +156,13 @@ const GateScan = () => {
           record.user?.id ||
           record.student?.id;
 
+        if (isSelfScan) {
+            toast.success("Scan successful!");
+            queryClient.invalidateQueries({ queryKey: ['mobile-student-roadmap'] });
+            navigate("/");
+            return;
+        }
+
         if (userId) {
           try {
             const policyRes = await attendanceService.getAttendancePolicy(
@@ -171,14 +176,12 @@ const GateScan = () => {
 
         setScanResult({
           status: "success",
-          message: isStudent
-            ? "You have checked in successfully."
-            : "Attendance Recorded",
-          studentName:
-            response.studentName || (isStudent ? user?.name : "Student"),
-          role: isStudent ? "self" : "kiosk",
+          message: "Attendance Recorded",
+          studentName: response.studentName || "Student",
+          role: "kiosk",
           policy,
           attendanceStatus: (record.statusLabel || response.statusLabel)?.toUpperCase(),
+          record: record,
         });
 
         setTimeout(() => {
@@ -194,7 +197,7 @@ const GateScan = () => {
 
   const submitDirectCheckIn = async (explicitPhoto?: string) => {
       try {
-        const deviceId = isStudent ? `mobile_${user?.id}` : "gate_kiosk_1";
+        const deviceId = isSelfScan ? `mobile_${user?.id}` : "gate_kiosk_1";
         let latitude: number | undefined;
         let longitude: number | undefined;
 
@@ -209,13 +212,26 @@ const GateScan = () => {
             photoBlob = await res.blob();
         }
 
-        const response = await attendanceService.checkIn({
-            deviceId,
-            latitude,
-            longitude,
-            method: "MANUAL",
-            photo: photoBlob
-        });
+        const isCheckedIn = userPolicy?.todayStatus?.clockIn ? true : false;
+        
+        let response;
+        if (isCheckedIn) {
+            response = await attendanceService.checkOut({
+                deviceId,
+                latitude,
+                longitude,
+                method: "MANUAL",
+                photo: photoBlob
+            });
+        } else {
+            response = await attendanceService.checkIn({
+                deviceId,
+                latitude,
+                longitude,
+                method: "MANUAL",
+                photo: photoBlob
+            });
+        }
 
         let policy: UserPolicyResponse | undefined;
         const record = (response as any).data || response;
@@ -225,6 +241,13 @@ const GateScan = () => {
           record.id ||
           record.user?.id ||
           record.student?.id;
+
+        if (isSelfScan) {
+            toast.success(isCheckedIn ? "You have checked out successfully." : "You have checked in successfully.");
+            queryClient.invalidateQueries({ queryKey: ['mobile-student-roadmap'] });
+            navigate("/");
+            return;
+        }
 
         if (userId) {
           try {
@@ -237,14 +260,12 @@ const GateScan = () => {
 
         setScanResult({
           status: "success",
-          message: isStudent
-            ? "You have checked in successfully."
-            : "Attendance Recorded",
-          studentName:
-            (response as any).studentName || (isStudent ? user?.name : "Student"),
-          role: isStudent ? "self" : "kiosk",
+          message: "Attendance Recorded",
+          studentName: (response as any).studentName || "Student",
+          role: "kiosk",
           policy,
           attendanceStatus: (record.statusLabel || (response as any).statusLabel)?.toUpperCase(),
+          record: record,
         });
 
         setTimeout(() => {
@@ -287,15 +308,41 @@ const GateScan = () => {
                 const videoEl = renderRef.current.querySelector("video");
                 if (videoEl) {
                     const canvas = document.createElement("canvas");
+                    const screenWidth = window.innerWidth || document.documentElement.clientWidth || 360;
+                    const screenHeight = window.innerHeight || document.documentElement.clientHeight || 800;
                     const vidWidth = videoEl.videoWidth || 640;
                     const vidHeight = videoEl.videoHeight || 480;
                     
-                    canvas.width = vidWidth;
-                    canvas.height = vidHeight;
+                    const scale = Math.max(screenWidth / vidWidth, screenHeight / vidHeight);
+
+                    const displayedWidth = vidWidth * scale;
+                    const displayedHeight = vidHeight * scale;
+
+                    const videoX = (screenWidth - displayedWidth) / 2;
+                    const videoY = (screenHeight - displayedHeight) / 2;
+
+                    // Frame is w-[80%] max-w-[320px] aspect-[3/4]
+                    const frameWidth = Math.min(screenWidth * 0.8, 320);
+                    const frameHeight = frameWidth * 4 / 3;
+
+                    const left = (screenWidth - frameWidth) / 2;
+                    const top = (screenHeight - frameHeight) / 2;
+
+                    const sourceX = (left - videoX) / scale;
+                    const sourceY = (top - videoY) / scale;
+                    const sourceWidth = frameWidth / scale;
+                    const sourceHeight = frameHeight / scale;
+
+                    canvas.width = sourceWidth;
+                    canvas.height = sourceHeight;
                     const ctx = canvas.getContext("2d");
                     if (ctx) {
-                        ctx.drawImage(videoEl, 0, 0, vidWidth, vidHeight);
-                        // Using WebP for superior compression and smaller payload size compared to JPEG
+                        const isMirrored = videoEl.style.transform.includes("scaleX(-1)");
+                        if (isMirrored) {
+                            ctx.translate(canvas.width, 0);
+                            ctx.scale(-1, 1);
+                        }
+                        ctx.drawImage(videoEl, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, sourceWidth, sourceHeight);
                         const dataUrl = canvas.toDataURL("image/webp", 0.5);
                         if (dataUrl && dataUrl.length > 50) {
                             photoEvidence = dataUrl;
@@ -307,13 +354,37 @@ const GateScan = () => {
             }
         }
 
-        if (pendingScanCode === "MANUAL_CHECKIN") {
-            await submitDirectCheckIn(photoEvidence);
+        if (photoEvidence) {
+            setCapturedPhoto(photoEvidence);
+            setIsProcessing(false);
         } else {
-            await submitScan(pendingScanCode, photoEvidence);
+            // Fallback if capture fails completely
+            if (pendingScanCode === "MANUAL_CHECKIN") {
+                await submitDirectCheckIn();
+            } else {
+                await submitScan(pendingScanCode);
+            }
+            setRequireSelfie(false);
+            setPendingScanCode(null);
+            setIsProcessing(false);
+        }
+  };
+
+  const handleConfirmPhoto = async () => {
+        setIsProcessing(true);
+        if (pendingScanCode === "MANUAL_CHECKIN") {
+            await submitDirectCheckIn(capturedPhoto || undefined);
+        } else if (pendingScanCode) {
+            await submitScan(pendingScanCode, capturedPhoto || undefined);
         }
         setRequireSelfie(false);
         setPendingScanCode(null);
+        setCapturedPhoto(null);
+        setIsProcessing(false);
+  };
+
+  const handleRetakePhoto = () => {
+        setCapturedPhoto(null);
   };
 
   // -- Camera Scanner Setup --
@@ -337,7 +408,6 @@ const GateScan = () => {
           { facingMode: "environment" },
           {
             fps: 10,
-            qrbox: { width: 300, height: 300 },
           },
           (decodedText) => {
             handleScan(decodedText);
@@ -370,8 +440,34 @@ const GateScan = () => {
     if (targetId) {
       attendanceService
         .getAttendancePolicy(targetId.toString())
-        .then((res) => {
+        .then(async (res) => {
           const policyData = (res as { data?: UserPolicyResponse }).data || (res as unknown as UserPolicyResponse);
+          
+          // Apply Dynamic Teacher Schedule Override
+          const isStudentUser = user?.userTypes?.includes("student");
+          if (!isStudentUser) {
+             const dynamicRule = policyData.rules?.find((r: any) => r.ruleType === "DYNAMIC_TEACHER_SCHEDULE");
+             if (dynamicRule && (dynamicRule.ruleValue === "true" || dynamicRule.ruleValue === true)) {
+                try {
+                   const todayStr = new Date().toISOString().split('T')[0];
+                   const sessionsRes = await attendanceService.getTeachingSessions({ 
+                       actualTeacherId: targetId.toString(), 
+                       sessionDate: todayStr,
+                       limit: 100
+                   });
+                   const sessions = (sessionsRes as any).data || sessionsRes;
+                   if (Array.isArray(sessions) && sessions.length > 0) {
+                       const firstSession = sessions.sort((a: any, b: any) => a.startTime.localeCompare(b.startTime))[0];
+                       if (policyData.attendancePolicy && firstSession.startTime) {
+                          policyData.attendancePolicy.startTime = firstSession.startTime;
+                       }
+                   }
+                } catch (err) {
+                   console.error("Failed to fetch teacher schedule for dynamic check-in:", err);
+                }
+             }
+          }
+
           setUserPolicy(policyData);
           setPolicyError(null);
         })
@@ -469,7 +565,9 @@ const GateScan = () => {
     message: string | null;
     openTime?: Date;
   } => {
-    if (geoSettings) {
+    const requireGeo = userPolicy?.rules?.some((r: any) => r.ruleType === "REQUIRE_GEO_LOCATION" && (r.ruleValue === "true" || r.ruleValue === "1" || r.ruleValue === true));
+
+    if (geoSettings && requireGeo) {
       if (!userLocation) {
         return {
           isRestricted: true,
@@ -521,15 +619,29 @@ const GateScan = () => {
       }
     }
 
+    // Remove early checkout lock
+    // if (userPolicy.todayStatus?.clockIn && !userPolicy.todayStatus?.clockOut) {
+    //   if (now < endDate) {
+    //     return {
+    //       isRestricted: false,
+    //       checkOutLocked: true,
+    //       reason: "too_early",
+    //       message: "Check-out locked",
+    //       openTime: endDate,
+    //     };
+    //   }
+    // }
+
     if (now > endDate && !userPolicy.todayStatus?.clockIn) {
       return {
         isRestricted: true,
+        checkOutLocked: false,
         reason: "too_late",
         message: "Attendance Closed",
       };
     }
 
-    return { isRestricted: false, reason: null, message: null };
+    return { isRestricted: false, checkOutLocked: false, reason: null, message: null };
   };
 
   const restriction = getRestrictionState();
@@ -553,9 +665,9 @@ const GateScan = () => {
     const todayStatus = userPolicy?.todayStatus;
     const isHoliday = userPolicy?.holiday?.isHoliday ?? false;
 
-    const attendanceState: 'complete' | 'restricted' | 'checkedIn' | 'none' | 'holiday' = 
+    const attendanceState: 'restricted' | 'checkedIn' | 'none' | 'holiday' | 'complete' = 
+        todayStatus?.clockOut ? 'complete' :
         isHoliday ? 'holiday' :
-        todayStatus?.clockIn && todayStatus?.clockOut ? 'complete' :
         (todayStatus?.clockIn ? 'checkedIn' :
          (isRestricted ? 'restricted' : 'none'));
 
@@ -600,34 +712,30 @@ const GateScan = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   whileHover={
-                    ["complete", "restricted", "holiday"].includes(attendanceState)
+                    ["restricted", "holiday"].includes(attendanceState)
                       ? {}
                       : { scale: 1.02 }
                   }
                   whileTap={
-                    ["complete", "restricted", "holiday"].includes(attendanceState)
+                    ["restricted", "holiday"].includes(attendanceState)
                       ? {}
                       : { scale: 0.98 }
                   }
                   onClick={() => {
-                    if (["complete", "restricted", "holiday"].includes(attendanceState)) return;
+                    if (["restricted", "holiday"].includes(attendanceState) || restriction.checkOutLocked) return;
                     
-                    const requirePhoto = userPolicy?.rules?.some((r: any) => r.ruleType === "REQUIRE_PHOTO_EVIDENCE" && (r.ruleValue === "true" || r.ruleValue === "1" || r.ruleValue === true));
-
                     if (requireQrCode) {
                         setViewMode("scanner");
-                    } else if (requirePhoto) {
+                    } else if (requirePhotoEvidence) {
                         setPendingScanCode("MANUAL_CHECKIN");
                         setRequireSelfie(true);
                         setViewMode("scanner");
                     } else {
-                        submitDirectCheckIn();
+                        setIsConfirmModalOpen(true);
                     }
                   }}
                   className={`border rounded-2xl p-6 transition-all group relative overflow-hidden shadow-2xl ${
-                    attendanceState === "complete"
-                      ? "bg-black/40 border-white/5 opacity-60 cursor-default"
-                      : attendanceState === "restricted"
+                    attendanceState === "restricted"
                       ? "bg-red-500/5 border-red-500/10 opacity-70 cursor-not-allowed"
                       : attendanceState === "holiday"
                       ? "bg-purple-500/10 border-purple-500/20 opacity-90 cursor-default"
@@ -636,11 +744,7 @@ const GateScan = () => {
                       : "bg-brand-500/10 border-brand-500/20 cursor-pointer hover:bg-brand-500/20"
                   }`}
                 >
-                  {attendanceState === "complete" && (
-                    <div className="absolute top-0 left-0 right-0 bg-green-500/20 text-green-400 text-center text-[10px] font-bold py-1 uppercase tracking-wider border-b border-green-500/30 font-mono">
-                      Attendance Completed
-                    </div>
-                  )}
+
 
                   {attendanceState === "holiday" && (
                     <div className="absolute top-0 left-0 right-0 bg-purple-500/20 text-purple-300 text-center text-[10px] font-bold py-1 uppercase tracking-wider border-b border-purple-500/30 font-mono">
@@ -658,10 +762,15 @@ const GateScan = () => {
                     </div>
                   )}
 
-                  <div className={`flex items-start justify-between mb-6 ${["complete", "restricted", "holiday"].includes(attendanceState) ? "mt-6" : ""}`}>
+                  {attendanceState === "checkedIn" && restriction.checkOutLocked && (
+                    <div className="absolute top-0 left-0 right-0 bg-yellow-500/20 text-yellow-500 text-center text-[10px] font-bold py-1 uppercase tracking-wider border-b border-yellow-500/30 font-mono">
+                      Check-out opens in <span className="text-white">{restriction.openTime ? getCountdown(restriction.openTime) : '--:--'}</span>
+                    </div>
+                  )}
+
+                  <div className={`flex items-start justify-between mb-6 ${["restricted", "holiday"].includes(attendanceState) ? "mt-6" : ""}`}>
                     <div>
                       <div className={`text-xs font-bold uppercase tracking-wider mb-2 ${
-                        attendanceState === "checkedIn" ? "text-yellow-500" : 
                         attendanceState === "restricted" ? "text-red-500" : "text-brand-400"
                       }`}>
                          {isHoliday ? 'Holiday' : (userPolicy.attendancePolicy?.source?.replace(/_/g, " ") || 'Unknown Policy')}
@@ -682,7 +791,6 @@ const GateScan = () => {
                     </div>
 
                     <div className={`p-2 rounded-full transition-colors flex-shrink-0 ml-4 ${
-                      attendanceState === "complete" ? "bg-green-500/20 text-green-500" :
                       attendanceState === "restricted" ? "bg-red-500/20 text-red-500" :
                       attendanceState === "holiday" ? "bg-purple-500/20 text-purple-400" :
                       attendanceState === "checkedIn" ? "bg-yellow-500/20 text-yellow-500" :
@@ -754,7 +862,7 @@ const GateScan = () => {
                       </div>
                   </div>
 
-                  <div className={`mt-6 flex items-center pt-4 border-t border-white/5 ${["complete", "restricted", "holiday"].includes(attendanceState) ? "justify-center" : "justify-between"}`}>
+                  <div className={`mt-6 flex items-center pt-4 border-t border-white/5 ${["restricted", "holiday", "complete"].includes(attendanceState) ? "justify-center" : "justify-between"}`}>
                     <span className="text-white/60 flex items-center gap-2 text-xs uppercase tracking-wide">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-brand-400">
                             <path fillRule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.75A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.5V6.75A2.75 2.75 0 014.75 4h.25V2.75A.75.75 0 015.75 2zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75z" clipRule="evenodd" />
@@ -762,7 +870,7 @@ const GateScan = () => {
                         {new Date().toLocaleDateString("en-GB", { weekday: "long" })}
                     </span>
 
-                    {!["complete", "restricted", "holiday"].includes(attendanceState) && (() => {
+                    {(!["restricted", "holiday", "complete"].includes(attendanceState) && !restriction.checkOutLocked) && (() => {
                         const requirePhoto = userPolicy?.rules?.some((r: any) => r.ruleType === "REQUIRE_PHOTO_EVIDENCE" && (r.ruleValue === "true" || r.ruleValue === "1" || r.ruleValue === true));
                         return (
                         <span className={`text-${attendanceState === 'checkedIn' ? 'yellow' : 'brand'}-400 group-hover:translate-x-1 transition-transform flex items-center gap-1 font-medium text-sm`}>
@@ -775,6 +883,12 @@ const GateScan = () => {
                         </span>
                         );
                     })()}
+                    
+                    {attendanceState === "checkedIn" && restriction.checkOutLocked && (
+                        <span className="text-white/40 flex items-center gap-1 font-medium text-sm">
+                            <LockIcon className="w-4 h-4" /> Locked until Check-Out
+                        </span>
+                    )}
                   </div>
                 </motion.div>
               ) : (
@@ -787,6 +901,39 @@ const GateScan = () => {
             </div>
           </div>
         </div>
+
+        {/* Confirmation Modal */}
+        <Modal
+          isOpen={isConfirmModalOpen}
+          onClose={() => setIsConfirmModalOpen(false)}
+          title="Confirm Check-In"
+          className="max-w-xs m-4"
+          footer={
+            <div className="flex justify-end gap-3 w-full">
+              <Button
+                variant="secondary"
+                onClick={() => setIsConfirmModalOpen(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  setIsConfirmModalOpen(false);
+                  submitDirectCheckIn();
+                }}
+                className="flex-1"
+              >
+                Confirm
+              </Button>
+            </div>
+          }
+        >
+          <div className="text-gray-600 dark:text-gray-300 text-sm">
+            <p>Are you sure you want to {attendanceState === "checkedIn" ? "clock out" : "check in"} now?</p>
+          </div>
+        </Modal>
       </div>
     );
   }
@@ -797,16 +944,26 @@ const GateScan = () => {
       <div className="absolute inset-0 bg-gradient-to-b from-brand-900/10 to-transparent pointer-events-none" />
 
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-20 p-6 flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent">
+      <div className="absolute top-0 left-0 right-0 z-50 p-6 flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
         <button 
-          onClick={() => setViewMode("landing")}
-          className="p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors backdrop-blur-md border border-white/10"
+          onClick={() => {
+            if (requireSelfie && requireQrCode) {
+               setRequireSelfie(false);
+            } else {
+               setViewMode("landing");
+            }
+          }}
+          className="p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors backdrop-blur-md border border-white/10 pointer-events-auto active:scale-95"
         >
           <ChevronLeftIcon className="size-6" />
         </button>
-        <div className="text-center">
-          <h1 className="text-xl sm:text-2xl font-bold text-white mb-1 tracking-tight">Absen Kehadiran</h1>
-          <p className="text-white/70 text-sm font-medium">Scan QR Code</p>
+        <div className="text-center pointer-events-auto">
+          <h1 className="text-lg sm:text-xl font-bold text-white mb-1 tracking-tight">
+            {requireSelfie ? "Take a Selfie" : "Absen Kehadiran"}
+          </h1>
+          <p className="text-white/70 text-xs font-medium">
+            {requireSelfie ? "Position your face in the frame" : "Scan QR Code"}
+          </p>
         </div>
         <div className="w-10" />
       </div>
@@ -820,9 +977,11 @@ const GateScan = () => {
         `}</style>
 
         {/* Adjust darkness: Reduced shadow alpha for clearer view */}
-        <div className="absolute inset-0 bg-black/40 z-10">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] h-[280px] sm:w-[350px] sm:h-[350px] bg-transparent shadow-[0_0_0_9999px_rgba(0,0,0,0.4)] rounded-3xl" />
-        </div>
+        {!requireSelfie && (
+            <div className="absolute inset-0 bg-black/40 z-10">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] h-[280px] sm:w-[350px] sm:h-[350px] bg-transparent shadow-[0_0_0_9999px_rgba(0,0,0,0.4)] rounded-3xl" />
+            </div>
+        )}
 
         {/* Custom Green Corner Frames Only (Hide during selfie or if QR is disabled) */}
         {!requireSelfie && requireQrCode && (
@@ -846,7 +1005,7 @@ const GateScan = () => {
         )}
 
         {/* Message for RFID Scanner when QR is disabled */}
-        {!requireSelfie && !requireQrCode && !isStudent && (
+        {!requireSelfie && !requireQrCode && !isSelfScan && (
             <div className="absolute inset-0 z-40 flex flex-col items-center justify-center pointer-events-none">
                 <div className="bg-black/60 backdrop-blur-md p-6 rounded-2xl border border-white/10 text-center">
                     <svg xmlns="http://www.w3.org/2000/svg" className="w-16 h-16 text-brand-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -859,34 +1018,83 @@ const GateScan = () => {
         )}
 
         {/* Selfie Capture Overlay */}
-        {requireSelfie && (
-            <div className="absolute inset-0 z-40 flex flex-col items-center justify-center pointer-events-auto">
-                <div className="absolute top-24 left-0 right-0 text-center z-50">
-                    <h2 className="text-3xl font-bold text-white mb-2 drop-shadow-lg">Take a Selfie</h2>
-                    <p className="text-white/80">Position your face in the frame</p>
-                </div>
-                
-                {/* Rectangular portrait cutout */}
-                <div className="w-[80%] max-w-[320px] aspect-[3/4] rounded-2xl border-2 border-brand-500 shadow-[0_0_0_9999px_rgba(0,0,0,0.85)] z-40 relative">
-                    {/* inner glow */}
-                    <div className="absolute inset-0 rounded-2xl shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]" />
-                    {/* Corner accents */}
-                    <div className="absolute top-0 left-0 w-8 h-8 border-l-4 border-t-4 border-brand-500 rounded-tl-2xl" />
-                    <div className="absolute top-0 right-0 w-8 h-8 border-r-4 border-t-4 border-brand-500 rounded-tr-2xl" />
-                    <div className="absolute bottom-0 left-0 w-8 h-8 border-l-4 border-b-4 border-brand-500 rounded-bl-2xl" />
-                    <div className="absolute bottom-0 right-0 w-8 h-8 border-r-4 border-b-4 border-brand-500 rounded-br-2xl" />
-                </div>
+        {requireSelfie && !capturedPhoto && (
+            <div className="absolute inset-0 z-40 flex flex-col items-center justify-center pointer-events-auto overflow-hidden pb-12">
+                {/* No dark overlay filter, let the camera view be fully visible */}
 
-                <button 
-                onClick={handleTakePhoto}
-                disabled={isProcessing}
-                className="absolute bottom-24 w-20 h-20 bg-brand-500 rounded-full border-4 border-white/30 flex items-center justify-center shadow-2xl active:scale-95 transition-transform z-50 disabled:opacity-50"
+                {/* Clean Cutout Frame */}
+                <motion.div 
+                    initial={{ scale: 0.95, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="w-[80%] max-w-[320px] aspect-[3/4] rounded-2xl z-40 relative mt-16"
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="size-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-                        <circle cx="12" cy="13" r="4"></circle>
-                    </svg>
-                </button>
+                    {/* Darken only the outside slightly to highlight the frame, but no heavy filter */}
+                    <div className="absolute inset-0 rounded-2xl shadow-[0_0_0_9999px_rgba(0,0,0,0.6)] pointer-events-none border-2 border-white/80" />
+                    
+                    {/* Corner accents */}
+                    <div className="absolute -top-0.5 -left-0.5 w-8 h-8 border-l-4 border-t-4 border-brand-500 rounded-tl-2xl pointer-events-none" />
+                    <div className="absolute -top-0.5 -right-0.5 w-8 h-8 border-r-4 border-t-4 border-brand-500 rounded-tr-2xl pointer-events-none" />
+                    <div className="absolute -bottom-0.5 -left-0.5 w-8 h-8 border-l-4 border-b-4 border-brand-500 rounded-bl-2xl pointer-events-none" />
+                    <div className="absolute -bottom-0.5 -right-0.5 w-8 h-8 border-r-4 border-b-4 border-brand-500 rounded-br-2xl pointer-events-none" />
+                </motion.div>
+
+                {/* Modern Camera Button */}
+                <motion.div 
+                    initial={{ y: 50, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    className="mt-8 flex flex-col items-center z-50"
+                >
+                    <button 
+                        onClick={handleTakePhoto}
+                        disabled={isProcessing}
+                        className="w-[72px] h-[72px] rounded-full border-[3px] border-white p-1 flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50"
+                    >
+                        <div className="w-full h-full bg-white rounded-full" />
+                    </button>
+                </motion.div>
+            </div>
+        )}
+
+        {/* Captured Photo Preview Overlay */}
+        {capturedPhoto && (
+            <div className="absolute inset-0 z-50 bg-black flex flex-col items-center justify-center pointer-events-auto">
+                <motion.div 
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="absolute top-16 left-0 right-0 text-center z-50 px-4"
+                >
+                    <h2 className="text-2xl font-bold text-white tracking-wide">Preview</h2>
+                </motion.div>
+                
+                <motion.div 
+                    initial={{ scale: 0.95, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="w-[80%] max-w-[320px] aspect-[3/4] rounded-2xl overflow-hidden z-40 relative mt-8"
+                >
+                    {/* Pure image, no filters */}
+                    <img src={capturedPhoto} className="w-full h-full object-cover" alt="Captured selfie" />
+                </motion.div>
+
+                <motion.div 
+                    initial={{ y: 50, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    className="absolute bottom-16 flex gap-4 z-50 w-[80%] max-w-[320px]"
+                >
+                    <button 
+                        className="flex-1 bg-[#333333] hover:bg-[#444444] text-white font-medium py-3.5 px-6 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2" 
+                        onClick={handleRetakePhoto} 
+                        disabled={isProcessing}
+                    >
+                        Retake
+                    </button>
+                    <button 
+                        className="flex-1 bg-brand-500 hover:bg-brand-400 text-white font-medium py-3.5 px-6 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2" 
+                        onClick={handleConfirmPhoto} 
+                        disabled={isProcessing}
+                    >
+                        {isProcessing ? "Saving..." : "Submit"}
+                    </button>
+                </motion.div>
             </div>
         )}
 
@@ -919,15 +1127,65 @@ const GateScan = () => {
                 : "bg-red-500/90"
             }`}
           >
-            <div className="text-center text-white">
-              <h2 className="text-4xl font-extrabold mb-4">
-                {scanResult.status === "success" && scanResult.attendanceStatus === "LATE"
-                  ? "LATE RECORDED"
+            <div className="text-center text-white max-w-md w-full">
+              {scanResult.status === "success" ? (
+                  <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-6 backdrop-blur-sm">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                  </div>
+              ) : (
+                  <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-6 backdrop-blur-sm">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                  </div>
+              )}
+              
+              <h2 className="text-3xl sm:text-4xl font-extrabold mb-2 tracking-tight">
+                {scanResult.status === "success" && scanResult.attendanceStatus?.includes("LATE")
+                  ? `LATE ${scanResult.record?.lateMinutes ? `BY ${scanResult.record.lateMinutes < 60 ? scanResult.record.lateMinutes + 'm' : Math.floor(scanResult.record.lateMinutes/60) + 'h ' + (scanResult.record.lateMinutes%60) + 'm'}` : 'RECORDED'}`
+                  : scanResult.status === "success" && scanResult.attendanceStatus?.includes("EARLY")
+                  ? `EARLY LEAVE ${scanResult.record?.earlyLeaveMinutes ? `BY ${scanResult.record.earlyLeaveMinutes < 60 ? scanResult.record.earlyLeaveMinutes + 'm' : Math.floor(scanResult.record.earlyLeaveMinutes/60) + 'h ' + (scanResult.record.earlyLeaveMinutes%60) + 'm'}` : 'RECORDED'}`
                   : scanResult.status === "success"
-                  ? "SUCCESS"
+                  ? "SUCCESS!"
                   : "ERROR"}
               </h2>
-              <p className="text-xl font-medium">{scanResult.message}</p>
+              <p className="text-lg font-medium text-white/90 mb-8">{scanResult.message}</p>
+              
+              {scanResult.status === "success" && (
+                  <div className="bg-black/20 rounded-2xl p-6 text-left space-y-4 backdrop-blur-md border border-white/10 shadow-2xl">
+                      <div className="border-b border-white/10 pb-4">
+                          <div className="text-white/60 text-xs uppercase tracking-wider mb-1">Student</div>
+                          <div className="text-xl font-bold">{scanResult.studentName}</div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                          <div>
+                              <div className="text-white/60 text-xs uppercase tracking-wider mb-1">Time</div>
+                              <div className="text-lg font-mono font-medium">{new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })}</div>
+                          </div>
+                          <div>
+                              <div className="text-white/60 text-xs uppercase tracking-wider mb-1">Status</div>
+                              <div className="text-lg font-bold">
+                                  {scanResult.attendanceStatus || "PRESENT"}
+                                  {scanResult.record?.lateMinutes > 0 && <span className="text-sm font-medium ml-1 opacity-80">(+{scanResult.record.lateMinutes < 60 ? `${scanResult.record.lateMinutes}m` : `${Math.floor(scanResult.record.lateMinutes/60)}h ${scanResult.record.lateMinutes%60}m`})</span>}
+                                  {scanResult.record?.earlyLeaveMinutes > 0 && <span className="text-sm font-medium ml-1 opacity-80">(-{scanResult.record.earlyLeaveMinutes < 60 ? `${scanResult.record.earlyLeaveMinutes}m` : `${Math.floor(scanResult.record.earlyLeaveMinutes/60)}h ${scanResult.record.earlyLeaveMinutes%60}m`})</span>}
+                              </div>
+                          </div>
+                          <div>
+                              <div className="text-white/60 text-xs uppercase tracking-wider mb-1">IP Address</div>
+                              <div className="text-sm font-mono truncate">{userIp || 'Not Detected'}</div>
+                          </div>
+                          <div>
+                              <div className="text-white/60 text-xs uppercase tracking-wider mb-1">Location</div>
+                              <div className="text-sm font-mono truncate">
+                                  {userLocation ? `${userLocation.lat.toFixed(4)}, ${userLocation.lng.toFixed(4)}` : 'Not Detected'}
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              )}
             </div>
           </motion.div>
         )}

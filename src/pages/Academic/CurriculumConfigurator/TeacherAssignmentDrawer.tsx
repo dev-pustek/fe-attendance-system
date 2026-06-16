@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { useTeacherSubjects } from "../../../api/hooks/useAcademic";
 import { useTeachers } from "../../../api/hooks/useUsers";
 import { CloseIcon, CheckCircleIcon, SearchIcon, AlertIcon, CheckLineIcon } from "../../../components/atoms/Icons";
+import Button from "../../../components/atoms/Button";
 import { useDebounce } from "../../../hooks/useDebounce";
 
 interface TeacherAssignmentDrawerProps {
@@ -9,8 +10,8 @@ interface TeacherAssignmentDrawerProps {
   onClose: () => void;
   subjectId: string | number;
   subjectName: string;
-  currentTeacherId?: string | null;
-  onSelect: (teacherId: string, teacherName: string, role: "primary" | "assistant") => void;
+  currentTeacherIds?: string[];
+  onToggle: (teacherId: string, teacherName: string, role: "primary" | "assistant") => void;
 }
 
 const TeacherAssignmentDrawer: React.FC<TeacherAssignmentDrawerProps> = ({
@@ -18,8 +19,8 @@ const TeacherAssignmentDrawer: React.FC<TeacherAssignmentDrawerProps> = ({
   onClose,
   subjectId,
   subjectName,
-  currentTeacherId,
-  onSelect,
+  currentTeacherIds = [],
+  onToggle,
 }) => {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
@@ -77,7 +78,7 @@ const TeacherAssignmentDrawer: React.FC<TeacherAssignmentDrawerProps> = ({
             {/* Header */}
             <div className="p-6 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02]">
                 <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Assign Teacher</h3>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Tetapkan Guru</h3>
                     <button 
                         onClick={onClose}
                         className="size-8 rounded-full bg-white dark:bg-white/10 flex items-center justify-center text-gray-500 hover:text-gray-700 transition-colors shadow-sm"
@@ -87,7 +88,7 @@ const TeacherAssignmentDrawer: React.FC<TeacherAssignmentDrawerProps> = ({
                 </div>
                 
                 <div className="p-4 rounded-xl bg-white dark:bg-white/5 border border-brand-100 dark:border-brand-500/20 shadow-sm">
-                    <p className="text-[10px] uppercase font-bold text-brand-500 mb-1">Target Subject</p>
+                    <p className="text-[10px] uppercase font-bold text-brand-500 mb-1">Mata Pelajaran Target</p>
                     <p className="font-bold text-gray-900 dark:text-white text-lg leading-tight">{subjectName}</p>
                 </div>
             </div>
@@ -102,7 +103,7 @@ const TeacherAssignmentDrawer: React.FC<TeacherAssignmentDrawerProps> = ({
                         : "text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5"
                     }`}
                 >
-                    Qualified ({qualifiedTeachers.length})
+                    Memenuhi Syarat ({qualifiedTeachers.length})
                 </button>
                 <button
                     onClick={() => setActiveTab("all")}
@@ -112,7 +113,7 @@ const TeacherAssignmentDrawer: React.FC<TeacherAssignmentDrawerProps> = ({
                         : "text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5"
                     }`}
                 >
-                    All Staff
+                    Semua Staf
                 </button>
             </div>
 
@@ -122,7 +123,7 @@ const TeacherAssignmentDrawer: React.FC<TeacherAssignmentDrawerProps> = ({
                     <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
                     <input 
                         type="text"
-                        placeholder="Search teachers..."
+                        placeholder="Cari guru..."
                         className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-100 dark:border-white/10 bg-gray-50 dark:bg-white/5 outline-none focus:ring-2 focus:ring-brand-500/20 text-sm"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
@@ -134,16 +135,16 @@ const TeacherAssignmentDrawer: React.FC<TeacherAssignmentDrawerProps> = ({
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
                 {activeTab === "qualified" ? (
                     <>
-                        {loadingQualified && <div className="text-center py-8 text-xs text-gray-400">Loading qualified teachers...</div>}
+                        {loadingQualified && <div className="text-center py-8 text-xs text-gray-400">Memuat guru yang memenuhi syarat...</div>}
                         {!loadingQualified && qualifiedTeachers.length === 0 && (
                             <div className="py-12 text-center">
                                 <AlertIcon className="size-12 mx-auto mb-3 text-amber-400 opacity-50" />
-                                <p className="text-sm font-bold text-gray-500">No qualified teachers found</p>
+                                <p className="text-sm font-bold text-gray-500">Tidak ada guru yang memenuhi syarat ditemukan</p>
                                 <button 
                                     onClick={() => setActiveTab("all")}
                                     className="mt-2 text-xs text-brand-600 font-bold hover:underline"
                                 >
-                                    Browse all staff instead
+                                    Jelajahi semua staf sebagai gantinya
                                 </button>
                             </div>
                         )}
@@ -153,11 +154,10 @@ const TeacherAssignmentDrawer: React.FC<TeacherAssignmentDrawerProps> = ({
                             <TeacherCard
                                 key={teacher.id}
                                 teacher={teacher}
-                                isSelected={teacher.id === currentTeacherId}
+                                isSelected={currentTeacherIds.includes(teacher.id)}
                                 onSelect={() => {
                                     if (teacher.id && teacher.name) {
-                                        onSelect(teacher.id, teacher.name, "primary");
-                                        onClose();
+                                        onToggle(teacher.id, teacher.name, "primary");
                                     }
                                 }}
                             />
@@ -165,22 +165,32 @@ const TeacherAssignmentDrawer: React.FC<TeacherAssignmentDrawerProps> = ({
                     </>
                 ) : (
                     <>
-                        {loadingAll && <div className="text-center py-8 text-xs text-gray-400">Searching staff directory...</div>}
+                        {loadingAll && <div className="text-center py-8 text-xs text-gray-400">Mencari direktori staf...</div>}
                         {allTeachers.map((teacher: any) => (
                             <TeacherCard
                                 key={teacher.id}
                                 teacher={teacher}
-                                isSelected={teacher.id === currentTeacherId}
+                                isSelected={currentTeacherIds.includes(teacher.id)}
                                 onSelect={() => {
                                     if (teacher.id && teacher.name) {
-                                        onSelect(teacher.id, teacher.name, "primary");
-                                        onClose();
+                                        onToggle(teacher.id, teacher.name, "primary");
                                     }
                                 }}
                             />
                         ))}
                     </>
                 )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-gray-100 dark:border-white/5 bg-white dark:bg-white/5 mt-auto">
+                <Button
+                    variant="primary"
+                    onClick={onClose}
+                    className="w-full"
+                >
+                    Selesai Memilih
+                </Button>
             </div>
         </div>
     </>

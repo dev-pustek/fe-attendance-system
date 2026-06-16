@@ -13,8 +13,8 @@ export const TableActionMenu = ({ children }: { children: React.ReactNode }) => 
         if (!isOpen && buttonRef.current) {
             const rect = buttonRef.current.getBoundingClientRect();
             setCoords({
-                top: rect.bottom + window.scrollY,
-                right: window.innerWidth - rect.right - window.scrollX
+                top: rect.bottom,
+                right: window.innerWidth - rect.right
             });
         }
         setIsOpen(!isOpen);
@@ -38,7 +38,7 @@ export const TableActionMenu = ({ children }: { children: React.ReactNode }) => 
                     <Dropdown
                         isOpen={isOpen}
                         onClose={() => setIsOpen(false)}
-                        className="w-36 origin-top-right rounded-xl border border-gray-200 bg-white py-1.5 shadow-lg dark:border-white/[0.07] dark:bg-gray-900"
+                        className="w-36 origin-top-right rounded-xl border border-gray-200 bg-white py-1.5 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:border-white/[0.07] dark:bg-gray-900 dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)]"
                     >
                         {React.Children.map(children, child => {
                             if (React.isValidElement(child)) {

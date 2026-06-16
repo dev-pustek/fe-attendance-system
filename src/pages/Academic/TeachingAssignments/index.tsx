@@ -295,7 +295,7 @@ const TeachingAssignments: React.FC = () => {
 
   return (
     <>
-      <PageMeta title="Teaching Assignments | Visia" description="Manage teachers assigned to subjects in specific classes." />
+      <PageMeta title="Teaching Assignments | SIAPUS" description="Manage teachers assigned to subjects in specific classes." />
       <PageBreadcrumb pageTitle="Teaching Assignments" />
 
       <div className="space-y-6">

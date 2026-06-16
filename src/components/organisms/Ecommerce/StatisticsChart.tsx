@@ -9,7 +9,7 @@ export default function StatisticsChart() {
       position: "top",
       horizontalAlign: "left",
     },
-    colors: ["#027a48", "#a6f4c5"], // Emerald and Sage tones
+    colors: ["#8b2558", "#f9a8d4"], // Emerald and Sage tones
     chart: {
       fontFamily: "Outfit, sans-serif",
       height: 310,

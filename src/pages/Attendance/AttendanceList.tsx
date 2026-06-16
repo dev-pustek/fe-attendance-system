@@ -1888,7 +1888,7 @@ const AttendanceList: React.FC = () => {
              <div className="space-y-4">
                 <div className="space-y-1.5">
                     <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Face Validation {manualForm.photo ? "(Captured)" : "*"}</label>
-                     <div className="relative w-full aspect-square bg-gray-100 dark:bg-white/5 rounded-2xl overflow-hidden flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-700">
+                     <div className="relative w-full aspect-[3/4] max-w-[320px] mx-auto bg-gray-100 dark:bg-white/5 rounded-2xl overflow-hidden flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-700">
                         {isCameraOpen ? (
                         <>
                             <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
@@ -1905,7 +1905,7 @@ const AttendanceList: React.FC = () => {
                                     if (video && canvas) {
                                         const context = canvas.getContext('2d');
                                         if (context) {
-                                            context.drawImage(video, 0, 0, 300, 300); // Draw square
+                                            context.drawImage(video, 0, 0, 300, 400); // Draw 3:4 portrait
                                             canvas.toBlob((blob) => {
                                                 if (blob) {
                                                     setManualForm(prev => ({ ...prev, photo: blob }));
@@ -2240,7 +2240,7 @@ const AttendanceList: React.FC = () => {
                         <VideoIcon className="size-3.5" /> 
                         Photo Evidence
                     </label>
-                    <div className="rounded-2xl border border-gray-100 bg-gray-50/50 p-2 dark:border-white/[0.05] dark:bg-white/[0.02] overflow-hidden shadow-sm">
+                    <div className="aspect-[3/4] max-w-[320px] mx-auto rounded-2xl border border-gray-100 bg-gray-50/50 p-2 dark:border-white/[0.05] dark:bg-white/[0.02] overflow-hidden shadow-md">
                         <img 
                             src={
                                 ((selectedRecord as any).photoUrl || (selectedRecord as any).photoEvidenceUrl || (selectedRecord as any).photoEvidence)?.startsWith('/') 
@@ -2248,7 +2248,7 @@ const AttendanceList: React.FC = () => {
                                     : ((selectedRecord as any).photoUrl || (selectedRecord as any).photoEvidenceUrl || (selectedRecord as any).photoEvidence)
                             } 
                             alt="Attendance Capture Evidence" 
-                            className="w-full max-h-[400px] object-cover rounded-xl"
+                            className="w-full h-full object-cover rounded-xl"
                         />
                     </div>
                 </div>

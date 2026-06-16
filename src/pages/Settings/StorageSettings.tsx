@@ -43,7 +43,7 @@ const StorageSettings: React.FC = () => {
 
     return (
         <>
-            <PageMeta title="Storage Settings | Visia" description="Manage file storage providers." />
+            <PageMeta title="Storage Settings | SIAPUS" description="Manage file storage providers." />
             <PageBreadcrumb pageTitle="Storage Settings" />
 
             <div className="space-y-6">

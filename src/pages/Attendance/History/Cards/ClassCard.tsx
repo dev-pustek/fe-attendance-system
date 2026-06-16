@@ -10,17 +10,18 @@ interface ClassCardProps {
   isSelected: boolean;
   onToggle: () => void;
   onDelete?: () => void;
+  onViewDetails?: () => void;
 }
 
 const getStatusBadge = (status: string) => {
-  if (status === 'present' || status === 'on-time') return <Badge color="success">Present</Badge>;
-  if (status === 'absent') return <Badge color="error">Absent</Badge>;
-  if (status === 'excused') return <Badge color="warning">Excused</Badge>;
-  if (status === 'late') return <Badge color="error">Late</Badge>;
+  if (status === 'present' || status === 'on-time') return <Badge color="success">Hadir</Badge>;
+  if (status === 'absent') return <Badge color="error">Tidak Hadir</Badge>;
+  if (status === 'excused') return <Badge color="warning">Izin</Badge>;
+  if (status === 'late') return <Badge color="error">Terlambat</Badge>;
   return <Badge color="primary">{status}</Badge>;
 };
 
-export default function ClassCard({ record, isSelected, onToggle, onDelete }: ClassCardProps) {
+export default function ClassCard({ record, isSelected, onToggle, onDelete, onViewDetails }: ClassCardProps) {
   return (
     <div className={`rounded-2xl border overflow-hidden transition-all ${
       isSelected
@@ -46,23 +47,23 @@ export default function ClassCard({ record, isSelected, onToggle, onDelete }: Cl
           </div>
           <div>
             <p className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white leading-tight">
-               {record.teachingSession?.classSubject?.subject?.name || 'Unknown Subject'}
+               {record.teachingSession?.classSubject?.subject?.name || 'Mata Pelajaran Tidak Diketahui'}
             </p>
             <p className="text-xs text-gray-500">
-               {record.teachingSession?.actualTeacher?.name || 'Unknown Teacher'}
+               {record.teachingSession?.actualTeacher?.name || 'Guru Tidak Diketahui'}
             </p>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-y-2 pt-2 border-t border-gray-50 dark:border-white/[0.02]">
             <div>
-               <p className="text-xs text-gray-500 mb-0.5">Date</p>
+               <p className="text-xs text-gray-500 mb-0.5">Tanggal</p>
                <p className="font-medium text-gray-900 dark:text-white text-sm">
                   {record.teachingSession?.sessionDate ? format(parseISO(record.teachingSession.sessionDate), 'dd MMM yyyy') : '-'}
                </p>
             </div>
             <div className="text-right">
-               <p className="text-xs text-gray-500 mb-0.5">Time</p>
+               <p className="text-xs text-gray-500 mb-0.5">Waktu</p>
                <p className="font-medium text-gray-900 dark:text-white text-sm">
                  {record.teachingSession?.startTime && record.teachingSession?.endTime
                    ? `${record.teachingSession.startTime.slice(0, 5)} - ${record.teachingSession.endTime.slice(0, 5)}`
@@ -70,7 +71,7 @@ export default function ClassCard({ record, isSelected, onToggle, onDelete }: Cl
                </p>
             </div>
             <div>
-               <p className="text-xs text-gray-500 mb-0.5">Recorded At</p>
+               <p className="text-xs text-gray-500 mb-0.5">Terekam Pada</p>
                <p className="font-medium text-gray-900 dark:text-white text-sm">
                   {record.recordedAt ? format(parseISO(record.recordedAt), 'HH:mm') : '-'}
                </p>
@@ -79,14 +80,24 @@ export default function ClassCard({ record, isSelected, onToggle, onDelete }: Cl
       </div>
 
       {/* Footer */}
-      {onDelete && (
-        <div className="flex items-center justify-end border-t border-gray-100 bg-gray-50/30 px-4 py-3 sm:px-5 dark:border-white/[0.05] dark:bg-white/[0.01]">
+      <div className="flex items-center justify-between border-t border-gray-100 bg-gray-50/30 px-4 py-3 sm:px-5 dark:border-white/[0.05] dark:bg-white/[0.01]">
+        {onViewDetails && (
+          <button onClick={(e) => { e.stopPropagation(); onViewDetails(); }}
+            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-500/10">
+            <svg className="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+            Lihat Detail
+          </button>
+        )}
+        {onDelete && (
           <button onClick={(e) => { e.stopPropagation(); onDelete(); }}
             className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/10">
-            <TrashBinIcon className="size-3.5" /> Delete
+            <TrashBinIcon className="size-3.5" /> Hapus
           </button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

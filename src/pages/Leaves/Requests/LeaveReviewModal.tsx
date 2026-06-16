@@ -17,7 +17,7 @@ const reviewSchema = z.object({
     if (data.action === "REJECT" && (!data.comments || data.comments.trim() === "")) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: "Rejection reason is required",
+            message: "Tolakion reason is required",
             path: ["comments"],
         });
     }
@@ -70,7 +70,7 @@ const LeaveReviewModal: React.FC<LeaveReviewModalProps> = ({ isOpen, onClose, se
                     status: reviewAction === "APPROVE" ? "approved" : "rejected",
                     comments: data.comments,
                     approvalLevel: selectedEntity.currentApprovalLevel,
-                    rejectionReason: reviewAction === "REJECT" ? data.comments : undefined,
+                    rejectionAlasan: reviewAction === "REJECT" ? data.comments : undefined,
                 }
             });
             showSuccess(`Request ${reviewAction === "APPROVE" ? "approved" : "rejected"} successfully!`);
@@ -84,16 +84,23 @@ const LeaveReviewModal: React.FC<LeaveReviewModalProps> = ({ isOpen, onClose, se
         <Modal 
             isOpen={isOpen} 
             onClose={onClose} 
-            title="Review Leave Request"
-            description="Approve or reject this employee's leave request."
+            title="Tinjau Pengajuan Cuti"
+            description="Setujui or reject this employee's leave request."
             footer={
                 !reviewAction && selectedEntity?.status !== "approved" && selectedEntity?.status !== "rejected" ? (
                     <div className="flex w-full gap-3">
                         <Button variant="outline" onClick={() => handleActionClick("REJECT")} className="flex-1 border-red-200 text-red-600 hover:bg-red-50">
-                            <CloseIcon className="size-4 mr-2" /> Reject
+                            <CloseIcon className="size-4 mr-2" /> Tolak
                         </Button>
                         <Button variant="outline" onClick={() => handleActionClick("APPROVE")} className="flex-1 border-green-200 text-green-600 hover:bg-green-50">
-                            <CheckCircleIcon className="size-4 mr-2" /> Approve
+                            <CheckCircleIcon className="size-4 mr-2" /> Setujui
+                        </Button>
+                    </div>
+                ) : reviewAction ? (
+                    <div className="flex justify-end gap-3 w-full sm:w-auto">
+                        <Button variant="outline" type="button" onClick={() => { setReviewAction(null); setValue("action", ""); }} className="flex-1 sm:flex-none">Batal</Button>
+                        <Button type="submit" form="review-form" disabled={reviewMutation.isPending} className="flex-1 sm:flex-none">
+                            {reviewMutation.isPending ? "Processing..." : `Confirm ${reviewAction === 'APPROVE' ? 'Approval' : 'Tolakion'}`}
                         </Button>
                     </div>
                 ) : !reviewAction ? (
@@ -111,7 +118,7 @@ const LeaveReviewModal: React.FC<LeaveReviewModalProps> = ({ isOpen, onClose, se
                         </div>
                         <div>
                             <p className="font-bold text-gray-900 dark:text-white">{selectedEntity?.user?.name}</p>
-                            <p className="text-xs text-gray-500">{selectedEntity?.leaveType?.displayName} - {selectedEntity?.totalDays} Days</p>
+                            <p className="text-xs text-gray-500">{selectedEntity?.leaveType?.displayName} - {selectedEntity?.totalDays} Hari</p>
                         </div>
                     </div>
                     <Badge color={getStatusColor(selectedEntity?.status || "pending")}>
@@ -120,12 +127,9 @@ const LeaveReviewModal: React.FC<LeaveReviewModalProps> = ({ isOpen, onClose, se
                 </div>
 
                 {reviewAction && (
-                    <form onSubmit={handleSubmit(onSubmit)} className="mt-4 p-4 border rounded-xl animate-in fade-in zoom-in-95 duration-200 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 shadow-lg relative">
-                        <button type="button" onClick={() => { setReviewAction(null); setValue("action", ""); }} className="absolute right-3 top-3 text-gray-400 hover:text-gray-600">
-                            <CloseIcon className="size-4" />
-                        </button>
+                    <form id="review-form" onSubmit={handleSubmit(onSubmit)} className="mt-4 p-4 border rounded-xl animate-in fade-in zoom-in-95 duration-200 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 shadow-lg relative">
                         <h4 className={`text-sm font-bold mb-3 ${reviewAction === 'APPROVE' ? 'text-green-600' : 'text-red-600'}`}>
-                            {reviewAction === 'APPROVE' ? 'Approval Comments' : 'Rejection Reason'}
+                            {reviewAction === 'APPROVE' ? 'Approval Comments' : 'Tolakion Alasan'}
                         </h4>
                         <textarea
                             {...register("comments")}
@@ -134,10 +138,6 @@ const LeaveReviewModal: React.FC<LeaveReviewModalProps> = ({ isOpen, onClose, se
                             placeholder={`Enter your ${reviewAction.toLowerCase()} notes...`}
                         />
                         {errors.comments && <p className="text-xs text-error-500 mt-1">{errors.comments.message}</p>}
-                        
-                        <Button type="submit" className="mt-3 w-full" disabled={reviewMutation.isPending}>
-                            {reviewMutation.isPending ? "Processing..." : `Confirm ${reviewAction === 'APPROVE' ? 'Approval' : 'Rejection'}`}
-                        </Button>
                     </form>
                 )}
             </div>

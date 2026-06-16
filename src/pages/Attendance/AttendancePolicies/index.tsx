@@ -194,7 +194,7 @@ const AttendanceRules: React.FC = () => {
 
   return (
     <>
-      <PageMeta title="Attendance Policies | Visia" description="Configure attendance rules, schedules, and policies." />
+      <PageMeta title="Attendance Policies | SIAPUS" description="Configure attendance rules, schedules, and policies." />
       <PageBreadcrumb pageTitle="Attendance Policies" />
 
       <div className="relative flex flex-col h-[calc(100vh-220px)] min-h-[600px]">
@@ -298,7 +298,7 @@ const AttendanceRules: React.FC = () => {
                         {/* Content Section */}
                         <div className="flex-1 bg-white dark:bg-transparent">
                                <div className="p-6">
-                                        {activeTab === "policies" && <PoliciesTab contextId={policyContext?.id} selectedContext={selectedContext} onOverride={handleCreateOverride} />}
+                                        {activeTab === "policies" && <PoliciesTab contextId={policyContext?.id} selectedContext={selectedContext} onOverride={handleCreateOverride} onEnsureContext={handleEnsureContext} />}
                                         {activeTab === "schedule" && <ScheduleTab contextId={scheduleContext?.id || 0} globalContextId={globalScheduleContext?.id} selectedContext={selectedContext} onOverride={handleCreateOverride} onEnsureContext={handleEnsureContext} />}
                                         {activeTab === "leaves" && <LeaveTypesTab />}
                                         {activeTab === "statuses" && <PresenceStatusesTab />}

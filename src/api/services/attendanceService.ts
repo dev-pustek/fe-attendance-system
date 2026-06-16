@@ -244,7 +244,7 @@ export const attendanceService = {
     return response.data;
   },
 
-  validateSession: async (id: number | string, status: 'valid' | 'invalid', notes?: string): Promise<TeachingSession> => {
+  validateSession: async (id: number | string, status: 'valid' | 'invalid' | 'pending', notes?: string): Promise<TeachingSession> => {
     const response = await apiClient.patch<TeachingSession>(`/attendance/teaching-sessions/${id}/validate`, { status, notes });
     return response.data;
   },

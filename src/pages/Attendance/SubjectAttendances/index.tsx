@@ -484,20 +484,20 @@ const SubjectAttendances: React.FC = () => {
   const [sessionOrderMap, setSessionOrderMap] = useState<Map<number | string, number>>(new Map());
 
   useEffect(() => {
-    // Collect unique (classSubjectId, sessionDate) pairs
-    const pairs = new Map<string, { classSubjectId: number; sessionDate: string }>();
+    // Collect unique (classId, sessionDate) pairs
+    const pairs = new Map<string, { classId: number; sessionDate: string }>();
     attendances.forEach((record) => {
       const s = record.teachingSession;
-      if (!s?.classSubjectId || !s?.sessionDate) return;
-      const key = `${s.classSubjectId}-${s.sessionDate}`;
-      if (!pairs.has(key)) pairs.set(key, { classSubjectId: s.classSubjectId, sessionDate: s.sessionDate });
+      if (!s?.classSubject?.classId || !s?.sessionDate) return;
+      const key = `${s.classSubject.classId}-${s.sessionDate}`;
+      if (!pairs.has(key)) pairs.set(key, { classId: s.classSubject.classId, sessionDate: s.sessionDate });
     });
     if (pairs.size === 0) return;
 
     // Fetch sibling sessions for each pair and build the order map
     Promise.all(
       Array.from(pairs.values()).map((pair) =>
-        attendanceService.getTeachingSessions({ classSubjectId: pair.classSubjectId, sessionDate: pair.sessionDate, limit: 100 })
+        attendanceService.getTeachingSessions({ classId: pair.classId, sessionDate: pair.sessionDate, limit: 100 })
           .then((res) => res.data || [])
           .catch(() => [] as typeof res.data)
       )
@@ -765,7 +765,7 @@ const SubjectAttendances: React.FC = () => {
   return (
     <>
       <PageMeta
-        title="Subject Attendance | Visia"
+        title="Subject Attendance | SIAPUS"
         description="Record and manage student presence for each teaching session."
       />
       <PageBreadcrumb pageTitle="Subject Attendance" />

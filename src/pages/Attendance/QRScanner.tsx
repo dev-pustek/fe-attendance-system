@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Html5Qrcode } from "html5-qrcode";
-import { Link } from "react-router";
+import { Link, useSearchParams, useNavigate } from "react-router";
 import { attendanceService } from "../../api/services/attendanceService";
 import { useMe } from "../../api/hooks/useAuth";
 import { UserPolicyResponse } from "../../api/types/attendance";
@@ -8,11 +8,14 @@ import {
   CheckCircleIcon,
   AlertIcon,
   ChevronLeftIcon,
-} from "../../components/atoms/Icons";
 import { AnimatePresence, motion } from "framer-motion";
 import toast from "react-hot-toast";
 
 import { useAuthStore } from "../../store/authStore";
+import { useAttendanceRules } from "../../api/hooks/useRules";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Modal } from "../../components/molecules/Modal";
+import Button from "../../components/atoms/Button";
 
 const QRScanner = () => {
   const { data: userData, isLoading: isUserLoading } = useMe();
@@ -22,7 +25,9 @@ const QRScanner = () => {
 
   // Determine Mode: Student = Self Scan, Others = Kiosk Mode
   // Default to Kiosk if loading or check fails (safe default for gate)
-  const isStudent = user?.userTypes?.includes("student") || false;
+  const [searchParams] = useSearchParams();
+  const isSelfScan = !searchParams.get("kiosk");
+  const queryClient = useQueryClient();
 
   const [scanResult, setScanResult] = useState<{
     status: "success" | "error" | "idle";
@@ -39,6 +44,8 @@ const QRScanner = () => {
   const [policyError, setPolicyError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"landing" | "scanner">("landing");
   const [requireSelfie, setRequireSelfie] = useState(false);
+  const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [pendingScanCode, setPendingScanCode] = useState<string | null>(null);
   const lastFetchedIdRef = useRef<string | null>(null);
   const lastScannedDataRef = useRef<string | null>(null);
@@ -76,7 +83,7 @@ const QRScanner = () => {
 
       try {
         // Dual Mode Payload logic matches standard API
-        const deviceId = isStudent ? `mobile_${user?.id}` : "gate_kiosk_1";
+        const deviceId = isSelfScan ? `mobile_${user?.id}` : "gate_kiosk_1";
 
         // Cooldown Check: Prevent scanning the same code within 5 seconds
         const now = Date.now();
@@ -119,12 +126,12 @@ const QRScanner = () => {
         handleScanError(error);
       }
     },
-    [isProcessing, isStudent, user, userPolicy, userLocation, requireSelfie, pendingScanCode]
+    [isProcessing, isSelfScan, user, userPolicy, userLocation, requireSelfie, pendingScanCode]
   );
 
   const submitScan = async (code: string, explicitPhoto?: string) => {
       try {
-        const deviceId = isStudent ? `mobile_${user?.id}` : "gate_kiosk_1";
+        const deviceId = isSelfScan ? `mobile_${user?.id}` : "gate_kiosk_1";
         let latitude: number | undefined;
         let longitude: number | undefined;
 
@@ -159,6 +166,13 @@ const QRScanner = () => {
           response
         );
 
+        if (isSelfScan) {
+            toast.success("You have checked in successfully.");
+            queryClient.invalidateQueries({ queryKey: ['mobile-student-roadmap'] });
+            navigate("/");
+            return;
+        }
+
         if (userId) {
           try {
             const policyRes = await attendanceService.getAttendancePolicy(
@@ -173,12 +187,12 @@ const QRScanner = () => {
         // Success Handling
         setScanResult({
           status: "success",
-          message: isStudent
+          message: isSelfScan
             ? "You have checked in successfully."
             : "Attendance Recorded",
           studentName:
-            response.studentName || (isStudent ? user?.name : "Student"),
-          role: isStudent ? "self" : "kiosk",
+            response.studentName || (isSelfScan ? user?.name : "Student"),
+          role: isSelfScan ? "self" : "kiosk",
           policy,
           attendanceStatus: record.status || response.status,
         });
@@ -188,10 +202,9 @@ const QRScanner = () => {
           if (isMountedRef.current) {
             setScanResult({ status: "idle" });
             setIsProcessing(false);
-            // If student, maybe redirect home after success?
-            // For now, keep it open for multi-scans or manual exit
-            if (isStudent) {
-              // navigate('/');
+            if (isSelfScan) {
+              queryClient.invalidateQueries({ queryKey: ['mobile-student-roadmap'] });
+              navigate("/");
             }
           }
         }, 3000);
@@ -202,7 +215,7 @@ const QRScanner = () => {
 
   const submitDirectCheckIn = async (explicitPhoto?: string) => {
       try {
-        const deviceId = isStudent ? `mobile_${user?.id}` : "gate_kiosk_1";
+        const deviceId = isSelfScan ? `mobile_${user?.id}` : "gate_kiosk_1";
         let latitude: number | undefined;
         let longitude: number | undefined;
 
@@ -236,6 +249,13 @@ const QRScanner = () => {
           record.user?.id ||
           record.student?.id;
 
+        if (isSelfScan) {
+            toast.success("You have checked in successfully.");
+            queryClient.invalidateQueries({ queryKey: ['mobile-student-roadmap'] });
+            navigate("/");
+            return;
+        }
+
         if (userId) {
           try {
             const policyRes = await attendanceService.getAttendancePolicy(userId);
@@ -248,12 +268,12 @@ const QRScanner = () => {
         // Success Handling
         setScanResult({
           status: "success",
-          message: isStudent
+          message: isSelfScan
             ? "You have checked in successfully."
             : "Attendance Recorded",
           studentName:
-            (record as any).studentName || (isStudent ? user?.name : "Student"),
-          role: isStudent ? "self" : "kiosk",
+            (record as any).studentName || (isSelfScan ? user?.name : "Student"),
+          role: isSelfScan ? "self" : "kiosk",
           policy,
           attendanceStatus: record.status || (response as any).status,
         });
@@ -299,15 +319,41 @@ const QRScanner = () => {
                 const videoEl = renderRef.current.querySelector("video");
                 if (videoEl) {
                     const canvas = document.createElement("canvas");
+                    const screenWidth = window.innerWidth || document.documentElement.clientWidth || 360;
+                    const screenHeight = window.innerHeight || document.documentElement.clientHeight || 800;
                     const vidWidth = videoEl.videoWidth || 640;
                     const vidHeight = videoEl.videoHeight || 480;
                     
-                    canvas.width = vidWidth;
-                    canvas.height = vidHeight;
+                    const scale = Math.max(screenWidth / vidWidth, screenHeight / vidHeight);
+
+                    const displayedWidth = vidWidth * scale;
+                    const displayedHeight = vidHeight * scale;
+
+                    const videoX = (screenWidth - displayedWidth) / 2;
+                    const videoY = (screenHeight - displayedHeight) / 2;
+
+                    // Frame is w-[80%] max-w-[320px] aspect-[3/4]
+                    const frameWidth = Math.min(screenWidth * 0.8, 320);
+                    const frameHeight = frameWidth * 4 / 3;
+
+                    const left = (screenWidth - frameWidth) / 2;
+                    const top = (screenHeight - frameHeight) / 2;
+
+                    const sourceX = (left - videoX) / scale;
+                    const sourceY = (top - videoY) / scale;
+                    const sourceWidth = frameWidth / scale;
+                    const sourceHeight = frameHeight / scale;
+
+                    canvas.width = sourceWidth;
+                    canvas.height = sourceHeight;
                     const ctx = canvas.getContext("2d");
                     if (ctx) {
-                        ctx.drawImage(videoEl, 0, 0, vidWidth, vidHeight);
-                        // Using WebP for superior compression and smaller payload size compared to JPEG
+                        const isMirrored = videoEl.style.transform.includes("scaleX(-1)");
+                        if (isMirrored) {
+                            ctx.translate(canvas.width, 0);
+                            ctx.scale(-1, 1);
+                        }
+                        ctx.drawImage(videoEl, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, sourceWidth, sourceHeight);
                         const dataUrl = canvas.toDataURL("image/webp", 0.5);
                         if (dataUrl && dataUrl.length > 50) {
                             photoEvidence = dataUrl;
@@ -319,18 +365,42 @@ const QRScanner = () => {
             }
         }
 
-        if (pendingScanCode === "MANUAL_CHECKIN") {
-            await submitDirectCheckIn(photoEvidence);
+        if (photoEvidence) {
+            setCapturedPhoto(photoEvidence);
+            setIsProcessing(false);
         } else {
-            await submitScan(pendingScanCode, photoEvidence);
+            // Fallback if capture fails completely
+            if (pendingScanCode === "MANUAL_CHECKIN") {
+                await submitDirectCheckIn();
+            } else {
+                await submitScan(pendingScanCode);
+            }
+            setRequireSelfie(false);
+            setPendingScanCode(null);
+            setIsProcessing(false);
+        }
+  };
+
+  const handleConfirmPhoto = async () => {
+        setIsProcessing(true);
+        if (pendingScanCode === "MANUAL_CHECKIN") {
+            await submitDirectCheckIn(capturedPhoto || undefined);
+        } else if (pendingScanCode) {
+            await submitScan(pendingScanCode, capturedPhoto || undefined);
         }
         setRequireSelfie(false);
         setPendingScanCode(null);
+        setCapturedPhoto(null);
+        setIsProcessing(false);
+  };
+
+  const handleRetakePhoto = () => {
+        setCapturedPhoto(null);
   };
 
   // -- USB Scanner Setup --1. USB Keyboard Listener (Mostly for Kiosk) --
   useEffect(() => {
-    if (isStudent) return; // Disable USB listener for mobile/student view to prevent conflicts
+    if (isSelfScan) return; // Disable USB listener for mobile/student view to prevent conflicts
     // USB Listener should arguably work in Landing Mode too?
     // User said: "user can click which card they want to scan".
     // But Kiosk usually has a scanner always ready.
@@ -358,7 +428,7 @@ const QRScanner = () => {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleScan, isStudent, viewMode]);
+  }, [handleScan, isSelfScan, viewMode]);
 
   // -- 2. Camera Scanner Setup --
   useEffect(() => {
@@ -381,10 +451,9 @@ const QRScanner = () => {
         scannerRef.current = scanner;
 
         await scanner.start(
-          { facingMode: "environment" },
+          { facingMode: isSelfScan && requireSelfie && !requireQrCode ? "user" : "environment" },
           {
             fps: 10,
-            qrbox: { width: 300, height: 300 },
           },
           (decodedText) => {
             handleScan(decodedText);
@@ -419,8 +488,34 @@ const QRScanner = () => {
     if (targetId) {
       attendanceService
         .getAttendancePolicy(targetId)
-        .then((res) => {
+        .then(async (res) => {
           const policyData = (res as any).data || res;
+          
+          // Apply Dynamic Teacher Schedule Override
+          const isSelfScanUser = user?.userTypes?.includes("student");
+          if (!isSelfScanUser) {
+             const dynamicRule = policyData?.rules?.find((r: any) => r.ruleType === "DYNAMIC_TEACHER_SCHEDULE");
+             if (dynamicRule && (dynamicRule.ruleValue === "true" || dynamicRule.ruleValue === true)) {
+                try {
+                   const todayStr = new Date().toISOString().split('T')[0];
+                   const sessionsRes = await attendanceService.getTeachingSessions({ 
+                       actualTeacherId: targetId.toString(), 
+                       sessionDate: todayStr,
+                       limit: 100
+                   });
+                   const sessions = (sessionsRes as any).data || sessionsRes;
+                   if (Array.isArray(sessions) && sessions.length > 0) {
+                       const firstSession = sessions.sort((a: any, b: any) => a.startTime.localeCompare(b.startTime))[0];
+                       if (policyData.attendancePolicy && firstSession.startTime) {
+                          policyData.attendancePolicy.startTime = firstSession.startTime;
+                       }
+                   }
+                } catch (err) {
+                   console.error("Failed to fetch teacher schedule for dynamic check-in:", err);
+                }
+             }
+          }
+
           console.log("Policy response:", res, "Extracted:", policyData);
           setUserPolicy(policyData);
           setPolicyError(null);
@@ -560,9 +655,9 @@ const QRScanner = () => {
     const requirePhoto = userPolicy?.rules?.some(r => r.ruleType === "REQUIRE_PHOTO_EVIDENCE" && (r.ruleValue === "true" || r.ruleValue === "1" || r.ruleValue === true));
 
     // Determine State
-    const attendanceState: 'complete' | 'restricted' | 'checkedIn' | 'none' | 'holiday' = 
+    const attendanceState: 'restricted' | 'checkedIn' | 'none' | 'holiday' | 'complete' = 
+            todayStatus?.clockOut ? 'complete' :
             isHoliday ? 'holiday' :
-            todayStatus?.clockIn && todayStatus?.clockOut ? 'complete' :
             (todayStatus?.clockIn ? 'checkedIn' :
              (isRestricted ? 'restricted' : 'none'));
 
@@ -621,26 +716,19 @@ const QRScanner = () => {
                   }
                   onClick={() => {
                     if (
-                      attendanceState === "complete" ||
                       attendanceState === "restricted" ||
                       attendanceState === "holiday"
                     )
                       return;
                     
-                    if (!isStudent) {
-                        setViewMode("scanner");
-                        return;
-                    }
-
-                    if (requireQrCode) {
-                        setViewMode("scanner");
+                    if (!isSelfScan || requireQrCode) {
+                      setViewMode("scanner");
                     } else if (requirePhoto) {
-                        setPendingScanCode("MANUAL_CHECKIN");
-                        setRequireSelfie(true);
-                        setViewMode("scanner");
+                      setPendingScanCode("MANUAL_CHECKIN");
+                      setRequireSelfie(true);
+                      setViewMode("scanner");
                     } else {
-                        // Directly check in without scanner
-                        submitDirectCheckIn();
+                      setIsConfirmModalOpen(true);
                     }
                   }}
                   className={`border rounded-2xl p-6 transition-all group relative overflow-hidden shadow-2xl ${
@@ -1001,12 +1089,12 @@ const QRScanner = () => {
                     {!["complete", "restricted", "holiday"].includes(attendanceState) && (
                          attendanceState === "checkedIn" ? (
                           <span className="text-yellow-400 group-hover:translate-x-1 transition-transform flex items-center gap-1 font-medium text-sm">
-                            {(!isStudent || requireQrCode) ? "Scan to Clock Out" : requirePhoto ? "Take Selfie to Clock Out" : "Tap to Clock Out"}
+                            {(!isSelfScan || requireQrCode) ? "Scan to Clock Out" : requirePhoto ? "Take Selfie to Clock Out" : "Tap to Clock Out"}
                             <ChevronLeftIcon className="w-4 h-4 rotate-180" />
                           </span>
                         ) : (
                           <span className="text-brand-400 group-hover:translate-x-1 transition-transform flex items-center gap-1 font-medium text-sm">
-                            {(!isStudent || requireQrCode) ? "Start Scanning" : requirePhoto ? "Take Selfie" : "Check In Now"}
+                            {(!isSelfScan || requireQrCode) ? "Start Scanning" : requirePhoto ? "Take Selfie" : "Check In Now"}
                             <ChevronLeftIcon className="w-4 h-4 rotate-180" />
                           </span>
                         )
@@ -1034,7 +1122,7 @@ const QRScanner = () => {
             {/* Footer / Back */}
             <div className="text-center mt-12">
               <Link
-                to={isStudent ? "/" : "/attendance/piket"}
+                to={isSelfScan ? "/" : "/attendance/piket"}
                 className="text-sm text-white/40 hover:text-white transition-colors"
               >
                 &larr; Back to Dashboard
@@ -1042,6 +1130,39 @@ const QRScanner = () => {
             </div>
           </div>
         </div>
+
+        {/* Confirmation Modal */}
+        <Modal
+          isOpen={isConfirmModalOpen}
+          onClose={() => setIsConfirmModalOpen(false)}
+          title="Confirm Check-In"
+          className="max-w-xs m-4"
+          footer={
+            <div className="flex justify-end gap-3 w-full">
+              <Button
+                variant="secondary"
+                onClick={() => setIsConfirmModalOpen(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  setIsConfirmModalOpen(false);
+                  submitDirectCheckIn();
+                }}
+                className="flex-1"
+              >
+                Confirm
+              </Button>
+            </div>
+          }
+        >
+          <div className="text-gray-600 dark:text-gray-300 text-sm">
+            <p>Are you sure you want to {attendanceState === "checkedIn" ? "clock out" : "check in"} now?</p>
+          </div>
+        </Modal>
       </div>
     );
   }
@@ -1089,11 +1210,17 @@ const QRScanner = () => {
       )}
 
       {/* Overlay UI Header */}
-      <div className="absolute inset-x-0 top-0 p-6 sm:p-8 z-20 pointer-events-none flex items-start justify-between">
+      <div className="absolute inset-x-0 top-0 p-6 sm:p-8 z-50 pointer-events-none flex items-start justify-between">
                 <div className="flex items-center justify-between w-full">
                   <button 
-                      onClick={() => navigate("/")}
-                      className="p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors backdrop-blur-md border border-white/10 pointer-events-auto"
+                      onClick={() => {
+                          if (requireSelfie && requireQrCode) {
+                              setRequireSelfie(false);
+                          } else {
+                              navigate("/");
+                          }
+                      }}
+                      className="p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors backdrop-blur-md border border-white/10 pointer-events-auto active:scale-95"
                   >
                       <ChevronLeftIcon className="size-6" />
                   </button>
@@ -1108,12 +1235,12 @@ const QRScanner = () => {
                   </button>
                 </div>
         <div className="flex-1 mr-10 text-center">
-          <h1 className="text-xl sm:text-2xl font-bold text-white mb-1 tracking-tight drop-shadow-md">
-            Scanning
+          <h1 className="text-lg sm:text-xl font-bold text-white mb-1 tracking-tight drop-shadow-md">
+            {requireSelfie ? "Take a Selfie" : "Scanning"}
           </h1>
           {userPolicy && (
-            <p className="text-white/70 text-sm font-medium drop-shadow-sm">
-              {userPolicy.class?.name}
+            <p className="text-white/70 text-xs font-medium drop-shadow-sm">
+              {requireSelfie ? "Position your face in the frame" : userPolicy.class?.name}
             </p>
           )}
         </div>
@@ -1122,9 +1249,11 @@ const QRScanner = () => {
       {/* Target Box (Fixed Position - Centered) */}
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 sm:w-80 sm:h-80 z-20 pointer-events-none">
         {/* Adjust darkness: Reduced shadow alpha for clearer view */}
-        <div className="absolute inset-0 bg-black/40 z-10">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] h-[280px] sm:w-[350px] sm:h-[350px] bg-transparent shadow-[0_0_0_9999px_rgba(0,0,0,0.4)] rounded-3xl" />
-        </div>
+        {!requireSelfie && (
+            <div className="absolute inset-0 bg-black/40 z-10">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] h-[280px] sm:w-[350px] sm:h-[350px] bg-transparent shadow-[0_0_0_9999px_rgba(0,0,0,0.4)] rounded-3xl" />
+            </div>
+        )}
 
         {/* Custom Green Corner Frames Only (Hide during selfie or if QR is disabled) */}
         {!requireSelfie && requireQrCode && (
@@ -1148,7 +1277,7 @@ const QRScanner = () => {
         )}
 
         {/* Message for RFID Scanner when QR is disabled */}
-        {!requireSelfie && !requireQrCode && !isStudent && (
+        {!requireSelfie && !requireQrCode && !isSelfScan && (
             <div className="absolute inset-0 z-40 flex flex-col items-center justify-center pointer-events-none">
                 <div className="bg-black/60 backdrop-blur-md p-6 rounded-2xl border border-white/10 text-center">
                     <svg xmlns="http://www.w3.org/2000/svg" className="w-16 h-16 text-brand-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1161,34 +1290,83 @@ const QRScanner = () => {
         )}
 
         {/* Selfie Capture Overlay */}
-        {requireSelfie && (
-            <div className="absolute inset-0 z-40 flex flex-col items-center justify-center pointer-events-auto">
-                <div className="absolute top-24 left-0 right-0 text-center z-50">
-                    <h2 className="text-3xl font-bold text-white mb-2 drop-shadow-lg">Take a Selfie</h2>
-                    <p className="text-white/80">Position your face in the frame</p>
-                </div>
-                
-                {/* Rectangular portrait cutout */}
-                <div className="w-[80%] max-w-[320px] aspect-[3/4] rounded-2xl border-2 border-brand-500 shadow-[0_0_0_9999px_rgba(0,0,0,0.85)] z-40 relative">
-                    {/* inner glow */}
-                    <div className="absolute inset-0 rounded-2xl shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]" />
-                    {/* Corner accents */}
-                    <div className="absolute top-0 left-0 w-8 h-8 border-l-4 border-t-4 border-brand-500 rounded-tl-2xl" />
-                    <div className="absolute top-0 right-0 w-8 h-8 border-r-4 border-t-4 border-brand-500 rounded-tr-2xl" />
-                    <div className="absolute bottom-0 left-0 w-8 h-8 border-l-4 border-b-4 border-brand-500 rounded-bl-2xl" />
-                    <div className="absolute bottom-0 right-0 w-8 h-8 border-r-4 border-b-4 border-brand-500 rounded-br-2xl" />
-                </div>
+        {requireSelfie && !capturedPhoto && (
+            <div className="absolute inset-0 z-40 flex flex-col items-center justify-center pointer-events-auto overflow-hidden pb-12">
+                {/* No dark overlay filter, let the camera view be fully visible */}
 
-                <button 
-                onClick={handleTakePhoto}
-                disabled={isProcessing}
-                className="absolute bottom-24 w-20 h-20 bg-brand-500 rounded-full border-4 border-white/30 flex items-center justify-center shadow-2xl active:scale-95 transition-transform z-50 disabled:opacity-50"
+                {/* Clean Cutout Frame */}
+                <motion.div 
+                    initial={{ scale: 0.95, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="w-[80%] max-w-[320px] aspect-[3/4] rounded-2xl z-40 relative mt-16"
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="size-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-                        <circle cx="12" cy="13" r="4"></circle>
-                    </svg>
-                </button>
+                    {/* Darken only the outside slightly to highlight the frame, but no heavy filter */}
+                    <div className="absolute inset-0 rounded-2xl shadow-[0_0_0_9999px_rgba(0,0,0,0.6)] pointer-events-none border-2 border-white/80" />
+                    
+                    {/* Corner accents */}
+                    <div className="absolute -top-0.5 -left-0.5 w-8 h-8 border-l-4 border-t-4 border-brand-500 rounded-tl-2xl pointer-events-none" />
+                    <div className="absolute -top-0.5 -right-0.5 w-8 h-8 border-r-4 border-t-4 border-brand-500 rounded-tr-2xl pointer-events-none" />
+                    <div className="absolute -bottom-0.5 -left-0.5 w-8 h-8 border-l-4 border-b-4 border-brand-500 rounded-bl-2xl pointer-events-none" />
+                    <div className="absolute -bottom-0.5 -right-0.5 w-8 h-8 border-r-4 border-b-4 border-brand-500 rounded-br-2xl pointer-events-none" />
+                </motion.div>
+
+                {/* Modern Camera Button */}
+                <motion.div 
+                    initial={{ y: 50, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    className="mt-8 flex flex-col items-center z-50"
+                >
+                    <button 
+                        onClick={handleTakePhoto}
+                        disabled={isProcessing}
+                        className="w-[72px] h-[72px] rounded-full border-[3px] border-white p-1 flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50"
+                    >
+                        <div className="w-full h-full bg-white rounded-full" />
+                    </button>
+                </motion.div>
+            </div>
+        )}
+
+        {/* Captured Photo Preview Overlay */}
+        {capturedPhoto && (
+            <div className="absolute inset-0 z-50 bg-black flex flex-col items-center justify-center pointer-events-auto">
+                <motion.div 
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="absolute top-16 left-0 right-0 text-center z-50 px-4"
+                >
+                    <h2 className="text-2xl font-bold text-white tracking-wide">Preview</h2>
+                </motion.div>
+                
+                <motion.div 
+                    initial={{ scale: 0.95, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="w-[80%] max-w-[320px] aspect-[3/4] rounded-2xl overflow-hidden z-40 relative mt-8"
+                >
+                    {/* Pure image, no filters */}
+                    <img src={capturedPhoto} className="w-full h-full object-cover" alt="Captured selfie" />
+                </motion.div>
+
+                <motion.div 
+                    initial={{ y: 50, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    className="absolute bottom-16 flex gap-4 z-50 w-[80%] max-w-[320px]"
+                >
+                    <button 
+                        className="flex-1 bg-[#333333] hover:bg-[#444444] text-white font-medium py-3.5 px-6 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2" 
+                        onClick={handleRetakePhoto} 
+                        disabled={isProcessing}
+                    >
+                        Retake
+                    </button>
+                    <button 
+                        className="flex-1 bg-brand-500 hover:bg-brand-400 text-white font-medium py-3.5 px-6 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2" 
+                        onClick={handleConfirmPhoto} 
+                        disabled={isProcessing}
+                    >
+                        {isProcessing ? "Saving..." : "Submit"}
+                    </button>
+                </motion.div>
             </div>
         )}
       </div>
@@ -1232,7 +1410,7 @@ const QRScanner = () => {
       )}
 
       {/* Self-Scan Hint (Only Student, if no policy?) */}
-      {isStudent && !userPolicy && (
+      {isSelfScan && !userPolicy && (
         <div className="absolute bottom-32 flex items-center justify-center pointer-events-none z-10">
           <p className="text-white/70 text-sm bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10">
             Point camera at the Gate QR Code
@@ -1271,7 +1449,7 @@ const QRScanner = () => {
                     {scanResult.attendanceStatus === "LATE" ? "LATE RECORDED" : "SUCCESS"}
                   </h2>
 
-                  {isStudent ? (
+                  {isSelfScan ? (
                     <>
                       <p className="text-2xl font-medium opacity-90">
                         {scanResult.attendanceStatus === "LATE" ? "Checked In Late!" : "Checked In!"}

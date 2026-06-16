@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { CheckCircleIcon } from "../../../components/atoms/Icons";
 import Button from "../../../components/atoms/Button";
 import { useAttendanceRules } from "../../../api/hooks/useRules";
-import { AttendanceRuleType, RuleContextType, CreateAttendanceRuleDto } from "../../../api/types/rules";
+import { AttendanceRuleType, RuleContextType, CreateAttendanceRuleDto, RulePurpose } from "../../../api/types/rules";
 import Switch from "../../../components/atoms/Switch";
 import { showSuccess, showError } from "../../../utils/toast";
 import GeoFencingSettings from "./GeoFencingSettings";
@@ -12,11 +12,12 @@ interface PoliciesTabProps {
   contextId?: number;
   selectedContext: { type: string; id: number; name: string };
   onOverride?: () => void;
+  onEnsureContext?: (purpose: string) => Promise<number | undefined>;
 }
 
-const PoliciesTab: React.FC<PoliciesTabProps> = ({ contextId, selectedContext, onOverride }) => {
+const PoliciesTab: React.FC<PoliciesTabProps> = ({ contextId, selectedContext, onOverride, onEnsureContext }) => {
   const { data: rulesData, createMutation, updateMutation, isLoading, refetch } = useAttendanceRules(
-    contextId ? { contextId, limit: 100 } : undefined
+    { contextId: contextId || -1, limit: 100 }
   );
 
   // Memoize rules to verify stable dependency for useEffect
@@ -52,13 +53,20 @@ const PoliciesTab: React.FC<PoliciesTabProps> = ({ contextId, selectedContext, o
   }, [rules]);
 
   const handleSave = async () => {
-    // Critical Guard: If we don't have a contextId, we risk creating duplicate rules because we haven't loaded existing ones.
-    if (!contextId && selectedContext.type !== RuleContextType.GLOBAL) {
-        console.warn("Attempting to save without Context ID - Potentially unsafe");
-        if (!contextId) { 
-             showError("Context not loaded. Please refresh or try again.", "Integration Error");
-             return;
+    let activeContextId = contextId;
+    if (!activeContextId && selectedContext.type === RuleContextType.GLOBAL && onEnsureContext) {
+        activeContextId = await onEnsureContext(RulePurpose.ATTENDANCE_RULE);
+        if (!activeContextId) {
+            showError("Failed to initialize Global Context", "Integration Error");
+            return;
         }
+    }
+
+    // Critical Guard: If we don't have a contextId, we risk creating duplicate rules because we haven't loaded existing ones.
+    if (!activeContextId && selectedContext.type !== RuleContextType.GLOBAL) {
+        console.warn("Attempting to save without Context ID - Potentially unsafe");
+        showError("Context not loaded. Please refresh or try again.", "Integration Error");
+        return;
     }
 
     try {
@@ -86,7 +94,7 @@ const PoliciesTab: React.FC<PoliciesTabProps> = ({ contextId, selectedContext, o
         } else {
              // Rule does not exist: Create it
              // CRITICAL FIX: Do NOT create if we don't have a contextId, unless we are absolutely sure.
-             if (!contextId) {
+             if (!activeContextId && selectedContext.type !== RuleContextType.GLOBAL) {
                  console.warn(`Skipping Create Rule [${type}]: No contextId available.`);
                  return; 
              }
@@ -98,7 +106,7 @@ const PoliciesTab: React.FC<PoliciesTabProps> = ({ contextId, selectedContext, o
                  ruleValue: stringValue,
                  isActive: true,
                  contextType: selectedContext.type,
-                 contextId, 
+                 contextId: activeContextId, 
              };
 
              if (selectedContext.type === RuleContextType.GRADE) {
