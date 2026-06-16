@@ -559,7 +559,12 @@ const Events: React.FC = () => {
                 </div>
 
                 <div className="fixed bottom-24 right-4 z-40">
-                    <DataActionsMenu onExportExcel={() => {}} onExportPdf={() => {}} onImportClick={() => {}} onDownloadTemplate={() => {}} isExporting={false} isImporting={false} isMobileFab={true} />
+                    <button
+                        onClick={() => handleOpenModal()}
+                        className="flex size-[52px] items-center justify-center rounded-full bg-brand-500 text-white shadow-[0_4px_20px_rgba(26,86,219,0.3)] transition-transform active:scale-95 hover:bg-brand-600"
+                    >
+                        <PlusIcon className="size-6 fill-white text-white" />
+                    </button>
                 </div>
             </div>
           ) : (
