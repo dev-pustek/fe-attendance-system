@@ -108,7 +108,7 @@ const SessionCard: React.FC<{
             {subjectName}
          </span>
          {!readOnly && (
-             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+             <div className="flex gap-1 transition-opacity">
                 <button 
                     onClick={(e) => { e.stopPropagation(); onEdit(template); }}
                     className="p-1 rounded bg-white/50 hover:bg-white text-gray-600 shadow-sm transition-colors"
