@@ -66,6 +66,7 @@ export const useUpdateStudent = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["profiles", "students"] });
       queryClient.invalidateQueries({ queryKey: ["profiles", "students", variables.userId] });
+      queryClient.invalidateQueries({ queryKey: ["users", "me"] });
       showSuccess("Student profile updated successfully");
     },
     onError: (error) => showError(error),
@@ -141,6 +142,7 @@ export const useUpdateEmployee = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["profiles", "employees"] });
       queryClient.invalidateQueries({ queryKey: ["profiles", "employees", variables.userId] });
+      queryClient.invalidateQueries({ queryKey: ["users", "me"] });
       showSuccess("Employee profile updated successfully");
     },
     onError: (error) => showError(error),

@@ -64,6 +64,14 @@ export default function UserDropdown({ isMobilePremium }: { isMobilePremium?: bo
               className="w-full h-full object-cover"
             />
           </div>
+        ) : user?.photo ? (
+          <span className="mr-0 sm:mr-3 overflow-hidden rounded-full h-11 w-11 flex items-center justify-center bg-gray-100 dark:bg-gray-800 text-gray-400">
+            <img 
+              src={user.photo} 
+              alt="Profile" 
+              className="w-full h-full object-cover"
+            />
+          </span>
         ) : (
           <span className="mr-0 sm:mr-3 overflow-hidden rounded-full h-11 w-11 flex items-center justify-center bg-gray-100 dark:bg-gray-800 text-gray-400">
             <UserCircleIcon className="size-8" />
