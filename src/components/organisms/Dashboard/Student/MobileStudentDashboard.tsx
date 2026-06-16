@@ -714,16 +714,16 @@ export default function MobileStudentDashboard({ logs = [] }: MobileStudentDashb
                       <div key={item.id} className={`flex gap-3.5 pb-3 relative transition-all duration-300 ${isUpcoming ? 'opacity-70' : isActive ? 'scale-[1.02]' : ''} ${activeLeave ? 'opacity-50' : ''}`}>
                         {/* Timeline Node */}
                         <div className="relative z-10 flex flex-col items-center mt-0 w-[36px] sm:w-[40px] shrink-0">
-                          {isActive && (
-                            <>
-                              {/* Outer pinging halo */}
-                              <div className="absolute -inset-2 sm:-inset-2.5 rounded-[18px] animate-ping opacity-25 duration-1000 bg-purple-400"></div>
-                              {/* Inner glowing aura */}
-                              <div className="absolute -inset-1 rounded-[16px] animate-pulse opacity-60 blur-sm bg-purple-500"></div>
-                            </>
-                          )}
-                          <div className={`w-[36px] h-[36px] sm:w-[40px] sm:h-[40px] rounded-[14px] flex items-center justify-center relative z-10 transition-transform duration-500 ${isActive ? 'scale-110 shadow-xl bg-gradient-to-b from-purple-400 to-purple-600 text-white shadow-purple-500/50' : isCompleted ? 'bg-gradient-to-b from-purple-100 to-purple-200 text-purple-700 dark:from-purple-500/20 dark:to-purple-500/10 dark:text-purple-400 shadow-md shadow-purple-500/30' : isMissed ? 'bg-gradient-to-b from-red-50 to-red-100 text-red-500 dark:from-red-500/10 dark:to-red-500/5 dark:text-red-400 shadow-md shadow-red-500/30' : 'bg-gradient-to-b from-gray-100 to-gray-200 text-gray-400 dark:from-slate-800 dark:to-slate-900 dark:text-gray-500 shadow-md shadow-slate-400/20'}`}>
-                            <SparklesIcon className="w-5 h-5" />
+                          <div className="relative flex items-center justify-center">
+                            {isActive && (
+                              <>
+                                <div className="absolute -inset-1.5 rounded-[18px] opacity-30 animate-pulse bg-purple-500"></div>
+                                <div className="absolute -inset-1.5 rounded-[18px] opacity-20 animate-ping bg-purple-500" style={{ animationDuration: '2s' }}></div>
+                              </>
+                            )}
+                            <div className={`w-[36px] h-[36px] sm:w-[40px] sm:h-[40px] rounded-[14px] flex items-center justify-center relative z-10 transition-transform duration-500 ${isActive ? 'scale-110 shadow-xl bg-gradient-to-b from-purple-400 to-purple-600 text-white shadow-purple-500/50' : isCompleted ? 'bg-gradient-to-b from-purple-100 to-purple-200 text-purple-700 dark:from-purple-500/20 dark:to-purple-500/10 dark:text-purple-400 shadow-md shadow-purple-500/30' : isMissed ? 'bg-gradient-to-b from-red-50 to-red-100 text-red-500 dark:from-red-500/10 dark:to-red-500/5 dark:text-red-400 shadow-md shadow-red-500/30' : 'bg-gradient-to-b from-gray-100 to-gray-200 text-gray-400 dark:from-slate-800 dark:to-slate-900 dark:text-gray-500 shadow-md shadow-slate-400/20'}`}>
+                              <SparklesIcon className="w-5 h-5" />
+                            </div>
                           </div>
                         </div>
 
