@@ -6,6 +6,8 @@ import { ChevronDownIcon, UserCircleIcon } from "../../components/atoms/Icons";
 import { ChevronRightIcon, ArrowRightOnRectangleIcon } from "@heroicons/react/24/outline";
 import { useAuthStore } from "../../store/authStore";
 import { showSuccess } from "../../utils/toast";
+import ConfirmDialog from "../../components/molecules/ConfirmDialog";
+import { useConfirm } from "../../hooks/useConfirm";
 
 const EXCLUDED_PATHS = [
   "/", // Beranda
@@ -19,10 +21,21 @@ const MobileMenu: React.FC = () => {
   const { user, logout } = useAuthStore();
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { confirm, confirmState } = useConfirm();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    const isConfirmed = await confirm({
+      title: "Konfirmasi Keluar",
+      message: "Apakah Anda yakin ingin keluar dari aplikasi SIAPUS?",
+      confirmText: "Ya, Keluar",
+      cancelText: "Batal",
+      variant: "danger"
+    });
+
+    if (!isConfirmed) return;
+
     logout();
-    showSuccess("Logged out successfully. See you soon!");
+    showSuccess("Berhasil Keluar", "Anda telah berhasil keluar dari sistem");
     navigate("/signin");
   };
 
@@ -164,6 +177,8 @@ const MobileMenu: React.FC = () => {
           </button>
         </div>
       </div>
+
+      <ConfirmDialog {...confirmState} />
     </div>
   );
 };
