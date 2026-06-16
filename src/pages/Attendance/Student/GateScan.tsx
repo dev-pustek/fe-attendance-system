@@ -714,17 +714,17 @@ const GateScan = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   whileHover={
-                    ["restricted", "holiday"].includes(attendanceState)
+                    ["restricted", "holiday", "complete"].includes(attendanceState)
                       ? {}
                       : { scale: 1.02 }
                   }
                   whileTap={
-                    ["restricted", "holiday"].includes(attendanceState)
+                    ["restricted", "holiday", "complete"].includes(attendanceState)
                       ? {}
                       : { scale: 0.98 }
                   }
                   onClick={() => {
-                    if (["restricted", "holiday"].includes(attendanceState) || restriction.checkOutLocked) return;
+                    if (["restricted", "holiday", "complete"].includes(attendanceState) || restriction.checkOutLocked) return;
                     
                     if (requireQrCode) {
                         setViewMode("scanner");
@@ -739,7 +739,7 @@ const GateScan = () => {
                   className={`border rounded-2xl p-6 transition-all group relative overflow-hidden shadow-2xl ${
                     attendanceState === "restricted"
                       ? "bg-red-500/5 border-red-500/10 opacity-70 cursor-not-allowed"
-                      : attendanceState === "holiday"
+                      : ["holiday", "complete"].includes(attendanceState)
                       ? "bg-purple-500/10 border-purple-500/20 opacity-90 cursor-default"
                       : attendanceState === "checkedIn"
                       ? "bg-yellow-500/10 border-yellow-500/20 cursor-pointer hover:bg-yellow-500/20"

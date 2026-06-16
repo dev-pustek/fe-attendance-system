@@ -720,7 +720,8 @@ const QRScanner = () => {
                   onClick={() => {
                     if (
                       attendanceState === "restricted" ||
-                      attendanceState === "holiday"
+                      attendanceState === "holiday" ||
+                      attendanceState === "complete"
                     )
                       return;
                     
