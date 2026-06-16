@@ -94,7 +94,7 @@ const SessionCard: React.FC<{
   return (
     <div
       ref={drag as any}
-      className={`group relative flex flex-col gap-1.5 rounded-lg p-2 text-left shadow-sm transition-all hover:shadow-md cursor-grab active:cursor-grabbing overflow-hidden ${
+      className={`group relative flex flex-col gap-1.5 rounded-lg p-2 text-left shadow-sm transition-all hover:shadow-md cursor-grab active:cursor-grabbing ${
         isDragging ? 'opacity-50 grayscale' : 'opacity-100'
       } ${!template.isActive ? 'opacity-60' : ''}`}
       style={{
