@@ -57,4 +57,7 @@ export default defineConfig({
       'localhost',
     ],
   },
+  build: {
+    target: 'esnext'
+  }
 });
