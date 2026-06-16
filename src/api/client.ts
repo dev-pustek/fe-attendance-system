@@ -39,12 +39,43 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+const fixImageUrls = (obj: any, origin: string): any => {
+  if (!obj) return obj;
+  if (typeof obj === 'string') {
+    if (obj.includes('localhost:3000/uploads')) {
+      return obj.replace(/http:\/\/localhost:3000/g, origin);
+    }
+    return obj;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(item => fixImageUrls(item, origin));
+  }
+  if (typeof obj === 'object') {
+    const newObj: any = {};
+    for (const key in obj) {
+      newObj[key] = fixImageUrls(obj[key], origin);
+    }
+    return newObj;
+  }
+  return obj;
+};
+
 // Response Interceptor
 apiClient.interceptors.response.use(
   (response) => {
+    let responseData = response.data;
+    
+    // Auto-fix localhost:3000 image URLs from the backend when testing on mobile/VPS
+    try {
+      const origin = new URL(API_BASE_URL).origin;
+      responseData = fixImageUrls(responseData, origin);
+    } catch (e) {
+      // Ignore URL parsing errors
+    }
+
     // Automatically unwrap the 'data' property if it exists
-    if (response.data && response.data.data !== undefined) {
-      const { data, ...metadata } = response.data;
+    if (responseData && responseData.data !== undefined) {
+      const { data, ...metadata } = responseData;
       
       // If there is metadata (like total, page, etc.) at the root level, 
       // we merge it with the data if data is an object, 
@@ -63,7 +94,11 @@ apiClient.interceptors.response.use(
         data: data
       };
     }
-    return response;
+    
+    return {
+      ...response,
+      data: responseData
+    };
   },
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
