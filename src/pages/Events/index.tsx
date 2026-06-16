@@ -99,6 +99,7 @@ const DataActionsMenu = ({
 
 const Events: React.FC = () => {
   const isMobile = useIsMobile();
+  const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const currentViewMode = isMobile ? "list" : viewMode;
   const navigate = useNavigate();
   const { confirm, confirmState } = useConfirm();
@@ -113,7 +114,6 @@ const Events: React.FC = () => {
   const [startFrom, setStartFrom] = useState("");
   const [startTo, setStartTo] = useState("");
   const [timeRangeFilter, setTimeRangeFilter] = useState("all"); 
-  const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   
   const { data: response, isLoading, refetch } = useEvents({
     page,
