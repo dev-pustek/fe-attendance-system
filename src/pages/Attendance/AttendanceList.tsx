@@ -49,7 +49,7 @@ import DataActionsMenu from "../../components/molecules/DataActionsMenu";
 import { showSuccess, showError } from "../../utils/toast";
 import { SmoothHeight } from "../../components/atoms/SmoothHeight";
 import QrScanner from "../../components/molecules/QrScanner";
-import { MapPinIcon } from "@heroicons/react/24/outline";
+import { MapPinIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
 
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
     const R = 6371e3; // Earth's radius in meters
@@ -182,6 +182,24 @@ const AttendanceList: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
+
+  const startCamera = async (mode: "user" | "environment") => {
+      try {
+          if (videoRef.current && videoRef.current.srcObject) {
+              const stream = videoRef.current.srcObject as MediaStream;
+              stream.getTracks().forEach(track => track.stop());
+          }
+          const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: mode } });
+          if (videoRef.current) {
+              videoRef.current.srcObject = stream;
+          }
+      } catch (err) {
+          console.error("Error accessing camera:", err);
+          showError("Failed to access camera");
+          setIsCameraOpen(false);
+      }
+  };
 
 
   const [qrForm, setQrForm] = useState({
@@ -1891,21 +1909,43 @@ const AttendanceList: React.FC = () => {
                      <div className="relative w-full aspect-[3/4] max-w-[320px] mx-auto bg-gray-100 dark:bg-white/5 rounded-2xl overflow-hidden flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-700">
                         {isCameraOpen ? (
                         <>
-                            <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+                            <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full object-cover ${facingMode === 'user' ? 'scale-x-[-1]' : ''}`} />
                             <canvas ref={canvasRef} width={300} height={400} className="hidden" />
+                            <button 
+                                type="button"
+                                className="absolute top-2 right-2 p-2 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors z-20"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    const newMode = facingMode === "user" ? "environment" : "user";
+                                    setFacingMode(newMode);
+                                    startCamera(newMode);
+                                }}
+                                title="Switch Camera"
+                            >
+                                <ArrowPathIcon className="size-5" />
+                            </button>
                             <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-4 z-10">
-                                <Button variant="secondary" size="sm" onClick={() => {
+                                <Button type="button" variant="secondary" size="sm" onClick={(e) => {
+                                    e.preventDefault();
                                     const stream = videoRef.current?.srcObject as MediaStream;
                                     stream?.getTracks().forEach(track => track.stop());
                                     setIsCameraOpen(false);
                                 }}>Cancel</Button>
-                                <Button variant="primary" size="sm" onClick={() => {
+                                <Button type="button" variant="primary" size="sm" onClick={(e) => {
+                                    e.preventDefault();
                                     const video = videoRef.current;
                                     const canvas = canvasRef.current;
                                     if (video && canvas) {
                                         const context = canvas.getContext('2d');
                                         if (context) {
+                                            if (facingMode === 'user') {
+                                                context.translate(300, 0);
+                                                context.scale(-1, 1);
+                                            }
                                             context.drawImage(video, 0, 0, 300, 400); // Draw 3:4 portrait
+                                            if (facingMode === 'user') {
+                                                context.setTransform(1, 0, 0, 1, 0, 0);
+                                            }
                                             canvas.toBlob((blob) => {
                                                 if (blob) {
                                                     setManualForm(prev => ({ ...prev, photo: blob }));
@@ -1949,18 +1989,10 @@ const AttendanceList: React.FC = () => {
                             </div>
                              <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Take Photo</h4>
                              <p className="text-xs text-gray-500 mb-4">Required for validation</p>
-                            <Button variant="secondary" size="sm" onClick={async () => {
+                            <Button type="button" variant="secondary" size="sm" onClick={async (e) => {
+                                e.preventDefault();
                                 setIsCameraOpen(true);
-                                try {
-                                    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                                    if (videoRef.current) {
-                                        videoRef.current.srcObject = stream;
-                                    }
-                                } catch (err) {
-                                    console.error("Error accessing camera:", err);
-                                    setIsCameraOpen(false);
-                                    showError("Failed to access camera");
-                                }
+                                startCamera(facingMode);
                             }}>Open Camera</Button>
                         </div>
                     )}
