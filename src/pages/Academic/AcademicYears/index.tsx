@@ -108,6 +108,8 @@ const RowActionMenu = ({ onEdit, onDelete }: { onEdit: () => void; onDelete: () 
       </Dropdown>
     </div>
   );
+};
+
 const academicYearSchema = z.object({
   code: z.string().min(1, "Year code is required"),
   name: z.string().min(1, "Display name is required"),
