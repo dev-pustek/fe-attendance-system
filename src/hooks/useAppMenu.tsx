@@ -206,7 +206,7 @@ export const useAppMenu = () => {
       hrItems.push({
         icon: <UserIcon />,
         name: "Pegawai",
-        path: "/profiles/employees",
+        path: "/hr/employees",
       });
     }
 
