@@ -3,9 +3,11 @@ import { useAuthStore } from "../../store/authStore";
 import AdminDashboard from "./AdminDashboard";
 import TeacherDashboard from "./TeacherDashboard";
 import StudentDashboard from "./StudentDashboard";
+import { useIsMobile } from "../../hooks/useIsMobile";
 
 export default function Home() {
   const { user } = useAuthStore();
+  const isMobile = useIsMobile(1024); // lg breakpoint
   
   const roles = user?.roles?.map(r => r.name.toLowerCase()) || [];
   const userTypes = user?.userTypes?.map(t => t.toLowerCase()) || [];
@@ -22,6 +24,11 @@ export default function Home() {
   // const isAdminOrStaff = true;
   // const isTeacher = false;
   // const isStudent = false;
+
+  // Show StudentDashboard (which contains MobileStudentDashboard) for all users on mobile
+  if (isMobile) {
+    return <StudentDashboard />;
+  }
 
   if (isAdminOrStaff) {
     return <AdminDashboard />;
