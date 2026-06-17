@@ -74,10 +74,11 @@ export const useAppMenu = () => {
   const isParent = hasAnyRole(["parent"]) && !isSuperAdmin;
 
   // Derive top-level categories
-  const isHR = isAdmin || isSuperAdmin;
-  const isAcademic = isAdmin || isSuperAdmin || isKurikulum;
-  // A teacher or admin might see academic features
-  const showAcademicFeatures = isAcademic || isGuru;
+  // Teachers (and other staff) get admin-like access to operational data, but with row-level security on backend
+  const hasAdminLikeAccess = isAdmin || isSuperAdmin || isGuru || isKaryawan || isKurikulum || isPiket;
+  const isHR = hasAdminLikeAccess;
+  const isAcademic = hasAdminLikeAccess;
+  const showAcademicFeatures = hasAdminLikeAccess;
 
   const navGroups = useMemo<NavGroup[]>(() => {
     // ─── Main Menu ───
@@ -98,7 +99,7 @@ export const useAppMenu = () => {
     // ─── Attendance & Leave ───
     const attendanceItems: NavItem[] = [];
 
-    if (isAdmin || isSuperAdmin || isPiket) {
+    if (hasAdminLikeAccess) {
       attendanceItems.push({
         icon: <VideoIcon />,
         name: "Absen Kehadiran",
@@ -127,7 +128,7 @@ export const useAppMenu = () => {
       });
     }
 
-    if (isAdmin || isSuperAdmin || isPiket) {
+    if (hasAdminLikeAccess) {
       attendanceItems.push({
         icon: <UserIcon />,
         name: "Tamu",
@@ -178,7 +179,7 @@ export const useAppMenu = () => {
       });
     }
 
-    if (isAdmin || isSuperAdmin) {
+    if (hasAdminLikeAccess) {
       academicItems.push({ icon: <ShootingStarIcon />, name: "Acara", path: "/events" });
     }
 
@@ -242,7 +243,7 @@ export const useAppMenu = () => {
       adminItems.push({ icon: <TableIcon />, name: "Tipe Cuti", path: "/leaves/types" });
     }
 
-    if (isAdmin || isSuperAdmin) {
+    if (hasAdminLikeAccess) {
       adminItems.push({
         icon: <DocsIcon />,
         name: "Aturan & Kebijakan",
