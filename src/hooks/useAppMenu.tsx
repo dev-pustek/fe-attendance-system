@@ -106,12 +106,14 @@ export const useAppMenu = () => {
     // ─── Attendance & Leave ───
     const attendanceItems: NavItem[] = [];
 
+    // Everyone gets "Absen Kehadiran" to perform self-scans
+    attendanceItems.push({
+      icon: <VideoIcon />,
+      name: "Absen Kehadiran",
+      path: "/attendance/gate-scan",
+    });
+
     if (hasGateAccess) {
-      attendanceItems.push({
-        icon: <VideoIcon />,
-        name: "Absen Kehadiran",
-        path: "/attendance/gate-scan",
-      });
       attendanceItems.push({
         icon: <TimeIcon />,
         name: "Kehadiran Gerbang",
