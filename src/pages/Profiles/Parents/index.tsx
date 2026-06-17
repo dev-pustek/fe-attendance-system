@@ -1129,6 +1129,4 @@ export default function ParentManagement() {
       <ConfirmDialog {...confirmState} />
     </>
   );
-}
-
-export default Parents;
+};
