@@ -62,47 +62,44 @@ export const useAppMenu = () => {
     [user]
   );
 
+  // ─── Base role flags ───
   const isAdmin = hasAnyRole(["admin"]);
   const isSuperAdmin = hasAnyRole(["superadmin", "super admin"]);
   const isKurikulum = hasAnyRole(["kurikulum"]);
   const isKaryawan = hasAnyRole(["karyawan", "staff"]);
   const isGuru = hasAnyRole(["guru", "teacher"]);
   const isPiket = hasAnyRole(["piket"]);
-
-  // Keeping student/parent just in case
   const isStudent = hasAnyRole(["student"]) && !isSuperAdmin;
   const isParent = hasAnyRole(["parent"]) && !isSuperAdmin;
 
-  // Derive top-level categories
-  const hasAdminLikeAccess = isAdmin || isSuperAdmin || isGuru || isKaryawan || isKurikulum || isPiket || isHR;
-  
-  // HR features should only be for HR/Admin, except for leave requests
+  // ─── Derived access flags (ORDER MATTERS — define dependencies first) ───
+  // HR features: manage leaves, gate passes, reimbursements, employees
   const isHR = isAdmin || isSuperAdmin || hasAnyRole(["hr"]);
-  
-  // Academic admin (curriculum editing, workload) vs Academic viewing (teachers)
+
+  // Academic admin: curriculum editing, workload, structure, teaching assignments
   const isAcademicAdmin = isAdmin || isSuperAdmin || isKurikulum;
+
+  // Academic viewer: teachers can view schedules, students in their class
   const isAcademic = isAcademicAdmin || isGuru;
   const showAcademicFeatures = isAcademicAdmin || isGuru;
 
-  // Gate access (Scan, Piket Monitor, Guests)
+  // Event management: only admin-level roles can manage events
+  const canManageEvents = isAdmin || isSuperAdmin || isKurikulum;
+
+  // Gate access: piket, admin, superadmin
   const hasGateAccess = isAdmin || isSuperAdmin || isPiket;
 
   const navGroups = useMemo<NavGroup[]>(() => {
-    // ─── Main Menu ───
+    // ═══════════════════════════════════════════
+    // ─── MENU UTAMA (everyone) ───
+    // ═══════════════════════════════════════════
     const mainMenu: NavItem[] = [
       { icon: <GridIcon />, name: "Dasbor", path: "/" },
       { icon: <UserIcon />, name: "Profil", path: "/profile" },
       { icon: <MailIcon />, name: "Notifikasi", path: "/notifications" }
     ];
 
-    if (isKaryawan && !isGuru) {
-      mainMenu.push({
-        icon: <CalenderIcon />,
-        name: "Jadwal Kerja",
-        path: "/schedules",
-      });
-    }
-
+    // Teacher: daily teaching schedule
     if (isGuru) {
       mainMenu.push({
         icon: <CalenderIcon />,
@@ -111,15 +108,18 @@ export const useAppMenu = () => {
       });
     }
 
-    if (isStudent) {
+    // Employee (non-teacher): work schedule
+    if (isKaryawan && !isGuru && !isAdmin && !isSuperAdmin) {
       mainMenu.push({
-        icon: <ShootingStarIcon />,
-        name: "Acara",
-        path: "/student/events",
+        icon: <CalenderIcon />,
+        name: "Jadwal Kerja",
+        path: "/schedules",
       });
     }
 
-    // ─── Attendance     // ─── Attendance & Leave ─── Leave ───
+    // ═══════════════════════════════════════════
+    // ─── KEHADIRAN & TAMU ───
+    // ═══════════════════════════════════════════
     const attendanceItems: NavItem[] = [];
 
     // Everyone gets "Absen Kehadiran" to perform self-scans
@@ -129,6 +129,7 @@ export const useAppMenu = () => {
       path: "/attendance/gate-scan",
     });
 
+    // Gate staff: piket monitor, attendance records, history, metrics
     if (hasGateAccess) {
       attendanceItems.push({
         icon: <TimeIcon />,
@@ -142,14 +143,7 @@ export const useAppMenu = () => {
       });
     }
 
-    if (isKaryawan && !isGuru) {
-      mainMenu.push({
-        icon: <CalenderIcon />,
-        name: "Jadwal Kerja",
-        path: "/schedules",
-      });
-    }
-
+    // Teacher: class attendance (teaching sessions, subject attendances)
     if (isGuru) {
       attendanceItems.push({
         icon: <TaskIcon />,
@@ -161,6 +155,7 @@ export const useAppMenu = () => {
       });
     }
 
+    // Gate staff: guest management
     if (hasGateAccess) {
       attendanceItems.push({
         icon: <UserIcon />,
@@ -172,9 +167,12 @@ export const useAppMenu = () => {
       });
     }
 
-    // ─── Academic ───
+    // ═══════════════════════════════════════════
+    // ─── AKADEMIK & JADWAL ───
+    // ═══════════════════════════════════════════
     const academicItems: NavItem[] = [];
 
+    // Student / Parent: their own class schedules
     if (isStudent || isParent) {
       academicItems.push({
         icon: <CalenderIcon />,
@@ -186,13 +184,28 @@ export const useAppMenu = () => {
       });
     }
 
+    // Student: events & ID card
+    if (isStudent) {
+      academicItems.push({ icon: <ShootingStarIcon />, name: "Acara", path: "/student/events" });
+      academicItems.push({ icon: <UserIcon />, name: "Kartu ID Saya", path: "/student/id-card" });
+    }
+
+    // Academic features: scheduling
     if (showAcademicFeatures) {
-      const scheduleSubItems = [];
+      const scheduleSubItems: SubItem[] = [];
+
+      // Only academic admins can manage teaching assignments & overrides
       if (isAcademicAdmin) {
         scheduleSubItems.push({ name: "Tugas Mengajar", path: "/academic/teaching-assignments" });
       }
+
+      // Both teachers and academic admins can view class schedules
       scheduleSubItems.push({ name: "Jadwal Kelas", path: "/academic/schedules" });
+
+      // Work schedules (shift calendar) — visible to teachers and academic admins
       scheduleSubItems.push({ name: "Jadwal Kerja", path: "/schedules" });
+
+      // Only academic admins can manage schedule overrides
       if (isAcademicAdmin) {
         scheduleSubItems.push({ name: "Timpa Jadwal", path: "/academic/schedule-overrides" });
       }
@@ -204,6 +217,7 @@ export const useAppMenu = () => {
       });
     }
 
+    // Academic admin only: curriculum management
     if (isAcademicAdmin) {
       academicItems.push({
         icon: <DocsIcon />,
@@ -217,23 +231,32 @@ export const useAppMenu = () => {
       });
     }
 
-    if (hasAdminLikeAccess) {
+    // Event management: admin, super_admin, kurikulum only
+    if (canManageEvents) {
       academicItems.push({ icon: <ShootingStarIcon />, name: "Acara", path: "/events" });
     }
 
-    // ─── HR / Leaves / Gate Pass ───
+    // ═══════════════════════════════════════════
+    // ─── SDM & IZIN ───
+    // ═══════════════════════════════════════════
     const hrItems: NavItem[] = [];
 
-    // Leave Submissions Logic
-    const leaveSubItems: SubItem[] = [];
-    if (isStudent || isKaryawan || isGuru || hasAdminLikeAccess) {
-        leaveSubItems.push({ name: "Pengajuan Cuti", path: "/leaves/requests" });
-    }
-    
-    if (leaveSubItems.length > 0) {
-      hrItems.push({ icon: <DocsIcon />, name: "Cuti", subItems: leaveSubItems });
+    // Leave requests: staff, teachers, students can submit their own
+    if (isStudent) {
+      hrItems.push({ icon: <DocsIcon />, name: "Cuti Siswa", path: "/student/leaves" });
     }
 
+    if (isKaryawan || isGuru || isHR) {
+      hrItems.push({
+        icon: <DocsIcon />,
+        name: "Cuti",
+        subItems: [
+          { name: "Pengajuan Cuti", path: "/leaves/requests" },
+        ],
+      });
+    }
+
+    // HR-only features
     if (isHR) {
       hrItems.push({
         icon: <DocsIcon />,
@@ -252,10 +275,13 @@ export const useAppMenu = () => {
       });
     }
 
-    // ─── Admin / Settings ───
+    // ═══════════════════════════════════════════
+    // ─── ADMINISTRASI ───
+    // ═══════════════════════════════════════════
     const adminItems: NavItem[] = [];
 
-    if (isAcademic) {
+    // Student management: academic admins see all, teachers see their class students only (RLS)
+    if (isAcademicAdmin) {
       adminItems.push({
         icon: <UserIcon />,
         name: "Manajemen Siswa",
@@ -264,8 +290,18 @@ export const useAppMenu = () => {
           { name: "Orang Tua", path: "/academic/parents" },
         ],
       });
+    } else if (isGuru) {
+      // Teachers only see students (filtered by RLS), not parents
+      adminItems.push({
+        icon: <UserIcon />,
+        name: "Manajemen Siswa",
+        subItems: [
+          { name: "Siswa", path: "/academic/students" },
+        ],
+      });
     }
 
+    // Academic structure: admin/kurikulum only
     if (isAcademicAdmin) {
       adminItems.push({
         icon: <ListIcon />,
@@ -282,10 +318,12 @@ export const useAppMenu = () => {
       adminItems.push({ icon: <CalenderIcon />, name: "Tahun Ajaran", path: "/academic/years" });
     }
 
+    // Leave types: HR only
     if (isHR) {
       adminItems.push({ icon: <TableIcon />, name: "Tipe Cuti", path: "/leaves/types" });
     }
 
+    // Policies
     const policySubItems: SubItem[] = [];
     if (isGuru || isAcademicAdmin) {
       policySubItems.push({ name: "Perintah Kelas", path: "/teacher/classroom" });
@@ -303,6 +341,7 @@ export const useAppMenu = () => {
       });
     }
 
+    // Super admin only: system management
     if (isSuperAdmin) {
       adminItems.push({
         icon: <PlugInIcon />,
@@ -347,7 +386,9 @@ export const useAppMenu = () => {
       });
     }
 
-    // Compile final array
+    // ═══════════════════════════════════════════
+    // Compile final array — only add groups that have items
+    // ═══════════════════════════════════════════
     const groups: NavGroup[] = [{ label: "MENU UTAMA", items: mainMenu }];
 
     if (attendanceItems.length > 0) {
@@ -364,7 +405,7 @@ export const useAppMenu = () => {
     }
 
     return groups;
-  }, [isAdmin, isSuperAdmin, isHR, isAcademic, showAcademicFeatures, isGuru, isPiket, isStudent, isParent, isAcademicAdmin, hasAdminLikeAccess, isKaryawan, isKurikulum]);
+  }, [isAdmin, isSuperAdmin, isHR, isAcademic, showAcademicFeatures, isAcademicAdmin, canManageEvents, isGuru, isPiket, isStudent, isParent, isKaryawan, isKurikulum, hasGateAccess]);
 
   return { navGroups, isStudent, isHR, isAcademic, isAdmin, isSuperAdmin, isGuru };
 };
