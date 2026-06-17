@@ -31,6 +31,7 @@ import Switch from "../../../components/atoms/Switch";
 import Dropdown from "../../../components/molecules/Dropdown";
 import DropdownItem from "../../../components/atoms/DropdownItem";
 import DataActionsMenu from "../../../components/molecules/DataActionsMenu";
+import MobileFloatingActions from "../../../components/molecules/MobileFloatingActions";
 
 import ConfirmDialog from "../../../components/molecules/ConfirmDialog";
 import { useConfirm } from "../../../hooks/useConfirm";
@@ -436,23 +437,18 @@ const Majors: React.FC = () => {
 
         {/* 3. Mobile FAB */}
         {isMobile && (
-          <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-3 items-end">
-            <DataActionsMenu
-              isMobileFab={true}
-              isExporting={isExporting}
-              isImporting={importMutation.isPending}
-              onExportExcel={handleExportExcel}
-              onExportPdf={handleExportPdf}
-              onImportClick={() => setIsImportModalOpen(true)}
-              onDownloadTemplate={handleDownloadTemplate}
-            />
-            <button
-              onClick={() => handleOpenModal()}
-              className="flex size-14 items-center justify-center rounded-full bg-brand-500 text-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] shadow-brand-500/30 transition-transform active:scale-95"
-            >
-              <PlusIcon className="size-6 fill-white" />
-            </button>
-          </div>
+          <MobileFloatingActions
+            onAdd={() => handleOpenModal()}
+            addAriaLabel="Tambah Jurusan"
+            dataActionsProps={{
+              isExporting: isExporting,
+              isImporting: importMutation.isPending,
+              onExportExcel: handleExportExcel,
+              onExportPdf: handleExportPdf,
+              onImportClick: () => setIsImportModalOpen(true),
+              onDownloadTemplate: handleDownloadTemplate
+            }}
+          />
         )}
 
         {/* 4. Advanced Filter Card */}

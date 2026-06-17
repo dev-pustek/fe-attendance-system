@@ -21,6 +21,7 @@ import { StudentProfile } from "../../../api/types/profiles";
 import PageMeta from "../../../components/atoms/PageMeta";
 import PageBreadcrumb from "../../../components/molecules/PageBreadcrumb";
 import DataActionsMenu from "../../../components/molecules/DataActionsMenu";
+import MobileFloatingActions from "../../../components/molecules/MobileFloatingActions";
 import Dropdown from "../../../components/molecules/Dropdown";
 import DropdownItem from "../../../components/atoms/DropdownItem";
 import SubjectAttendanceCard from "./SubjectAttendanceCard";
@@ -829,31 +830,29 @@ const SubjectAttendances: React.FC = () => {
 
         {/* ── Mobile FAB ── */}
         {isMobile && (
-          <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-3 items-end">
-            <DataActionsMenu
-              isMobileFab={true}
-              onExportPdf={() => {
+          <MobileFloatingActions
+            onAdd={() => handleOpenModal()}
+            addAriaLabel="Record Attendance"
+            dataActionsProps={{
+              onExportPdf: () => {
                 const params: any = {};
                 if (urlClassId) params.classId = urlClassId;
                 setReportParams((p) => ({ ...p, ...params }));
                 setIsReportModalOpen(true);
-              }}
-            />
-            {sessionIdFilter && (
-              <button
-                onClick={handleOpenBulkModal}
-                className="flex size-12 items-center justify-center rounded-full bg-white text-gray-700 shadow-lg border border-gray-100 transition-transform active:scale-95"
-              >
-                <GroupIcon className="size-5" />
-              </button>
-            )}
-            <button
-              onClick={() => handleOpenModal()}
-              className="flex size-14 items-center justify-center rounded-full bg-brand-500 text-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] shadow-brand-500/30 transition-transform active:scale-95"
-            >
-              <PlusIcon className="size-6 fill-white" />
-            </button>
-          </div>
+              }
+            }}
+            customActions={
+              sessionIdFilter && (
+                <button
+                  onClick={handleOpenBulkModal}
+                  className="flex size-12 items-center justify-center rounded-full bg-white text-gray-700 shadow-lg border border-gray-100 transition-transform active:scale-95"
+                  aria-label="Bulk Update Attendance"
+                >
+                  <GroupIcon className="size-5" />
+                </button>
+              )
+            }
+          />
         )}
 
         {/* ── Stats Bar ── */}

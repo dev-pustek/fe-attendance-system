@@ -45,6 +45,7 @@ import SearchableAsyncSelect from "../../components/molecules/SearchableAsyncSel
 import { userService } from "../../api/services/userService";
 import Label from "../../components/atoms/Label";
 import DataActionsMenu from "../../components/molecules/DataActionsMenu";
+import MobileFloatingActions from "../../components/molecules/MobileFloatingActions";
 
 import { showSuccess, showError } from "../../utils/toast";
 import { SmoothHeight } from "../../components/atoms/SmoothHeight";
@@ -684,38 +685,34 @@ const AttendanceList: React.FC = () => {
         </div>
 
         {/* Mobile FAB */}
-        <div className="sm:hidden fixed bottom-6 right-6 z-40 flex flex-col gap-3 items-end">
-            <DataActionsMenu
-                isExporting={isExporting || isDownloadingTemplate}
-                isImporting={isImporting}
-                onExportExcel={() => handleExportExcel()}
-                onExportPdf={() => handleExportPdf()}
-                onExportExcelSelected={selectedIds.size > 0 ? () => handleExportExcel(Array.from(selectedIds)) : undefined}
-                selectedCount={selectedIds.size}
-                onImportClick={() => setIsImportModalOpen(true)}
-                onDownloadTemplate={() => handleDownloadTemplate(false)}
-                isMobileFab={true}
-            />
+        <div className="sm:hidden">
             {(() => {
-              const user = useAuthStore.getState().user;
-              if (!user?.roles || user.roles.length === 0) return null;
-              const roleNames = user.roles.map(r => r.name.toLowerCase());
-              const isAdminOrStaff = roleNames.some(role => 
-                role === 'admin' || role.includes('admin') || role === 'staff' || role.includes('staff')
-              );
-              return isAdminOrStaff ? (
-                <button
-                    onClick={() => {
-                        resetManualForm();
-                        resetQrForm();
-                        setIsCreateModalOpen(true);
-                    }}
-                    className="flex size-14 items-center justify-center rounded-full bg-brand-500 text-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] shadow-brand-500/30 transition-transform active:scale-95"
-                    aria-label="Add Record"
-                >
-                    <PlusIcon className="size-6 fill-white" />
-                </button>
-              ) : null;
+                const user = useAuthStore.getState().user;
+                const isAdminOrStaff = user?.roles?.some(r => {
+                    const role = r.name.toLowerCase();
+                    return role === 'admin' || role.includes('admin') || role === 'staff' || role.includes('staff');
+                }) ?? false;
+
+                return (
+                    <MobileFloatingActions
+                        onAdd={isAdminOrStaff ? () => {
+                            resetManualForm();
+                            resetQrForm();
+                            setIsCreateModalOpen(true);
+                        } : undefined}
+                        addAriaLabel="Add Record"
+                        dataActionsProps={{
+                            isExporting: isExporting || isDownloadingTemplate,
+                            isImporting: isImporting,
+                            onExportExcel: () => handleExportExcel(),
+                            onExportPdf: () => handleExportPdf(),
+                            onExportExcelSelected: selectedIds.size > 0 ? () => handleExportExcel(Array.from(selectedIds)) : undefined,
+                            selectedCount: selectedIds.size,
+                            onImportClick: () => setIsImportModalOpen(true),
+                            onDownloadTemplate: () => handleDownloadTemplate(false)
+                        }}
+                    />
+                );
             })()}
         </div>
 

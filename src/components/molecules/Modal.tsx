@@ -103,13 +103,7 @@ export const Modal: React.FC<ModalProps> = ({
     };
 
     const handleClickOutside = (event: MouseEvent) => {
-      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
-        const target = event.target as HTMLElement;
-        if (target.closest(".flatpickr-calendar")) {
-          return;
-        }
-        onClose();
-      }
+      // Do nothing on outside click
     };
 
     if (isOpen) {
@@ -128,10 +122,10 @@ export const Modal: React.FC<ModalProps> = ({
   if (!isRendered) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-gray-900/50 backdrop-blur-sm dark:bg-black/80">
+    <div className={`fixed inset-0 z-[99999] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-gray-900/50 backdrop-blur-sm dark:bg-black/80 transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
       <div
         ref={modalRef}
-        className={`relative w-full bg-white dark:bg-gray-900 rounded-t-[2rem] sm:rounded-3xl shadow-xl flex flex-col max-h-[90vh] ${(!isDragging && !closingFromDrag) ? (isVisible ? 'animate-slide-up' : 'animate-slide-down') : ''} sm:animate-none ${className}`}
+        className={`relative w-full bg-white dark:bg-gray-900 rounded-t-[2rem] sm:rounded-3xl shadow-xl flex flex-col max-h-[90vh] ${(!isDragging && !closingFromDrag) ? (isVisible ? 'animate-slide-up sm:animate-none sm:scale-100 sm:opacity-100' : 'animate-slide-down sm:animate-none sm:scale-95 sm:opacity-0') : ''} sm:transition-all sm:duration-300 sm:ease-out ${className}`}
         style={{
           transform: isDragging ? `translateY(${dragY}px)` : (closingFromDrag ? 'translateY(100%)' : (dragY > 0 ? 'translateY(0)' : undefined)),
           transition: isDragging ? 'none' : (dragY > 0 || closingFromDrag ? 'transform 0.3s linear' : undefined)

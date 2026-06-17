@@ -40,6 +40,7 @@ import NumberInput from "../../../components/molecules/NumberInput";
 import { useIsMobile } from "../../../hooks/useIsMobile";
 import TableToolbar from "../../../components/molecules/TableToolbar";
 import DataActionsMenu from "../../../components/molecules/DataActionsMenu";
+import MobileFloatingActions from "../../../components/molecules/MobileFloatingActions";
 import ImportModal from "../../../components/molecules/ImportModal";
 import { useInView } from "react-intersection-observer";
 import TeachingUnitPolicyCard from "./TeachingUnitPolicyCard";
@@ -383,23 +384,18 @@ const TeachingUnitPolicies: React.FC = () => {
 
         {/* Mobile FAB */}
         {isMobile && (
-            <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-3 items-end">
-                <DataActionsMenu
-                    isMobileFab={true}
-                    onExportExcel={handleExportExcel}
-                    onExportPdf={handleExportPdf}
-                    onDownloadTemplate={handleDownloadTemplate}
-                    onImportClick={handleImportClick}
-                    isExporting={isExporting}
-                    isImporting={isImporting}
-                />
-                <button 
-                    onClick={() => handleOpenModal()} 
-                    className="flex size-14 items-center justify-center rounded-full bg-brand-500 text-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] shadow-brand-500/30 transition-transform active:scale-95"
-                >
-                    <PlusIcon className="size-6 fill-white" />
-                </button>
-            </div>
+            <MobileFloatingActions
+                onAdd={() => handleOpenModal()}
+                addAriaLabel="Add Policy"
+                dataActionsProps={{
+                    onExportExcel: handleExportExcel,
+                    onExportPdf: handleExportPdf,
+                    onDownloadTemplate: handleDownloadTemplate,
+                    onImportClick: handleImportClick,
+                    isExporting: isExporting,
+                    isImporting: isImporting
+                }}
+            />
         )}
 
         {/* Advanced Filter Card */}

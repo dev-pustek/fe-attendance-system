@@ -39,6 +39,7 @@ import {
 } from "../../components/atoms/Icons";
 import Button from "../../components/atoms/Button";
 import Switch from "../../components/atoms/Switch";
+import MobileFloatingActions from "../../components/molecules/MobileFloatingActions";
 
 // ─── useIsMobile ────────────────────────────────────────────────────────────
 function useIsMobile() {
@@ -54,51 +55,7 @@ function useIsMobile() {
 const formatDate = (d?: string) =>
   d ? new Date(d).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
 
-const DataActionsMenu = ({ 
-    onExportExcel, 
-    onExportPdf, 
-    onImportClick, 
-    onDownloadTemplate,
-    isExporting,
-    isImporting,
-    isMobileFab = false
-}: {
-    onExportExcel: () => void;
-    onExportPdf: () => void;
-    onImportClick: () => void;
-    onDownloadTemplate: () => void;
-    isExporting: boolean;
-    isImporting: boolean;
-    isMobileFab?: boolean;
-}) => {
-    const [isOpen, setIsOpen] = useState(false);
-    return (
-        <div className="relative">
-            <button
-                onClick={() => setIsOpen(!isOpen)}
-                disabled={isExporting || isImporting}
-                className={isMobileFab 
-                    ? "flex size-[52px] items-center justify-center rounded-full bg-white text-brand-600 shadow-[0_4px_20px_rgb(0,0,0,0.1)] border-2 border-brand-500 transition-transform active:scale-95 disabled:opacity-50"
-                    : "flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"}
-            >
-                {isMobileFab ? <PlusIcon className="size-6 text-brand-500" /> : <PlusIcon className="size-4" />}
-                {!isMobileFab && "Data Actions"}
-            </button>
-            <Dropdown
-                isOpen={isOpen}
-                onClose={() => setIsOpen(false)}
-                className={`absolute z-30 mt-2 w-48 origin-top-right rounded-xl border border-gray-200 bg-white py-2 shadow-xl ${isMobileFab ? "bottom-full mb-4 right-0" : "right-0"}`}
-            >
-                <DropdownItem onClick={() => { setIsOpen(false); /* Export disabled */ }} className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 opacity-50 cursor-not-allowed">
-                    Export to Excel (N/A)
-                </DropdownItem>
-                <DropdownItem onClick={() => { setIsOpen(false); /* Import disabled */ }} className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 opacity-50 cursor-not-allowed">
-                    Import Data (N/A)
-                </DropdownItem>
-            </Dropdown>
-        </div>
-    );
-};
+
 
 const Events: React.FC = () => {
   const isMobile = useIsMobile();
@@ -606,14 +563,11 @@ const Events: React.FC = () => {
                     {!infiniteQuery.hasNextPage && infiniteEvents.length > 0 && <p className="text-xs text-gray-400">Semua acara dimuat</p>}
                 </div>
 
-                <div className="fixed bottom-24 right-4 z-40">
-                    <button
-                        onClick={() => handleOpenModal()}
-                        className="flex size-[52px] items-center justify-center rounded-full bg-brand-500 text-white shadow-[0_4px_20px_rgba(26,86,219,0.3)] transition-transform active:scale-95 hover:bg-brand-600"
-                    >
-                        <PlusIcon className="size-6 fill-white text-white" />
-                    </button>
-                </div>
+                {/* Mobile FAB */}
+                <MobileFloatingActions
+                    onAdd={() => handleOpenModal()}
+                    addAriaLabel="Create Event"
+                />
             </div>
           ) : (
             <>

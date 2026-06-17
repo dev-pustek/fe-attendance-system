@@ -40,6 +40,7 @@ import DropdownItem from "../../components/atoms/DropdownItem";
 import { SkeletonTable } from "../../components/molecules/SkeletonRow";
 import Checkbox from "../../components/atoms/Checkbox";
 import DataActionsMenu from "../../components/molecules/DataActionsMenu";
+import MobileFloatingActions from "../../components/molecules/MobileFloatingActions";
 import TableToolbar from "../../components/molecules/TableToolbar";
 import ImportModal from "../../components/molecules/ImportModal";
 
@@ -349,26 +350,20 @@ const Guests: React.FC = () => {
 
         {/* Mobile FAB */}
         {isMobile && (
-            <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-3 items-end">
-                <DataActionsMenu
-                    isExporting={isExporting || isDownloadingTemplate}
-                    isImporting={importMutation.isPending}
-                    onExportExcel={() => handleExportExcel()}
-                    onExportPdf={handleExportPdf}
-                    onExportExcelSelected={selectedIds.size > 0 ? () => handleExportExcel(Array.from(selectedIds)) : undefined}
-                    selectedCount={selectedIds.size}
-                    isMobileFab={true}
-                    onImportClick={() => setIsImportModalOpen(true)}
-                    onDownloadTemplate={() => handleDownloadTemplate(false)}
-                />
-                <button
-                    onClick={() => handleOpenFormModal()}
-                    className="flex size-14 items-center justify-center rounded-full bg-brand-500 text-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] shadow-brand-500/30 transition-transform active:scale-95"
-                    aria-label="Add New Guest"
-                >
-                    <PlusIcon className="size-6 fill-white" />
-                </button>
-            </div>
+            <MobileFloatingActions
+                onAdd={() => handleOpenFormModal()}
+                addAriaLabel="Add New Guest"
+                dataActionsProps={{
+                    isExporting: isExporting || isDownloadingTemplate,
+                    isImporting: importMutation.isPending,
+                    onExportExcel: () => handleExportExcel(),
+                    onExportPdf: handleExportPdf,
+                    onExportExcelSelected: selectedIds.size > 0 ? () => handleExportExcel(Array.from(selectedIds)) : undefined,
+                    selectedCount: selectedIds.size,
+                    onImportClick: () => setIsImportModalOpen(true),
+                    onDownloadTemplate: () => handleDownloadTemplate(false)
+                }}
+            />
         )}
 
         {/* Advanced Filter Card */}

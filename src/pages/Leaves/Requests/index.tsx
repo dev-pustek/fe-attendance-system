@@ -23,6 +23,7 @@ import ConfirmDialog from "../../../components/molecules/ConfirmDialog";
 import { useConfirm } from "../../../hooks/useConfirm";
 import { showSuccess, showError } from "../../../utils/toast";
 import DataActionsMenu from "../../../components/molecules/DataActionsMenu";
+import MobileFloatingActions from "../../../components/molecules/MobileFloatingActions";
 import TableActionMenu from "../../../components/molecules/TableActionMenu";
 import ImportModal from "../../../components/molecules/ImportModal";
 import Dropdown from "../../../components/molecules/Dropdown";
@@ -416,21 +417,18 @@ const LeaveRequests: React.FC = () => {
 
                 {/* Mobile FAB */}
                 {isMobile && (
-                    <div className="fixed bottom-24 right-4 md:bottom-8 md:right-8 z-50 flex flex-col gap-3 items-end">
-                        <DataActionsMenu 
-                            isMobileFab={true} 
-                            isExporting={isExporting} 
-                            isImporting={isImporting} 
-                            onExportExcel={handleExportExcel} 
-                            onExportPdf={handleExportPdf} 
-                            onImportClick={handleImportClick}
-                            onDownloadTemplate={handleDownloadTemplate}
-                        />
-                        <button onClick={() => handleOpenModal()} 
-                            className="flex size-12 items-center justify-center rounded-full bg-brand-500 text-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] shadow-brand-500/30 transition-transform active:scale-95">
-                            <PlusIcon className="size-6 fill-white" />
-                        </button>
-                    </div>
+                    <MobileFloatingActions
+                        onAdd={() => handleOpenModal()}
+                        addAriaLabel="Create Request"
+                        dataActionsProps={{
+                            isExporting,
+                            isImporting,
+                            onExportExcel: handleExportExcel,
+                            onExportPdf: handleExportPdf,
+                            onImportClick: handleImportClick,
+                            onDownloadTemplate: handleDownloadTemplate
+                        }}
+                    />
                 )}
 
                 {/* Advanced Filter Card */}

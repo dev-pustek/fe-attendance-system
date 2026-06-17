@@ -16,6 +16,7 @@ import NumberInput from "../../../components/atoms/NumberInput";
 import { PlusIcon, GridIcon, DocsIcon, PencilIcon, TrashBinIcon, FilterIcon, ChevronDownIcon, SearchIcon } from "../../../components/atoms/Icons";
 import SearchableAsyncSelect from "../../../components/molecules/SearchableAsyncSelect";
 import DataActionsMenu from "../../../components/molecules/DataActionsMenu";
+import MobileFloatingActions from "../../../components/molecules/MobileFloatingActions";
 import ImportModal from "../../../components/molecules/ImportModal";
 import { leaveService } from "../../../api/services/leaveService";
 import { useIsMobile } from "../../../hooks/useIsMobile";
@@ -255,21 +256,20 @@ const LeaveTypes: React.FC = () => {
                 </div>
 
                 {/* Mobile FAB */}
+                {/* Mobile FAB */}
                 {isMobile && (
-                    <div className="fixed bottom-24 right-4 md:bottom-8 md:right-8 z-50 flex flex-col gap-3 items-end">
-                        <DataActionsMenu
-                            isMobileFab={true}
-                            onExportExcel={handleExportExcel}
-                            onExportPdf={handleExportPdf}
-                            onDownloadTemplate={handleDownloadTemplate}
-                            onImportClick={handleImportClick}
-                            isExporting={isExporting}
-                            isImporting={isImporting}
-                        />
-                        <button onClick={() => handleOpenFormModal()} className="flex size-12 items-center justify-center rounded-full bg-brand-500 text-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] shadow-brand-500/30 transition-transform active:scale-95">
-                            <PlusIcon className="size-6 fill-white" />
-                        </button>
-                    </div>
+                    <MobileFloatingActions
+                        onAdd={() => handleOpenFormModal()}
+                        addAriaLabel="Create Leave Type"
+                        dataActionsProps={{
+                            isExporting,
+                            isImporting,
+                            onExportExcel: handleExportExcel,
+                            onExportPdf: handleExportPdf,
+                            onImportClick: handleImportClick,
+                            onDownloadTemplate: handleDownloadTemplate
+                        }}
+                    />
                 )}
 
                 {/* Advanced Filter Card */}

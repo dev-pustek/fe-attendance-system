@@ -25,6 +25,7 @@ import PhoneNumberInput from "../../components/atoms/PhoneNumberInput";
 
 import CustomSelect from "../../components/molecules/CustomSelect";
 import DataActionsMenu from "../../components/molecules/DataActionsMenu";
+import MobileFloatingActions from "../../components/molecules/MobileFloatingActions";
 import { guestService } from "../../api/services/guestService";
 
 import { SkeletonTable } from "../../components/molecules/SkeletonRow";
@@ -491,23 +492,15 @@ const GuestVisits: React.FC = () => {
 
                 {/* Mobile FAB */}
                 {isMobile && (
-                    <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-3 items-end">
-                        <DataActionsMenu
-                            isExporting={isExporting}
-                            onExportExcel={() => handleExportExcel()}
-                            onExportPdf={handleExportPdf}
-                            
-                            
-                            isMobileFab={true}
-                        />
-                        <button
-                            onClick={() => setIsCreateModalOpen(true)}
-                            className="flex size-14 items-center justify-center rounded-full bg-brand-500 text-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] shadow-brand-500/30 transition-transform active:scale-95"
-                            aria-label="Register Visit"
-                        >
-                            <PlusIcon className="size-6 fill-white" />
-                        </button>
-                    </div>
+                    <MobileFloatingActions
+                        onAdd={() => setIsCreateModalOpen(true)}
+                        addAriaLabel="Register Visit"
+                        dataActionsProps={{
+                            isExporting: isExporting,
+                            onExportExcel: () => handleExportExcel(),
+                            onExportPdf: handleExportPdf
+                        }}
+                    />
                 )}
 
                 {/* Advanced Filter Card */}

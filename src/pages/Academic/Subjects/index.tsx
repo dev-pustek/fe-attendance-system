@@ -24,6 +24,7 @@ import ConfirmDialog from "../../../components/molecules/ConfirmDialog";
 import { useConfirm } from "../../../hooks/useConfirm";
 import { showSuccess, showError } from "../../../utils/toast";
 import DataActionsMenu from "../../../components/molecules/DataActionsMenu";
+import MobileFloatingActions from "../../../components/molecules/MobileFloatingActions";
 
 import SubjectCard from "./SubjectCard";
 import { useDebounce } from "../../../hooks/useDebounce";
@@ -259,15 +260,11 @@ export default function Subjects() {
 
         {/* Mobile FABs */}
         {isMobile && (
-          <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-3 items-end">
-            <DataActionsMenu isMobileFab={true} />
-            <button
-              onClick={() => handleOpenModal()}
-              className="flex size-14 items-center justify-center rounded-full bg-brand-500 text-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] shadow-brand-500/30 transition-transform active:scale-95"
-            >
-              <PlusIcon className="size-6 fill-white" />
-            </button>
-          </div>
+          <MobileFloatingActions
+            onAdd={() => handleOpenModal()}
+            addAriaLabel="Add New Subject"
+            dataActionsProps={{}}
+          />
         )}
 
         {/* Advanced Filter Card */}

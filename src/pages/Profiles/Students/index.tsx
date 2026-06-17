@@ -38,6 +38,7 @@ import Badge from "../../../components/atoms/Badge";
 import { showSuccess, showError } from "../../../utils/toast";
 import ConfirmDialog from "../../../components/molecules/ConfirmDialog";
 import DataActionsMenu from "../../../components/molecules/DataActionsMenu";
+import MobileFloatingActions from "../../../components/molecules/MobileFloatingActions";
 
 import { useConfirm } from "../../../hooks/useConfirm";
 import Modal from "../../../components/molecules/Modal";
@@ -484,27 +485,22 @@ export default function StudentManagement() {
                 </div>
 
                 {/* Mobile FABs */}
+                {/* Mobile FABs */}
                 {isMobile && (
-                    <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-3 items-end">
-                        <DataActionsMenu
-                            isExporting={isExporting || isDownloadingTemplate}
-                            isImporting={importMutation.isPending}
-                            onExportExcel={() => handleExportExcel()}
-                            onExportPdf={handleExportPdf}
-                            onExportExcelSelected={selectedIds.size > 0 ? () => handleExportExcel(Array.from(selectedIds)) : undefined}
-                            selectedCount={selectedIds.size}
-                            onImportClick={() => setIsImportModalOpen(true)}
-                            onDownloadTemplate={() => handleDownloadTemplate(false)}
-                            isMobileFab={true}
-                        />
-                        <button
-                            onClick={handleAdd}
-                            className="flex size-14 items-center justify-center rounded-full bg-brand-500 text-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] shadow-brand-500/30 transition-transform active:scale-95"
-                            aria-label="Add New Student"
-                        >
-                            <PlusIcon className="size-6 fill-white" />
-                        </button>
-                    </div>
+                    <MobileFloatingActions
+                        onAdd={handleAdd}
+                        addAriaLabel="Add New Student"
+                        dataActionsProps={{
+                            isExporting: isExporting || isDownloadingTemplate,
+                            isImporting: importMutation.isPending,
+                            onExportExcel: () => handleExportExcel(),
+                            onExportPdf: handleExportPdf,
+                            onExportExcelSelected: selectedIds.size > 0 ? () => handleExportExcel(Array.from(selectedIds)) : undefined,
+                            selectedCount: selectedIds.size,
+                            onImportClick: () => setIsImportModalOpen(true),
+                            onDownloadTemplate: () => handleDownloadTemplate(false)
+                        }}
+                    />
                 )}
 
                 {/* ── Advanced Filter Card ── */}
