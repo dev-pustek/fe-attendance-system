@@ -873,7 +873,7 @@ span.flatpickr-weekday,
   0% { transform: translateY(100%); }
   100% { transform: translateY(0); }
 }
-.animate-slide-up {
+.animate-custom-slide-up {
   animation: slide-up 0.3s linear forwards;
 }
 
@@ -882,7 +882,7 @@ span.flatpickr-weekday,
   0% { transform: translateY(0); }
   100% { transform: translateY(100%); }
 }
-.animate-slide-down {
+.animate-custom-slide-down {
   animation: slide-down 0.3s linear forwards;
 }
 @keyframes fade-in {
