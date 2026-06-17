@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import React, { useState, useRef, useEffect } from "react";
 import { ChevronDownIcon, ChevronUpIcon, GridIcon, CloseLineIcon } from "../atoms/Icons";
 import { useDebounce } from "../../hooks/useDebounce";
@@ -166,7 +167,7 @@ export const SearchableAsyncSelect: React.FC<SearchableAsyncSelectProps> = ({
         </div>
       </div>
 
-      {isOpen && (
+      {isOpen && typeof document !== 'undefined' && createPortal(
         <div 
             className="fixed z-[99999] mt-1 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl shadow-gray-200/40 animate-in fade-in zoom-in duration-200 dark:border-white/[0.08] dark:bg-[#1E1E1E] dark:shadow-none"
             style={{
@@ -254,7 +255,8 @@ export const SearchableAsyncSelect: React.FC<SearchableAsyncSelectProps> = ({
               ))
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
