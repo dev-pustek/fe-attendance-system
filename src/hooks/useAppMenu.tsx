@@ -74,7 +74,7 @@ export const useAppMenu = () => {
   const isParent = hasAnyRole(["parent"]) && !isSuperAdmin;
 
   // Derive top-level categories
-  const hasAdminLikeAccess = isAdmin || isSuperAdmin || isGuru || isKaryawan || isKurikulum || isPiket;
+  const hasAdminLikeAccess = isAdmin || isSuperAdmin || isGuru || isKaryawan || isKurikulum || isPiket || isHR;
   
   // HR features should only be for HR/Admin, except for leave requests
   const isHR = isAdmin || isSuperAdmin || hasAnyRole(["hr"]);
@@ -95,7 +95,15 @@ export const useAppMenu = () => {
       { icon: <MailIcon />, name: "Notifikasi", path: "/notifications" }
     ];
 
-    if (isStudent) {
+    if (isKaryawan && !isGuru) {
+      mainMenu.push({
+        icon: <CalenderIcon />,
+        name: "Jadwal Kerja",
+        path: "/schedules",
+      });
+    }
+
+    if (isGuru) {
       mainMenu.push({
         icon: <CalenderIcon />,
         name: "Jadwal Saya",
@@ -103,7 +111,15 @@ export const useAppMenu = () => {
       });
     }
 
-    // ─── Attendance & Leave ───
+    if (isStudent) {
+      mainMenu.push({
+        icon: <ShootingStarIcon />,
+        name: "Acara",
+        path: "/student/events",
+      });
+    }
+
+    // ─── Attendance     // ─── Attendance & Leave ─── Leave ───
     const attendanceItems: NavItem[] = [];
 
     // Everyone gets "Absen Kehadiran" to perform self-scans
@@ -123,6 +139,14 @@ export const useAppMenu = () => {
           { name: "Riwayat", path: "/attendance/history" },
           { name: "Metrik", path: "/attendance/metrics", icon: <ChartBarIcon className="size-5" /> },
         ],
+      });
+    }
+
+    if (isKaryawan && !isGuru) {
+      mainMenu.push({
+        icon: <CalenderIcon />,
+        name: "Jadwal Kerja",
+        path: "/schedules",
       });
     }
 
@@ -163,19 +187,24 @@ export const useAppMenu = () => {
     }
 
     if (showAcademicFeatures) {
+      const scheduleSubItems = [];
+      if (isAcademicAdmin) {
+        scheduleSubItems.push({ name: "Tugas Mengajar", path: "/academic/teaching-assignments" });
+      }
+      scheduleSubItems.push({ name: "Jadwal Kelas", path: "/academic/schedules" });
+      scheduleSubItems.push({ name: "Jadwal Kerja", path: "/schedules" });
+      if (isAcademicAdmin) {
+        scheduleSubItems.push({ name: "Timpa Jadwal", path: "/academic/schedule-overrides" });
+      }
+
       academicItems.push({
         icon: <CalenderIcon />,
         name: "Penjadwalan",
-        subItems: [
-          { name: "Tugas Mengajar", path: "/academic/teaching-assignments" },
-          { name: "Jadwal Kelas", path: "/academic/schedules" },
-          { name: "Jadwal Kerja", path: "/schedules" },
-          { name: "Timpa Jadwal", path: "/academic/schedule-overrides" },
-        ],
+        subItems: scheduleSubItems,
       });
     }
 
-    if (isAcademic) {
+    if (isAcademicAdmin) {
       academicItems.push({
         icon: <DocsIcon />,
         name: "Kurikulum",
@@ -235,7 +264,9 @@ export const useAppMenu = () => {
           { name: "Orang Tua", path: "/academic/parents" },
         ],
       });
+    }
 
+    if (isAcademicAdmin) {
       adminItems.push({
         icon: <ListIcon />,
         name: "Struktur Akademik",
@@ -333,7 +364,7 @@ export const useAppMenu = () => {
     }
 
     return groups;
-  }, [isAdmin, isSuperAdmin, isHR, isAcademic, showAcademicFeatures, isGuru, isPiket, isStudent, isParent]);
+  }, [isAdmin, isSuperAdmin, isHR, isAcademic, showAcademicFeatures, isGuru, isPiket, isStudent, isParent, isAcademicAdmin, hasAdminLikeAccess, isKaryawan, isKurikulum]);
 
   return { navGroups, isStudent, isHR, isAcademic, isAdmin, isSuperAdmin, isGuru };
 };

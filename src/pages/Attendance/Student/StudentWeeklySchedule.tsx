@@ -26,7 +26,7 @@ type ScheduleMatrixRule = import('../../../api/types/rules').ScheduleRule;
 const StudentWeeklySchedule = () => {
     const { user } = useAuthStore();
     const isTeacher = user?.roles?.some(r => ['guru', 'teacher'].includes(r.name.toLowerCase())) || user?.userTypes?.some(t => ['guru', 'teacher'].includes(t.toLowerCase()));
-    const isStudent = !isTeacher; // Assuming if not teacher, treat as student logic for schedule
+    const isStudent = user?.roles?.some(r => r.name.toLowerCase() === 'student') || user?.userTypes?.some(t => t.toLowerCase() === 'student') || (user?.profile as any)?.nis;
     
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
     useEffect(() => {
@@ -56,13 +56,15 @@ const StudentWeeklySchedule = () => {
         }
     }, [academicYears, selectedAcademicYearId]);
 
-    // 2. Fetch Templates
+    // 2. Fetch Templates — filter to logged-in user's own schedule
     const fetchParams: any = { isActive: true, limit: 100 };
     if (selectedAcademicYearId) fetchParams.academicYearId = selectedAcademicYearId;
-    if (isTeacher) {
-        fetchParams.defaultTeacherId = user.public_id || user.id;
-    } else {
+    if (isStudent && userClassId) {
+        // Students: show all schedules for their class
         fetchParams.classId = userClassId;
+    } else {
+        // Teachers, admins, staff, etc.: show only schedules where they are the assigned teacher
+        fetchParams.teacherId = user?.public_id || user?.id;
     }
 
     const { data: weeklyScheduleResponse, isLoading: isLoadingWeekly } = useTeachingScheduleTemplates(fetchParams);
@@ -312,14 +314,14 @@ const StudentWeeklySchedule = () => {
                                                   ) : (
                                                     <ScheduleMatrix 
                                                         templates={weeklyTemplates}
-                                                        viewMode={isTeacher ? "teacher" : "subject"}
+                                                        viewMode={isStudent ? "subject" : "teacher"}
                                                         availableDays={activeAvailableDays}
                                                         onAddSession={() => {}}
                                                         onEditSession={() => {}}
                                                         onDeleteSession={() => {}}
                                                         onMoveSession={() => {}}
                                                         onDropSubject={() => {}}
-                                                        effectiveRules={isTeacher ? undefined : effectiveRules}
+                                                        effectiveRules={isStudent ? effectiveRules : undefined}
                                                         minutesPerUnit={minutesPerUnit}
                                                         readOnly={true}
                                                     />
