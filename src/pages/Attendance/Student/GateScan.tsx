@@ -22,8 +22,7 @@ const GateScan = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const [searchParams] = useSearchParams();
-  const eventId = searchParams.get("eventId");
-  const isSelfScan = !searchParams.get("kiosk") && !eventId;
+  const isSelfScan = !searchParams.get("kiosk");
   const queryClient = useQueryClient();
 
   const [scanResult, setScanResult] = useState<{
@@ -133,7 +132,7 @@ const GateScan = () => {
 
   const submitScan = async (code: string, explicitPhoto?: string) => {
       try {
-        const deviceId = eventId ? `event_scanner_${user?.id}` : isSelfScan ? `mobile_${user?.id}` : "gate_kiosk_1";
+        const deviceId = isSelfScan ? `mobile_${user?.id}` : "gate_kiosk_1";
         let latitude: number | undefined;
         let longitude: number | undefined;
 
@@ -145,7 +144,6 @@ const GateScan = () => {
         const response = await attendanceService.scanQRCode({
           qrData: code,
           deviceId,
-          eventId: eventId || undefined,
           latitude,
           longitude,
           photoEvidence: explicitPhoto
@@ -167,36 +165,32 @@ const GateScan = () => {
             return;
         }
 
-        if (eventId) {
-            toast.success("Event attendance recorded!");
-        }
-
-        try {
-            if (userId) {
-                const policyRes = await attendanceService.getAttendancePolicy(
-                    userId
-                );
-                policy = (policyRes as any).data || policyRes;
-            }
-        } catch (e) {
-            console.warn("Could not fetch policy for scanned user", e);
+        if (userId) {
+          try {
+            const policyRes = await attendanceService.getAttendancePolicy(
+              userId
+            );
+            policy = (policyRes as { data?: UserPolicyResponse }).data || (policyRes as unknown as UserPolicyResponse);
+          } catch (e) {
+            console.error("Failed to fetch policy", e);
+          }
         }
 
         setScanResult({
           status: "success",
-          message: eventId ? "Event Attendance Success" : "Scan successful",
-          studentName: record.studentName || record.user?.name || "Student",
+          message: "Attendance Recorded",
+          studentName: response.studentName || "Student",
           role: "kiosk",
-          policy: policy,
-          attendanceStatus: record.status || "Unknown",
-          record,
+          policy,
+          attendanceStatus: (record.statusLabel || response.statusLabel)?.toUpperCase(),
+          record: record,
         });
 
         setTimeout(() => {
-          setScanResult({ status: "idle" });
-          setIsProcessing(false);
-          setPendingScanCode(null);
-          setCapturedPhoto(null);
+          if (isMountedRef.current) {
+            setScanResult({ status: "idle" });
+            setIsProcessing(false);
+          }
         }, 3000);
       } catch (error: unknown) {
         handleScanError(error);
@@ -205,7 +199,7 @@ const GateScan = () => {
 
   const submitDirectCheckIn = async (explicitPhoto?: string) => {
       try {
-        const deviceId = eventId ? `event_scanner_${user?.id}` : isSelfScan ? `mobile_${user?.id}` : "gate_kiosk_1";
+        const deviceId = isSelfScan ? `mobile_${user?.id}` : "gate_kiosk_1";
         let latitude: number | undefined;
         let longitude: number | undefined;
 
@@ -214,30 +208,44 @@ const GateScan = () => {
             longitude = userLocation.lng;
         }
 
-        let response: any;
-        if (isSelfScan && userPolicy?.todayStatus) {
-            if (userPolicy.todayStatus.status === 'checked_in') {
-                response = await attendanceService.checkOut({
-                    latitude,
-                    longitude,
-                    deviceId,
-                    photoEvidence: explicitPhoto
-                });
-            } else {
-                response = await attendanceService.checkIn({
-                    latitude,
-                    longitude,
-                    deviceId,
-                    photoEvidence: explicitPhoto
-                });
-            }
+        let photoBlob: Blob | undefined;
+        if (explicitPhoto) {
+            const res = await fetch(explicitPhoto);
+            photoBlob = await res.blob();
         }
 
-        const record = response?.data || response;
-        const isCheckedIn = record?.status === 'checked_in';
+        const isCheckedIn = userPolicy?.todayStatus?.clockIn ? true : false;
+        
+        let response;
+        if (isCheckedIn) {
+            response = await attendanceService.checkOut({
+                deviceId,
+                latitude,
+                longitude,
+                method: "MANUAL",
+                photo: photoBlob
+            });
+        } else {
+            response = await attendanceService.checkIn({
+                deviceId,
+                latitude,
+                longitude,
+                method: "MANUAL",
+                photo: photoBlob
+            });
+        }
+
+        let policy: UserPolicyResponse | undefined;
+        const record = (response as any).data || response;
+        const userId =
+          record.userId ||
+          record.user_id ||
+          record.id ||
+          record.user?.id ||
+          record.student?.id;
 
         if (isSelfScan) {
-            toast.success(isCheckedIn ? "You have checked in successfully." : "You have checked out successfully.");
+            toast.success(isCheckedIn ? "You have checked out successfully." : "You have checked in successfully.");
             queryClient.invalidateQueries({ queryKey: ['mobile-student-roadmap'] });
             navigate("/");
             return;

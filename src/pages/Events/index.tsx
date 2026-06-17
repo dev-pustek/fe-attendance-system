@@ -12,6 +12,7 @@ import TableToolbar from "../../components/molecules/TableToolbar";
 import { SkeletonTable } from "../../components/molecules/SkeletonRow";
 import Modal from "../../components/molecules/Modal";
 import CustomSelect from "../../components/molecules/CustomSelect";
+import SearchableAsyncSelect from "../../components/molecules/SearchableAsyncSelect";
 import DatePicker from "../../components/molecules/DatePicker";
 import NumberInput from "../../components/molecules/NumberInput";
 import Input from "../../components/atoms/InputField";
@@ -159,6 +160,34 @@ const Events: React.FC = () => {
     name: "", description: "", location: "", startDateTime: "", endDateTime: "",
     eventType: "", capacity: null, affectsAttendance: false, isCancelled: false, cancellationReason: "", scannerIds: []
   });
+
+  const [scannerSearchQuery, setScannerSearchQuery] = useState("");
+  const scannerOptions = users
+    ? users
+        .filter((u: any) =>
+          u.name?.toLowerCase().includes(scannerSearchQuery.toLowerCase()) ||
+          (u.email && u.email.toLowerCase().includes(scannerSearchQuery.toLowerCase()))
+        )
+        .map((u: any) => ({
+          label: u.name,
+          value: u.public_id,
+          subLabel: u.email || undefined,
+        }))
+    : [];
+
+  const selectedScanners = users
+    ? users.filter((u: any) => (formData.scannerIds || []).includes(u.public_id))
+    : [];
+
+  const handleAddScanner = (val: string) => {
+    if (!formData.scannerIds?.includes(val)) {
+      setFormData({ ...formData, scannerIds: [...(formData.scannerIds || []), val] });
+    }
+  };
+
+  const handleRemoveScanner = (val: string) => {
+    setFormData({ ...formData, scannerIds: (formData.scannerIds || []).filter((id) => id !== val) });
+  };
 
   const sentinelRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -873,15 +902,46 @@ const Events: React.FC = () => {
                       />
                   </div>
               </div>
-              <div className="space-y-1.5 mt-4">
-                  <Label>Panitia (Scanner)</Label>
-                  <CustomSelect
-                     multiple
-                     value={formData.scannerIds || []}
-                     onChange={(val) => setFormData({...formData, scannerIds: val})}
-                     options={users?.map((u: any) => ({ label: u.name, value: u.public_id })) || []}
-                     placeholder="Pilih panitia scanner"
-                  />
+              <div className="space-y-4 mt-4">
+                  <div className="space-y-1.5">
+                      <Label>Panitia (Scanner)</Label>
+                      <SearchableAsyncSelect
+                         placeholder="Cari nama panitia..."
+                         value=""
+                         onChange={(val) => handleAddScanner(String(val))}
+                         onSearch={(term) => setScannerSearchQuery(term)}
+                         options={scannerOptions}
+                         closeOnSelect={false}
+                         selectedValues={formData.scannerIds || []}
+                      />
+                  </div>
+                  
+                  <div className="min-h-[60px] max-h-[150px] overflow-y-auto p-3 rounded-xl border border-gray-200 bg-gray-50 dark:border-white/[0.08] dark:bg-white/[0.03]">
+                    {selectedScanners.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-4 text-gray-400">
+                        <UserIcon className="size-6 opacity-20 mb-2" />
+                        <p className="text-[11px]">Belum ada panitia yang dipilih</p>
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {selectedScanners.map((user: any) => (
+                          <div
+                            key={user.public_id}
+                            className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white border border-gray-200 text-xs font-medium text-gray-700 dark:bg-white/10 dark:border-transparent dark:text-white shadow-sm"
+                          >
+                            <span>{user.name}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveScanner(user.public_id)}
+                              className="text-gray-400 hover:text-error-500 transition-colors"
+                            >
+                              <CloseIcon className="size-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <p className="text-[10px] text-gray-500">Panitia yang dipilih akan dapat melakukan scan kehadiran pada event ini melalui mobile app.</p>
               </div>
               <div className="flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50/60 p-4 dark:border-white/[0.05] dark:bg-white/[0.02]">
