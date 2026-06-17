@@ -278,7 +278,7 @@ export const attendanceService = {
     await apiClient.post("/attendance/subject-attendances/bulk", data);
   },
 
-  scanQRCode: async (data: { qrData: string, deviceId: string, latitude?: number, longitude?: number, photoEvidence?: string }): Promise<unknown> => {
+  scanQRCode: async (data: { qrData: string, deviceId: string, latitude?: number, longitude?: number, photoEvidence?: string, eventId?: string }): Promise<unknown> => {
     const response = await apiClient.post('/attendance/qr-scan', data);
     return response.data;
   },

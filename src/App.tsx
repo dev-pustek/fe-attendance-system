@@ -73,6 +73,7 @@ const StudentEvents = lazy(() => import("./pages/Attendance/Student/StudentEvent
 const MyIdCardPage = lazy(() => import("./pages/Attendance/Student/MyIdCardPage"));
 const StudentLeaveRequest = lazy(() => import("./pages/Student/LeaveRequest"));
 const GateScan = lazy(() => import("./pages/Attendance/Student/GateScan"));
+const EventScanner = lazy(() => import("./pages/Events/EventScanner"));
 const AttendancePolicies = lazy(() => import("./pages/Attendance/AttendancePolicies"));
 const PiketMonitor = lazy(() => import("./pages/Attendance/PiketMonitor"));
 const AttendanceMetrics = lazy(() => import("./pages/Attendance/AttendanceMetrics"));
@@ -270,7 +271,7 @@ export default function App() {
               <Route path="/scheduling/assignments" element={<ShiftAssignments />} />
               <Route path="/schedules" element={<WorkSchedules />} />
               <Route path="/events" element={<Events />} />
-              <Route path="/events/scan" element={<GateScan />} />
+              <Route path="/events/scan" element={<EventScanner />} />
               <Route path="/events/:id/invitations" element={<EventInvitations />} />
               <Route path="/events/:id/invitation-paper" element={<EventInvitationPaper />} />
               <Route path="/guests" element={<Guests />} />
