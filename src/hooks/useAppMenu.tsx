@@ -74,11 +74,18 @@ export const useAppMenu = () => {
   const isParent = hasAnyRole(["parent"]) && !isSuperAdmin;
 
   // Derive top-level categories
-  // Teachers (and other staff) get admin-like access to operational data, but with row-level security on backend
   const hasAdminLikeAccess = isAdmin || isSuperAdmin || isGuru || isKaryawan || isKurikulum || isPiket;
-  const isHR = hasAdminLikeAccess;
-  const isAcademic = hasAdminLikeAccess;
-  const showAcademicFeatures = hasAdminLikeAccess;
+  
+  // HR features should only be for HR/Admin, except for leave requests
+  const isHR = isAdmin || isSuperAdmin || hasAnyRole(["hr"]);
+  
+  // Academic admin (curriculum editing, workload) vs Academic viewing (teachers)
+  const isAcademicAdmin = isAdmin || isSuperAdmin || isKurikulum;
+  const isAcademic = isAcademicAdmin || isGuru;
+  const showAcademicFeatures = isAcademicAdmin || isGuru;
+
+  // Gate access (Scan, Piket Monitor, Guests)
+  const hasGateAccess = isAdmin || isSuperAdmin || isPiket;
 
   const navGroups = useMemo<NavGroup[]>(() => {
     // ─── Main Menu ───
@@ -99,7 +106,7 @@ export const useAppMenu = () => {
     // ─── Attendance & Leave ───
     const attendanceItems: NavItem[] = [];
 
-    if (hasAdminLikeAccess) {
+    if (hasGateAccess) {
       attendanceItems.push({
         icon: <VideoIcon />,
         name: "Absen Kehadiran",
@@ -128,7 +135,7 @@ export const useAppMenu = () => {
       });
     }
 
-    if (hasAdminLikeAccess) {
+    if (hasGateAccess) {
       attendanceItems.push({
         icon: <UserIcon />,
         name: "Tamu",
@@ -188,12 +195,15 @@ export const useAppMenu = () => {
 
     // Leave Submissions Logic
     const leaveSubItems: SubItem[] = [];
-    if (isStudent || isKaryawan || isGuru) {
+    if (isStudent || isKaryawan || isGuru || hasAdminLikeAccess) {
         leaveSubItems.push({ name: "Pengajuan Cuti", path: "/leaves/requests" });
+    }
+    
+    if (leaveSubItems.length > 0) {
+      hrItems.push({ icon: <DocsIcon />, name: "Cuti", subItems: leaveSubItems });
     }
 
     if (isHR) {
-      hrItems.push({ icon: <DocsIcon />, name: "Manajemen Cuti", subItems: leaveSubItems });
       hrItems.push({
         icon: <DocsIcon />,
         name: "Izin Keluar",
@@ -243,15 +253,20 @@ export const useAppMenu = () => {
       adminItems.push({ icon: <TableIcon />, name: "Tipe Cuti", path: "/leaves/types" });
     }
 
-    if (hasAdminLikeAccess) {
+    const policySubItems: SubItem[] = [];
+    if (isGuru || isAcademicAdmin) {
+      policySubItems.push({ name: "Perintah Kelas", path: "/teacher/classroom" });
+    }
+    if (isAdmin || isSuperAdmin) {
+      policySubItems.push({ name: "Kebijakan Kehadiran", path: "/attendance/policies" });
+      policySubItems.push({ name: "Kebijakan Unit Mengajar", path: "/academic/teaching-unit-policies" });
+    }
+    
+    if (policySubItems.length > 0) {
       adminItems.push({
         icon: <DocsIcon />,
         name: "Aturan & Kebijakan",
-        subItems: [
-          { name: "Perintah Kelas", path: "/teacher/classroom" },
-          { name: "Kebijakan Kehadiran", path: "/attendance/policies" },
-          { name: "Kebijakan Unit Mengajar", path: "/academic/teaching-unit-policies" },
-        ],
+        subItems: policySubItems,
       });
     }
 
