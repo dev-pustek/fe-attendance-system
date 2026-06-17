@@ -63,7 +63,7 @@ export const useAppMenu = () => {
   );
 
   const isAdmin = hasAnyRole(["admin"]);
-  const isSuperAdmin = hasAnyRole(["superadmin", "super admin", "admin"]);
+  const isSuperAdmin = hasAnyRole(["superadmin", "super admin"]);
   const isKurikulum = hasAnyRole(["kurikulum"]);
   const isKaryawan = hasAnyRole(["karyawan", "staff"]);
   const isGuru = hasAnyRole(["guru", "teacher"]);
@@ -252,6 +252,9 @@ export const useAppMenu = () => {
           { name: "Kebijakan Unit Mengajar", path: "/academic/teaching-unit-policies" },
         ],
       });
+    }
+
+    if (isSuperAdmin) {
       adminItems.push({
         icon: <PlugInIcon />,
         name: "Fasilitas",
@@ -272,9 +275,6 @@ export const useAppMenu = () => {
           /* { name: "Kredensial", path: "/identity/credentials" }, */
         ],
       });
-    }
-
-    if (isSuperAdmin) {
       adminItems.push({
         icon: <BoltIcon />,
         name: "Pengaturan",

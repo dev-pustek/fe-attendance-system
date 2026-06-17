@@ -1,5 +1,5 @@
 // Role-based route permissions configuration
-export type UserRole = 'admin' | 'teacher' | 'student' | 'staff' | 'parent';
+export type UserRole = 'admin' | 'superadmin' | 'super admin' | 'teacher' | 'student' | 'staff' | 'parent';
 
 export interface RoutePermission {
   path: string;
@@ -64,16 +64,16 @@ export const routePermissions: RoutePermission[] = [
   // HR & Employees
   { path: '/hr/employees', allowedRoles: ['admin', 'staff'] },
 
-  // Devices & CCTV - Admin and Staff only
-  { path: '/devices', allowedRoles: ['admin', 'staff'] },
-  { path: '/devices/live', allowedRoles: ['admin', 'staff'] },
+  // Devices & CCTV - Super Admin only
+  { path: '/devices', allowedRoles: ['super admin', 'superadmin'] },
+  { path: '/devices/live', allowedRoles: ['super admin', 'superadmin'] },
 
-  // Identity Management - Admin only
-  { path: '/identity/channels', allowedRoles: ['admin'] },
-  { path: '/identity/credentials', allowedRoles: ['admin'] },
-  { path: '/identity/logs', allowedRoles: ['admin'] },
-  { path: '/identity/resolutions', allowedRoles: ['admin'] },
-  { path: '/identity/capabilities', allowedRoles: ['admin'] },
+  // Identity Management - Super Admin only
+  { path: '/identity/channels', allowedRoles: ['super admin', 'superadmin'] },
+  { path: '/identity/credentials', allowedRoles: ['super admin', 'superadmin'] },
+  { path: '/identity/logs', allowedRoles: ['super admin', 'superadmin'] },
+  { path: '/identity/resolutions', allowedRoles: ['super admin', 'superadmin'] },
+  { path: '/identity/capabilities', allowedRoles: ['super admin', 'superadmin'] },
 
   // Leave Requests - Everyone except parents
   { path: '/leaves/requests', allowedRoles: ['admin', 'teacher', 'student', 'staff'] },
@@ -92,19 +92,20 @@ export const routePermissions: RoutePermission[] = [
   { path: '/scheduling/assignments', allowedRoles: ['admin', 'staff'] },
   { path: '/schedules', allowedRoles: ['admin', 'teacher', 'staff'] },
 
-  // Settings & Admin - Admin only
-  { path: '/settings', allowedRoles: ['admin'] },
-  { path: '/settings/backups', allowedRoles: ['admin'] },
-  { path: '/settings/notifications', allowedRoles: ['admin'] },
-  { path: '/roles', allowedRoles: ['admin'] },
+  // Settings & Admin - Super Admin only
+  { path: '/settings', allowedRoles: ['super admin', 'superadmin'] },
+  { path: '/settings/storage', allowedRoles: ['super admin', 'superadmin'] },
+  { path: '/settings/backups', allowedRoles: ['super admin', 'superadmin'] },
+  { path: '/settings/notifications', allowedRoles: ['super admin', 'superadmin'] },
+  { path: '/roles', allowedRoles: ['super admin', 'superadmin'] },
   { path: '/users/list', allowedRoles: ['admin', 'staff'] },
-  { path: '/users/print-ids', allowedRoles: ['admin', 'staff'] },
-  { path: '/users/user-types', allowedRoles: ['admin'] },
-  { path: '/admin/notification-templates', allowedRoles: ['admin'] },
+  { path: '/users/print-ids', allowedRoles: ['super admin', 'superadmin'] },
+  { path: '/users/user-types', allowedRoles: ['super admin', 'superadmin'] },
+  { path: '/admin/notification-templates', allowedRoles: ['super admin', 'superadmin'] },
 
-  // Audit & Logs - Admin only
-  { path: '/audit/logs', allowedRoles: ['admin'] },
-  { path: '/audit/metrics', allowedRoles: ['admin'] },
+  // Audit & Logs - Super Admin only
+  { path: '/audit/logs', allowedRoles: ['super admin', 'superadmin'] },
+  { path: '/audit/metrics', allowedRoles: ['super admin', 'superadmin'] },
 ];
 
 /**
@@ -128,9 +129,9 @@ export const hasRoutePermission = (
 
   const roleNames = roles.map(r => r.name.toLowerCase());
 
-  // 2. SUPER ADMIN BYPASS: If user is admin, they can access EVERYTHING
-  if (roleNames.some(r => r === 'admin' || r.includes('admin') || r === 'super admin')) {
-    console.log('🛡️ Admin Bypass Granted for:', routePath);
+  // 2. SUPER ADMIN BYPASS: If user is superadmin, they can access EVERYTHING
+  if (roleNames.some(r => r === 'super admin' || r === 'superadmin')) {
+    console.log('🛡️ Super Admin Bypass Granted for:', routePath);
     return true;
   }
 
