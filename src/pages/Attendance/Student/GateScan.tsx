@@ -178,7 +178,7 @@ const GateScan = () => {
 
         setScanResult({
           status: "success",
-          message: "Attendance Recorded",
+          message: "Kehadiran Tercatat",
           studentName: response.studentName || "Student",
           role: "kiosk",
           policy,
@@ -262,7 +262,7 @@ const GateScan = () => {
 
         setScanResult({
           status: "success",
-          message: "Attendance Recorded",
+          message: "Kehadiran Tercatat",
           studentName: (response as any).studentName || "Student",
           role: "kiosk",
           policy,
@@ -639,7 +639,7 @@ const GateScan = () => {
         isRestricted: true,
         checkOutLocked: false,
         reason: "too_late",
-        message: "Attendance Closed",
+        message: "Kehadiran Ditutup",
       };
     }
 
@@ -775,7 +775,7 @@ const GateScan = () => {
                       <div className={`text-xs font-bold uppercase tracking-wider mb-2 ${
                         attendanceState === "restricted" ? "text-red-500" : "text-brand-400"
                       }`}>
-                         {isHoliday ? 'Holiday' : (userPolicy.attendancePolicy?.source?.replace(/_/g, " ") || 'Unknown Policy')}
+                         {isHoliday ? 'Hari Libur' : (userPolicy.attendancePolicy?.source?.replace(/_/g, " ") || 'Kebijakan Tidak Diketahui')}
                       </div>
                       <h3 className="text-xl font-bold text-white mb-1">
                         {userPolicy.userName}
@@ -817,8 +817,8 @@ const GateScan = () => {
                   <div className="grid grid-cols-2 gap-3 bg-black/20 rounded-xl p-4 border border-white/5">
                     {attendanceState === "holiday" ? (
                         <div className="col-span-2 text-center py-2">
-                             <div className="text-purple-300 font-medium text-sm">No attendance required today</div>
-                             <div className="text-white/40 text-xs mt-1">Enjoy your holiday!</div>
+                             <div className="text-purple-300 font-medium text-sm">Tidak ada jadwal kehadiran hari ini</div>
+                             <div className="text-white/40 text-xs mt-1">Selamat menikmati hari libur!</div>
                         </div>
                     ) : (
                     <>
@@ -881,10 +881,10 @@ const GateScan = () => {
                         return (
                         <span className={`text-${attendanceState === 'checkedIn' ? 'yellow' : 'brand'}-400 group-hover:translate-x-1 transition-transform flex items-center gap-1 font-medium text-sm`}>
                             {requireQrCode 
-                              ? (attendanceState === "checkedIn" ? "Scan to Clock Out" : "Start Scanning")
+                              ? (attendanceState === "checkedIn" ? "Scan untuk Jam Keluar" : "Mulai Scan")
                               : requirePhoto 
-                                ? (attendanceState === "checkedIn" ? "Take Selfie to Clock Out" : "Take Selfie")
-                                : (attendanceState === "checkedIn" ? "Tap to Clock Out" : "Check In Now")
+                                ? (attendanceState === "checkedIn" ? "Ambil Selfie untuk Jam Keluar" : "Ambil Selfie")
+                                : (attendanceState === "checkedIn" ? "Ketuk untuk Jam Keluar" : "Check In Sekarang")
                             } <ChevronLeftIcon className="w-4 h-4 rotate-180" />
                         </span>
                         );
@@ -892,7 +892,7 @@ const GateScan = () => {
                     
                     {attendanceState === "checkedIn" && restriction.checkOutLocked && (
                         <span className="text-white/40 flex items-center gap-1 font-medium text-sm">
-                            <LockIcon className="w-4 h-4" /> Locked until Check-Out
+                            <LockIcon className="w-4 h-4" /> Terkunci hingga Jam Keluar
                         </span>
                     )}
                   </div>
@@ -1167,12 +1167,12 @@ const GateScan = () => {
               
               <h2 className="text-3xl sm:text-4xl font-extrabold mb-2 tracking-tight">
                 {scanResult.status === "success" && scanResult.attendanceStatus?.includes("LATE")
-                  ? `LATE ${scanResult.record?.lateMinutes ? `BY ${scanResult.record.lateMinutes < 60 ? scanResult.record.lateMinutes + 'm' : Math.floor(scanResult.record.lateMinutes/60) + 'h ' + (scanResult.record.lateMinutes%60) + 'm'}` : 'RECORDED'}`
+                  ? `TERLAMBAT ${scanResult.record?.lateMinutes ? `${scanResult.record.lateMinutes < 60 ? scanResult.record.lateMinutes + 'm' : Math.floor(scanResult.record.lateMinutes/60) + 'j ' + (scanResult.record.lateMinutes%60) + 'm'}` : 'TERCATAT'}`
                   : scanResult.status === "success" && scanResult.attendanceStatus?.includes("EARLY")
-                  ? `EARLY LEAVE ${scanResult.record?.earlyLeaveMinutes ? `BY ${scanResult.record.earlyLeaveMinutes < 60 ? scanResult.record.earlyLeaveMinutes + 'm' : Math.floor(scanResult.record.earlyLeaveMinutes/60) + 'h ' + (scanResult.record.earlyLeaveMinutes%60) + 'm'}` : 'RECORDED'}`
+                  ? `PULANG CEPAT ${scanResult.record?.earlyLeaveMinutes ? `${scanResult.record.earlyLeaveMinutes < 60 ? scanResult.record.earlyLeaveMinutes + 'm' : Math.floor(scanResult.record.earlyLeaveMinutes/60) + 'j ' + (scanResult.record.earlyLeaveMinutes%60) + 'm'}` : 'TERCATAT'}`
                   : scanResult.status === "success"
-                  ? "SUCCESS!"
-                  : "ERROR"}
+                  ? "BERHASIL!"
+                  : "KESALAHAN"}
               </h2>
               <p className="text-lg font-medium text-white/90 mb-8">{scanResult.message}</p>
               

@@ -110,7 +110,7 @@ const QRScanner = () => {
 
            if (requireGeo) {
                if (!userLocation) {
-                   setScanResult({ status: "error", message: "Location access is required by attendance policy. Please enable GPS." });
+                   setScanResult({ status: "error", message: "Akses lokasi diperlukan. Harap aktifkan GPS." });
                    setIsProcessing(false);
                    return;
                }
@@ -192,7 +192,7 @@ const QRScanner = () => {
           status: "success",
           message: isSelfScan
             ? "You have checked in successfully."
-            : "Attendance Recorded",
+            : "Kehadiran Tercatat",
           studentName:
             response.studentName || (isSelfScan ? user?.name : "Student"),
           role: isSelfScan ? "self" : "kiosk",
@@ -273,7 +273,7 @@ const QRScanner = () => {
           status: "success",
           message: isSelfScan
             ? "You have checked in successfully."
-            : "Attendance Recorded",
+            : "Kehadiran Tercatat",
           studentName:
             (record as any).studentName || (isSelfScan ? user?.name : "Student"),
           role: isSelfScan ? "self" : "kiosk",
@@ -302,7 +302,7 @@ const QRScanner = () => {
           message: err.response?.data?.message || err.message || "Invalid QR Code",
         });
 
-        toast.error("Scan Failed");
+        toast.error("Gagal Scan");
 
         setTimeout(() => {
           if (isMountedRef.current) {
