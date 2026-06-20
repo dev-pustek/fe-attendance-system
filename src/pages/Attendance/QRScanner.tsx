@@ -601,14 +601,18 @@ const QRScanner = () => {
 
       // A. Check Early Restriction (CHECKIN_WINDOW_START_MIN)
       const checkInWindowRule = userPolicy.rules?.find(
-        (r) => r.ruleType === "CHECKIN_WINDOW_START_MIN"
+        (r: any) => r.ruleType === "CHECKIN_WINDOW_START_MIN"
       );
       if (checkInWindowRule) {
         const windowMinutes = Number(checkInWindowRule.ruleValue);
-        // Allowed start = startTime - windowMinutes
-        const allowedStart = new Date(
-          startDate.getTime() - windowMinutes * 60000
-        );
+        let allowedStart: Date;
+        
+        if (windowMinutes === 0) {
+          allowedStart = new Date(startDate.getTime());
+          allowedStart.setHours(0, 0, 0, 0);
+        } else {
+          allowedStart = new Date(startDate.getTime() - windowMinutes * 60000);
+        }
 
         if (now < allowedStart) {
           return {
