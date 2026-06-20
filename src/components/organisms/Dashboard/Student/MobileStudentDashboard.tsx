@@ -295,7 +295,52 @@ export default function MobileStudentDashboard({ logs = [] }: MobileStudentDashb
       
       const lateTolerance = res.policies?.lateToleranceMinutes || 0;
       
+      const nowObj = new Date();
+      let isDayOverAndMissed = false;
+      if (!userPolicy?.todayStatus?.clockIn) {
+        const scanOutItem = res.roadmap.find((r: any) => r.type === 'scan_out');
+        const endTimeStr = scanOutItem?.time || userPolicy?.attendancePolicy?.endTime || "15:00:00";
+        const [eh, em, es] = endTimeStr.split(":").map(Number);
+        const expectedEndObj = new Date(nowObj);
+        expectedEndObj.setHours(eh, em, es || 0, 0);
+        if (nowObj.getTime() > expectedEndObj.getTime()) {
+           isDayOverAndMissed = true;
+        }
+      }
+
       const enrichedRoadmap = res.roadmap.map((item) => {
+        let shouldMiss = isDayOverAndMissed;
+
+        // Exceptions: Upcoming events that happen after scan out time
+        if (isDayOverAndMissed && (item.type === 'event' || item.type === 'class' || item.type === 'session')) {
+           const timeStr = item.time?.split(" - ")[1] || item.time?.split(" - ")[0] || item.time;
+           if (timeStr) {
+             const [eh, em] = timeStr.split(":").map(Number);
+             const endObj = new Date(nowObj);
+             endObj.setHours(eh, em, 0, 0);
+             if (nowObj.getTime() <= endObj.getTime()) {
+                shouldMiss = false; // it is not over yet
+             }
+           }
+        }
+
+        if (shouldMiss && item.status !== 'completed') {
+           item.status = 'missed';
+        }
+
+        // Check if break has passed
+        if (item.type === 'break' && item.time) {
+           const times = item.time.split(' - ');
+           if (times.length === 2) {
+               const [eH, eM] = times[1].split(':').map(Number);
+               const endObj = new Date(nowObj);
+               endObj.setHours(eH, eM, 0, 0);
+               if (nowObj.getTime() > endObj.getTime()) {
+                   item.status = 'missed'; // Break is over, make it look disabled
+               }
+           }
+        }
+
         if (item.type === 'scan_in' && userPolicy?.todayStatus?.clockIn) {
            item.status = 'completed';
            if (!item.attendanceTime) item.attendanceTime = userPolicy.todayStatus.clockIn;
@@ -522,7 +567,7 @@ export default function MobileStudentDashboard({ logs = [] }: MobileStudentDashb
             </div>
             
             <div className="flex items-center gap-3">
-              <NotificationDropdown isMobilePremium={true} />
+              {/* <NotificationDropdown isMobilePremium={true} /> */}
               <UserDropdown isMobilePremium={true} />
             </div>
           </div>
@@ -657,7 +702,7 @@ export default function MobileStudentDashboard({ logs = [] }: MobileStudentDashb
                         default: return "bg-gradient-to-b from-brand-400 to-brand-600 text-white shadow-lg shadow-brand-500/50";
                       }
                     }
-                    if (isMissed) return "bg-gradient-to-b from-error-50 to-error-100 text-error-500 dark:from-error-500/10 dark:to-error-500/5 dark:text-error-400 shadow-md shadow-error-500/30";
+                    if (isMissed) return "bg-gradient-to-b from-gray-100 to-gray-200 text-gray-400 dark:from-slate-800 dark:to-slate-900 dark:text-gray-500 shadow-md shadow-gray-400/20";
                     if (isHoliday) return "bg-gradient-to-b from-warning-100 to-warning-200 text-warning-700 dark:from-warning-500/20 dark:to-warning-500/10 dark:text-warning-400 shadow-md shadow-warning-500/30";
                     if (isCompleted) {
                       switch (type) {
@@ -667,11 +712,17 @@ export default function MobileStudentDashboard({ logs = [] }: MobileStudentDashb
                         default: return "bg-gradient-to-b from-brand-100 to-brand-200 text-brand-700 dark:from-brand-500/20 dark:to-brand-500/10 dark:text-brand-400 shadow-md shadow-brand-500/30";
                       }
                     }
-                    return "bg-gradient-to-b from-gray-100 to-gray-200 text-gray-400 dark:from-slate-800 dark:to-slate-900 dark:text-gray-500 shadow-md shadow-gray-400/20";
+                    // For upcoming items, make them look active/colorful but slightly lighter than isActive
+                    switch (type) {
+                      case "scan_in": return "bg-gradient-to-b from-success-50 to-success-100 text-success-500 dark:from-success-500/10 dark:to-success-500/5 dark:text-success-400 shadow-md shadow-success-500/20";
+                      case "scan_out": return "bg-gradient-to-b from-error-50 to-error-100 text-error-500 dark:from-error-500/10 dark:to-error-500/5 dark:text-error-400 shadow-md shadow-error-500/20";
+                      case "break": return "bg-gradient-to-b from-warning-50 to-warning-100 text-warning-600 dark:from-warning-500/10 dark:to-warning-500/5 dark:text-warning-400 shadow-md shadow-warning-500/20";
+                      default: return "bg-gradient-to-b from-brand-50 to-brand-100 text-brand-500 dark:from-brand-500/10 dark:to-brand-500/5 dark:text-brand-400 shadow-md shadow-brand-500/20";
+                    }
                   };
 
                   const getTextColor = (type: string) => {
-                    if (isMissed) return "text-error-500 dark:text-error-400";
+                    if (isMissed) return "text-gray-500 dark:text-gray-400";
                     switch (type) {
                       case "scan_in": return "text-success-600 dark:text-success-400";
                       case "scan_out": return "text-error-600 dark:text-error-400";
@@ -697,7 +748,7 @@ export default function MobileStudentDashboard({ logs = [] }: MobileStudentDashb
                       if (invStatus === 'pending' || invStatus === 'invited') return 'from-amber-400 to-orange-500 shadow-amber-500/20';
                       if (isActive) return 'from-purple-500 to-indigo-600 shadow-purple-500/20';
                       if (isCompleted) return 'from-emerald-500 to-teal-600 shadow-emerald-500/20';
-                      if (isMissed) return 'from-rose-500 to-red-600 shadow-rose-500/20';
+                      if (isMissed) return 'from-gray-300 to-gray-400 shadow-gray-500/20 opacity-70 grayscale';
                       return 'from-purple-500 to-indigo-600 shadow-purple-500/20';
                     };
                     const getInvitationBadge = () => {
@@ -721,7 +772,7 @@ export default function MobileStudentDashboard({ logs = [] }: MobileStudentDashb
                                 <div className="absolute -inset-1.5 rounded-[18px] opacity-20 animate-ping bg-purple-500" style={{ animationDuration: '2s' }}></div>
                               </>
                             )}
-                            <div className={`w-[36px] h-[36px] sm:w-[40px] sm:h-[40px] rounded-[14px] flex items-center justify-center relative z-10 transition-transform duration-500 ${isActive ? 'scale-110 shadow-xl bg-gradient-to-b from-purple-400 to-purple-600 text-white shadow-purple-500/50' : isCompleted ? 'bg-gradient-to-b from-purple-100 to-purple-200 text-purple-700 dark:from-purple-500/20 dark:to-purple-500/10 dark:text-purple-400 shadow-md shadow-purple-500/30' : isMissed ? 'bg-gradient-to-b from-red-50 to-red-100 text-red-500 dark:from-red-500/10 dark:to-red-500/5 dark:text-red-400 shadow-md shadow-red-500/30' : 'bg-gradient-to-b from-gray-100 to-gray-200 text-gray-400 dark:from-slate-800 dark:to-slate-900 dark:text-gray-500 shadow-md shadow-slate-400/20'}`}>
+                            <div className={`w-[36px] h-[36px] sm:w-[40px] sm:h-[40px] rounded-[14px] flex items-center justify-center relative z-10 transition-transform duration-500 ${isActive ? 'scale-110 shadow-xl bg-gradient-to-b from-purple-400 to-purple-600 text-white shadow-purple-500/50' : isCompleted ? 'bg-gradient-to-b from-purple-100 to-purple-200 text-purple-700 dark:from-purple-500/20 dark:to-purple-500/10 dark:text-purple-400 shadow-md shadow-purple-500/30' : isMissed ? 'bg-gradient-to-b from-gray-100 to-gray-200 text-gray-400 dark:from-slate-800 dark:to-slate-900 dark:text-gray-500 shadow-md shadow-gray-400/20' : 'bg-gradient-to-b from-gray-100 to-gray-200 text-gray-400 dark:from-slate-800 dark:to-slate-900 dark:text-gray-500 shadow-md shadow-slate-400/20'}`}>
                               <SparklesIcon className="w-5 h-5" />
                             </div>
                           </div>
@@ -734,7 +785,7 @@ export default function MobileStudentDashboard({ logs = [] }: MobileStudentDashb
                               {isActive && (
                                  <div className="absolute inset-0 bg-brand-400 blur-[3px] opacity-40 animate-pulse" />
                               )}
-                              <div className={`w-full transition-colors duration-500 ${isCompleted ? 'bg-brand-400 dark:bg-brand-500/80' : isMissed ? 'bg-error-400 dark:bg-error-500/80' : isActive ? 'bg-brand-400 dark:bg-brand-500 shadow-[0_0_8px_rgba(236,72,153,0.5)] animate-pulse' : 'bg-gray-200 dark:bg-slate-700/80'}`} />
+                              <div className={`w-full transition-colors duration-500 ${isCompleted ? 'bg-brand-400 dark:bg-brand-500/80' : isMissed ? 'bg-gray-300 dark:bg-slate-600/80' : isActive ? 'bg-brand-400 dark:bg-brand-500 shadow-[0_0_8px_rgba(236,72,153,0.5)] animate-pulse' : 'bg-gray-200 dark:bg-slate-700/80'}`} />
                             </div>
                           </div>
                         )}
@@ -755,7 +806,7 @@ export default function MobileStudentDashboard({ logs = [] }: MobileStudentDashb
                                   </span>
                                 )}
                                 {isCompleted && <span className="text-[10px] font-bold text-emerald-300 uppercase tracking-wider bg-white/10 px-2 py-0.5 rounded-full">Attended</span>}
-                                {isMissed && <span className="text-[10px] font-bold text-rose-200 uppercase tracking-wider bg-white/10 px-2 py-0.5 rounded-full">Missed</span>}
+                                {isMissed && <span className="text-[10px] font-bold text-gray-200 uppercase tracking-wider bg-black/20 px-2 py-0.5 rounded-full">Terlewat</span>}
                               </div>
                               <span className="text-[12px] font-bold shrink-0 text-white">
                                 {formattedTime}
@@ -830,7 +881,7 @@ export default function MobileStudentDashboard({ logs = [] }: MobileStudentDashb
                   }
 
                   return (
-                    <div key={item.id} className={`flex gap-3.5 pb-3 relative transition-all duration-300 ${isUpcoming ? 'opacity-60 grayscale-[30%]' : isActive ? 'scale-[1.02]' : ''} ${activeLeave ? 'opacity-50' : ''}`}>
+                    <div key={item.id} className={`flex gap-3.5 pb-3 relative transition-all duration-300 ${isActive ? 'scale-[1.02]' : ''} ${activeLeave ? 'opacity-50' : ''}`}>
                       {/* Timeline Node */}
                       <div className="relative z-10 flex flex-col items-center mt-0 w-[36px] sm:w-[40px] shrink-0">
                         <div className="relative flex items-center justify-center">
@@ -866,7 +917,7 @@ export default function MobileStudentDashboard({ logs = [] }: MobileStudentDashb
                                    item.type === 'break' ? 'bg-warning-400 dark:bg-warning-500/80' :
                                    'bg-brand-400 dark:bg-brand-500/80')
                                 : item.status === 'missed' 
-                                  ? 'bg-error-400 dark:bg-error-500/80'
+                                  ? 'bg-gray-300 dark:bg-slate-600/80'
                                   : isActive
                                     ? (item.type === 'scan_in' ? 'bg-success-400 dark:bg-success-500 shadow-[0_0_8px_rgba(50,213,131,0.5)] animate-pulse' :
                                        item.type === 'scan_out' ? 'bg-error-400 dark:bg-error-500 shadow-[0_0_8px_rgba(249,112,102,0.5)] animate-pulse' :
@@ -881,10 +932,10 @@ export default function MobileStudentDashboard({ logs = [] }: MobileStudentDashb
                       {/* Content Box */}
                       <div className="flex-1 pt-2.5 sm:pt-3 pb-4 mb-2 border-b border-gray-100 dark:border-slate-800/50 last:border-b-0 last:mb-0 last:pb-0">
                         <div className="flex justify-between items-start mb-1.5">
-                          <h3 className={`text-[13px] sm:text-[14px] font-bold leading-tight pr-3 ${isActive ? typeColor : isCompleted || isMissed ? 'text-gray-800 dark:text-gray-200' : 'text-gray-500 dark:text-gray-400'}`}>
+                          <h3 className={`text-[13px] sm:text-[14px] font-bold leading-tight pr-3 ${isActive ? typeColor : isCompleted ? 'text-gray-800 dark:text-gray-200' : isMissed ? 'text-gray-500 dark:text-gray-400 opacity-80' : 'text-gray-700 dark:text-gray-300'}`}>
                             {item.title}
                           </h3>
-                          <span className={`text-[11px] font-bold whitespace-nowrap shrink-0 ${isActive ? typeColor : isMissed ? 'text-red-500' : 'text-gray-500'}`}>
+                          <span className={`text-[11px] font-bold whitespace-nowrap shrink-0 ${isActive ? typeColor : isMissed ? 'text-gray-400' : 'text-gray-500'}`}>
                             {formattedTime}
                           </span>
                         </div>
@@ -928,6 +979,13 @@ export default function MobileStudentDashboard({ logs = [] }: MobileStudentDashb
                             <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider ${(item as any).isLate ? 'text-red-500' : 'text-emerald-500'}`}>
                               {(item as any).lateInfo}
                             </span>
+                          )}
+
+                          {/* Missed Badge */}
+                          {isMissed && item.type !== 'event' && item.type !== 'break' && (
+                             <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-gray-500 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded-md border border-gray-200 dark:border-gray-700">
+                               Terlewat
+                             </span>
                           )}
 
                           {/* Substitute Teacher Badge */}

@@ -45,10 +45,10 @@ const AttendanceRecordCard: React.FC<AttendanceRecordCardProps> = ({
       <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50/80 px-4 py-3 sm:px-5 dark:border-white/[0.05] dark:bg-white/[0.02]">
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <span className="inline-flex items-center rounded-lg bg-white px-2.5 py-1 text-xs font-bold tracking-wide text-gray-700 shadow-sm border border-gray-200 dark:border-white/[0.06] dark:bg-white/[0.05] dark:text-gray-200 truncate max-w-full">
-            {record.user?.studentProfile?.nis || record.user?.public_id?.substring(0,8) || "Unknown ID"}
+            {record.user?.studentProfile?.nis || record.user?.public_id?.substring(0,8) || "ID Tidak Diketahui"}
           </span>
           <Badge color={getStatusColor(record.statusLabel || undefined)}>
-            {record.status?.name || record.statusLabel || "Unknown"}
+            {record.status?.name || record.statusLabel || "Tidak Diketahui"}
           </Badge>
         </div>
         <Checkbox checked={isSelected} onChange={onToggle} />
@@ -64,7 +64,7 @@ const AttendanceRecordCard: React.FC<AttendanceRecordCardProps> = ({
             </span>
           )}
           <p className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white leading-tight line-clamp-1">
-            {record.user?.name || "Unknown User"}
+            {record.user?.name || "Pengguna Tidak Diketahui"}
           </p>
         </div>
 

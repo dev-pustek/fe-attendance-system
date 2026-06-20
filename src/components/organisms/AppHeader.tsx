@@ -57,7 +57,7 @@ const AppHeader: React.FC = () => {
           </Link>
           
           <div className="flex items-center gap-3">
-            <NotificationDropdown isMobilePremium={true} />
+            {/* <NotificationDropdown isMobilePremium={true} /> */}
             <UserDropdown isMobilePremium={true} />
           </div>
         </div>
@@ -107,7 +107,7 @@ const AppHeader: React.FC = () => {
           <div className="flex items-center gap-2 2xsm:gap-3">
             <ThemeToggleButton />
             <InstallAppButton />
-            <NotificationDropdown />
+            {/* <NotificationDropdown /> */}
           </div>
           <UserDropdown />
         </div>

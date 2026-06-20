@@ -1,31 +1,36 @@
-
 import { useTeacherCockpit } from "./TeacherCockpitContext";
-import { useTeachingScheduleTemplates } from "../../../api/hooks/useAcademic";
-import { CalenderIcon, FileIcon, TableIcon } from "../../../components/atoms/Icons"; // Replaced PrinterIcon
+import { useTeachingSessions } from "../../../api/hooks/useAttendance";
+import { CalenderIcon, FileIcon, TableIcon } from "../../../components/atoms/Icons"; 
 import Button from "../../../components/atoms/Button";
 import { academicService } from "../../../api/services/academicService";
 import { showError } from "../../../utils/toast";
-import ScheduleMatrix from "../TeachingScheduleTemplates/ScheduleMatrix"; 
+import WeeklySessionMatrix from "../../Attendance/components/WeeklySessionMatrix"; 
 import { useNavigate } from "react-router"; 
+import { format, startOfWeek, endOfWeek } from "date-fns";
 
 const PersonalScheduleTab = () => {
     const { employeeDetails } = useTeacherCockpit();
     const navigate = useNavigate();
     
     // Fetch Schedule
-    const { data: scheduleResponse, isLoading } = useTeachingScheduleTemplates({
-        teacherId: employeeDetails?.userId,
-        isActive: true,
+    const now = new Date();
+    const startOfCurrentWeek = format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+    const endOfCurrentWeek = format(endOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+
+    const { data: scheduleResponse, isLoading } = useTeachingSessions({
+        actualTeacherId: employeeDetails?.userId,
+        startDate: startOfCurrentWeek,
+        endDate: endOfCurrentWeek,
         limit: 1000
     });
     
-    const templates = scheduleResponse?.data || [];
+    const sessions = scheduleResponse?.data || [];
     
     if (isLoading) {
         return <div className="p-8 animate-pulse text-gray-400">Loading schedule...</div>;
     }
 
-    if (templates.length === 0) {
+    if (sessions.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center p-12 text-center border-2 border-dashed border-gray-200 dark:border-white/10 rounded-2xl">
                 <div className="size-12 rounded-full bg-gray-100 dark:bg-white/5 flex items-center justify-center mb-4">
@@ -57,7 +62,7 @@ const PersonalScheduleTab = () => {
                 <div>
                     <h3 className="text-lg font-bold text-gray-900 dark:text-white">Weekly Schedule</h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {templates.length} sessions scheduled per week
+                        {sessions.length} sessions scheduled this week
                     </p>
                 </div>
                 <div className="flex gap-2">
@@ -116,15 +121,9 @@ const PersonalScheduleTab = () => {
             </div>
 
             <div className="flex-1 min-h-0 min-w-0 grid grid-cols-1 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-white/5 overflow-hidden">
-                 <ScheduleMatrix 
-                    templates={templates}
+                 <WeeklySessionMatrix 
+                    sessions={sessions}
                     viewMode="teacher"
-                    onAddSession={() => {}}
-                    onEditSession={() => {}}
-                    onDeleteSession={() => {}}
-                    onMoveSession={() => {}}
-                    onDropSubject={() => {}}
-                    readOnly={true}
                  />
             </div>
         </div>

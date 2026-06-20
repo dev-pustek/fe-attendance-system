@@ -11,8 +11,8 @@ import Checkbox from "../../../../components/atoms/Checkbox";
 import Badge from "../../../../components/atoms/Badge";
 import DropdownItem from "../../../../components/atoms/DropdownItem";
 import Label from "../../../../components/atoms/Label";
-
-import { useConfirm } from "../../../../hooks/useConfirm";
+import ConfirmDialog from "../../../../components/molecules/ConfirmDialog";
+import Modal from "../../../../components/molecules/Modal";
 
 import {
   EyeIcon,
@@ -21,6 +21,7 @@ import {
   CloseIcon,
   FilterIcon,
   ChevronDownIcon,
+  MapPinIcon,
 } from "../../../../components/atoms/Icons";
 
 import EventCard from "../Cards/EventCard";
@@ -68,9 +69,10 @@ export default function EventTab() {
   const [eventTimeFilter, setEventTimeFilter] = useState<"all" | "upcoming" | "past">("all");
   
   const [selectedIds, setSelectedIds] = useState<Set<number | string>>(new Set());
+  const [selectedDetailRecord, setSelectedDetailRecord] = useState<any | null>(null);
 
   // Clear selection on filter change
-  useEffect(() => { setSelectedIds(new Set()); }, [page, eventStatus, eventTimeFilter]);
+  useEffect(() => { setSelectedIds(new Set()); setSelectedDetailRecord(null); }, [page, eventStatus, eventTimeFilter]);
 
   // ── Queries ──
   // Desktop Pagination
@@ -264,13 +266,14 @@ export default function EventTab() {
           ) : (
             <div className="grid grid-cols-1 gap-3">
               {displayItems.map((item) => (
-                <EventCard 
-                  key={item.id || item.public_id} 
-                  record={item}
-                  isSelected={selectedIds.has(item.id || item.public_id)}
-                  onToggle={() => toggleOne(item.id || item.public_id)}
-                  onViewDetails={() => { /* View details for Event */ }}
-                />
+                <div key={item.id || item.public_id} onClick={() => setSelectedDetailRecord(item)} className="cursor-pointer">
+                  <EventCard 
+                    record={item}
+                    isSelected={selectedIds.has(item.id || item.public_id)}
+                    onToggle={() => toggleOne(item.id || item.public_id)}
+                    onViewDetails={() => setSelectedDetailRecord(item)}
+                  />
+                </div>
               ))}
             </div>
           )}
@@ -353,7 +356,7 @@ export default function EventTab() {
                       </TableCell>
                       <TableCell className="px-4 py-4 text-center">
                         <RowActionMenu 
-                          onViewDetails={() => { /* Implement if needed */ }}
+                          onViewDetails={() => setSelectedDetailRecord(record)}
                         />
                       </TableCell>
                     </TableRow>
@@ -383,6 +386,104 @@ export default function EventTab() {
           )}
         </div>
       )}
+
+      {/* Detail Modal */}
+      <Modal 
+        isOpen={!!selectedDetailRecord} 
+        onClose={() => setSelectedDetailRecord(null)} 
+        className="max-w-xl sm:m-4"
+        title={
+          <div className="flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400">
+                  <MapPinIcon className="size-5" />
+              </div>
+              <div>
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">Detail Kegiatan</h2>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                     {selectedDetailRecord?.event?.startTime ? format(parseISO(selectedDetailRecord.event.startTime), "EEEE, dd MMMM yyyy") : "-"}
+                  </p>
+              </div>
+          </div>
+        }
+        footer={
+          <div className="flex justify-end gap-3 w-full border-t border-gray-100 p-4 dark:border-white/[0.05]">
+            <button 
+              onClick={() => setSelectedDetailRecord(null)}
+              className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-bold text-gray-700 transition-colors hover:bg-gray-50 dark:border-white/[0.06] dark:text-gray-300 dark:hover:bg-white/[0.02]"
+            >
+              Tutup
+            </button>
+          </div>
+        }
+      >
+        {selectedDetailRecord && (
+          <div className="space-y-6">
+             <div className="p-5 rounded-2xl border border-gray-100 bg-gray-50/50 dark:border-white/[0.05] dark:bg-white/[0.02] space-y-4">
+                <div>
+                   <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1">Nama Acara</p>
+                   <p className="text-lg font-bold text-gray-900 dark:text-white">
+                      {selectedDetailRecord.event?.name || 'Acara Tidak Diketahui'}
+                   </p>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                   <div className="col-span-2">
+                      <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1">Lokasi</p>
+                      <p className="font-medium text-gray-900 dark:text-white flex items-center gap-2">
+                         <MapPinIcon className="size-4 text-gray-400" />
+                         {selectedDetailRecord.event?.location || 'Lokasi tidak diketahui'}
+                      </p>
+                   </div>
+                </div>
+             </div>
+             
+             <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-3 p-5 rounded-2xl bg-brand-50/30 border border-brand-100 dark:bg-brand-500/5 dark:border-brand-500/10">
+                    <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-brand-700 dark:text-brand-400 uppercase tracking-widest">Waktu Acara</span>
+                    </div>
+                    <p className="text-xl font-bold text-gray-900 dark:text-white">
+                        {selectedDetailRecord.event?.startTime ? format(parseISO(selectedDetailRecord.event.startTime), 'HH:mm') : "--:--"} - {selectedDetailRecord.event?.endTime ? format(parseISO(selectedDetailRecord.event.endTime), 'HH:mm') : "--:--"}
+                    </p>
+                </div>
+                <div className="space-y-3 p-5 rounded-2xl bg-green-50/80 border border-green-100 dark:bg-green-500/5 dark:border-green-500/10">
+                    <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-green-700 dark:text-green-400 uppercase tracking-widest">Waktu Hadir</span>
+                    </div>
+                    <div className="flex justify-between items-end">
+                       <div>
+                          <p className="text-xs text-green-600 dark:text-green-500">Masuk</p>
+                          <p className="text-lg font-bold text-gray-900 dark:text-white">
+                              {selectedDetailRecord.attendanceStatus?.clockIn ? format(parseISO(selectedDetailRecord.attendanceStatus.clockIn), "HH:mm") : "--:--"}
+                          </p>
+                       </div>
+                       <div className="text-right">
+                          <p className="text-xs text-green-600 dark:text-green-500">Keluar</p>
+                          <p className="text-lg font-bold text-gray-900 dark:text-white">
+                              {selectedDetailRecord.attendanceStatus?.clockOut ? format(parseISO(selectedDetailRecord.attendanceStatus.clockOut), "HH:mm") : "--:--"}
+                          </p>
+                       </div>
+                    </div>
+                </div>
+             </div>
+             
+             <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest px-1">Status Kehadiran</label>
+                <div className="flex items-center gap-3 p-4 rounded-xl border border-gray-100 bg-white dark:border-white/[0.05] dark:bg-transparent">
+                   {selectedDetailRecord.attendanceStatus?.hasAttended
+                        ? <Badge color={selectedDetailRecord.attendanceStatus.status === 'present' ? 'success' : 'warning'}>
+                            {selectedDetailRecord.attendanceStatus.isLate ? 'Terlambat' : 'Hadir'}
+                          </Badge>
+                        : <Badge color="error">Tidak Hadir</Badge>
+                   }
+                   <Badge color="light" size="sm" className="uppercase tracking-wider font-semibold">
+                      {selectedDetailRecord.event?.eventType || 'EVENT'}
+                   </Badge>
+                </div>
+             </div>
+          </div>
+        )}
+      </Modal>
+
     </div>
   );
 }

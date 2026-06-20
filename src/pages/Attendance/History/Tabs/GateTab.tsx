@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { attendanceService } from "../../../../api/services/attendanceService";
 import { format, startOfWeek, endOfWeek, parseISO } from "date-fns";
+import { API_BASE_URL } from "../../../../api/client";
 
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "../../../../components/atoms/Table";
 import TableToolbar from "../../../../components/molecules/TableToolbar";
@@ -79,12 +80,12 @@ export default function GateTab() {
   // ── Pagination & Filters ──
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [page, setPage] = useState(1);
-  const [limit] = useState(10);
+  const [limit] = useState(20);
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [dateFrom, setDateFrom] = useState(format(startOfWeek(new Date()), 'yyyy-MM-dd'));
-  const [dateTo, setDateTo] = useState(format(endOfWeek(new Date()), 'yyyy-MM-dd'));
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   
   const [selectedIds, setSelectedIds] = useState<Set<number | string>>(new Set());
   const [selectedDetailRecord, setSelectedDetailRecord] = useState<any | null>(null);
@@ -93,36 +94,21 @@ export default function GateTab() {
   useEffect(() => { setSelectedIds(new Set()); setSelectedDetailRecord(null); }, [page, searchQuery, statusFilter, dateFrom, dateTo]);
 
   // ── Queries ──
-  // Desktop Pagination
-  const { data: gateResponse, isLoading: isLoadingDesktop } = useQuery({
-    queryKey: ["gateHistory", page, limit, statusFilter, dateFrom, dateTo, searchQuery],
-    queryFn: () =>
-      attendanceService.getAttendanceHistory({
-        page,
-        limit,
-        dateFrom,
-        dateTo,
-        status: statusFilter || undefined,
-        search: searchQuery || undefined,
-      }),
-    enabled: !isMobile,
-  });
-
-  // Mobile Infinite
+  // Infinite query for both Desktop and Mobile
   const { 
-    data: gateMobileData, 
+    data: gateData, 
     fetchNextPage, 
     hasNextPage, 
     isFetchingNextPage,
-    isLoading: isLoadingMobile 
+    isLoading 
   } = useInfiniteQuery({
-    queryKey: ["gateHistoryMobile", limit, statusFilter, dateFrom, dateTo, searchQuery],
+    queryKey: ["gateHistory", limit, statusFilter, dateFrom, dateTo, searchQuery],
     queryFn: ({ pageParam = 1 }) =>
       attendanceService.getAttendanceHistory({
         page: pageParam,
         limit,
-        dateFrom,
-        dateTo,
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined,
         status: statusFilter || undefined,
         search: searchQuery || undefined,
       }),
@@ -132,7 +118,6 @@ export default function GateTab() {
        return current < last ? current + 1 : undefined; 
     },
     initialPageParam: 1,
-    enabled: isMobile,
   });
 
   // ── Mutations ──
@@ -146,10 +131,10 @@ export default function GateTab() {
   });
 
   // ── Helpers ──
-  const displayItems = isMobile ? (gateMobileData?.pages.flatMap(p => p.data) || []) : (gateResponse?.data || []);
+  const displayItems = gateData?.pages.flatMap(p => p.data) || [];
   const allSelected = displayItems.length > 0 && displayItems.every((item) => selectedIds.has(item.id || item.public_id));
-  const isLoading = isMobile ? isLoadingMobile : isLoadingDesktop;
-  const meta = gateResponse?.meta;
+  const meta = gateData?.pages[0]?.meta;
+  const metrics = gateData?.pages[0]?.metrics;
 
   const toggleAll = () => {
     if (allSelected) setSelectedIds(new Set());
@@ -195,10 +180,9 @@ export default function GateTab() {
     }
   };
 
-  // ── Intersection Observer for Mobile ──
+  // ── Intersection Observer ──
   const sentinelRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (!isMobile) return;
     const observer = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
         fetchNextPage();
@@ -211,14 +195,14 @@ export default function GateTab() {
   return (
     <div className="space-y-5">
       {/* Metrics */}
-      {!isLoading && meta && gateResponse?.metrics && (
+      {!isLoading && meta && metrics && (
         <div className="flex overflow-x-auto gap-3 pb-2 -mx-4 px-4 snap-x snap-mandatory md:grid md:grid-cols-4 lg:grid-cols-6 md:gap-4 md:pb-0 md:mx-0 md:px-0 no-scrollbar">
-          <MetricCard className="min-w-[140px] w-[40vw] max-w-[160px] shrink-0 snap-center md:w-auto md:max-w-none md:min-w-0" title="Total Hari" value={gateResponse.metrics.totalDays} icon={<CalenderIcon />} color="blue" />
-          <MetricCard className="min-w-[140px] w-[40vw] max-w-[160px] shrink-0 snap-center md:w-auto md:max-w-none md:min-w-0" title="Hadir" value={gateResponse.metrics.presentCount} icon={<CheckCircleIcon />} color="green" />
-          <MetricCard className="min-w-[140px] w-[40vw] max-w-[160px] shrink-0 snap-center md:w-auto md:max-w-none md:min-w-0" title="Terlambat" value={gateResponse.metrics.lateCount} icon={<TimeIcon />} color="orange" />
-          <MetricCard className="min-w-[140px] w-[40vw] max-w-[160px] shrink-0 snap-center md:w-auto md:max-w-none md:min-w-0" title="Pulang Cepat" value={gateResponse.metrics.earlyLeaveCount} icon={<TimeIcon />} color="yellow" />
-          <MetricCard className="min-w-[140px] w-[40vw] max-w-[160px] shrink-0 snap-center md:w-auto md:max-w-none md:min-w-0" title="Tidak Hadir" value={gateResponse.metrics.absentCount} icon={<CloseIcon />} color="red" />
-          <MetricCard className="min-w-[140px] w-[40vw] max-w-[160px] shrink-0 snap-center md:w-auto md:max-w-none md:min-w-0" title="Persentase Hadir" value={`${gateResponse.metrics.attendancePercentage}%`} icon={<CheckCircleIcon />} color="brand" badge={{ text: gateResponse.metrics.attendancePercentage >= 90 ? "Bagus" : "Kurang", color: gateResponse.metrics.attendancePercentage >= 90 ? "success" : "warning" }} />
+          <MetricCard className="min-w-[140px] w-[40vw] max-w-[160px] shrink-0 snap-center md:w-auto md:max-w-none md:min-w-0" title="Total Hari" value={metrics.totalDays} icon={<CalenderIcon />} color="blue" />
+          <MetricCard className="min-w-[140px] w-[40vw] max-w-[160px] shrink-0 snap-center md:w-auto md:max-w-none md:min-w-0" title="Hadir" value={metrics.presentCount} icon={<CheckCircleIcon />} color="green" />
+          <MetricCard className="min-w-[140px] w-[40vw] max-w-[160px] shrink-0 snap-center md:w-auto md:max-w-none md:min-w-0" title="Terlambat" value={metrics.lateCount} icon={<TimeIcon />} color="orange" />
+          <MetricCard className="min-w-[140px] w-[40vw] max-w-[160px] shrink-0 snap-center md:w-auto md:max-w-none md:min-w-0" title="Pulang Cepat" value={metrics.earlyLeaveCount} icon={<TimeIcon />} color="yellow" />
+          <MetricCard className="min-w-[140px] w-[40vw] max-w-[160px] shrink-0 snap-center md:w-auto md:max-w-none md:min-w-0" title="Tidak Hadir" value={metrics.absentCount} icon={<CloseIcon />} color="red" />
+          <MetricCard className="min-w-[140px] w-[40vw] max-w-[160px] shrink-0 snap-center md:w-auto md:max-w-none md:min-w-0" title="Persentase Hadir" value={`${metrics.attendancePercentage}%`} icon={<CheckCircleIcon />} color="brand" badge={{ text: metrics.attendancePercentage >= 90 ? "Bagus" : "Kurang", color: metrics.attendancePercentage >= 90 ? "success" : "warning" }} />
         </div>
       )}
 
@@ -469,31 +453,18 @@ export default function GateTab() {
             </TableBody>
           </Table>
           
-          {/* Desktop Pagination */}
-          {!isLoading && meta && meta.totalPages > 1 && (
-            <div className="flex items-center justify-between border-t border-gray-100 bg-white px-6 py-4 dark:border-white/[0.05] dark:bg-gray-900">
-              <span className="text-sm text-gray-500 dark:text-gray-400">
-                Menampilkan <span className="font-medium text-gray-900 dark:text-white">{(page - 1) * limit + 1}</span> hingga <span className="font-medium text-gray-900 dark:text-white">{Math.min(page * limit, meta.total)}</span> dari <span className="font-medium text-gray-900 dark:text-white">{meta.total}</span> rekaman
-              </span>
-              <div className="flex gap-2">
-                <button disabled={page === 1} onClick={() => setPage(page - 1)}
-                  className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-50 dark:border-white/[0.06] dark:text-gray-300 dark:hover:bg-white/[0.02]">
-                  Sebelumnya
-                </button>
-                <button disabled={page >= meta.totalPages} onClick={() => setPage(page + 1)}
-                  className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-50 dark:border-white/[0.06] dark:text-gray-300 dark:hover:bg-white/[0.02]">
-                  Berikutnya
-                </button>
-              </div>
-            </div>
-          )}
+          {/* Infinite scroll sentinel for desktop */}
+          <div ref={sentinelRef} className="py-4 border-t border-gray-100 dark:border-white/[0.05] flex items-center justify-center bg-white dark:bg-gray-900 rounded-b-2xl">
+            {isFetchingNextPage && <div className="flex items-center gap-3"><div className="size-5 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" /><span className="text-sm text-gray-500">Memuat data tambahan...</span></div>}
+            {!hasNextPage && displayItems.length > 0 && <p className="text-xs text-gray-400">Semua data telah ditampilkan</p>}
+          </div>
         </div>
       )}
 
       <Modal 
         isOpen={!!selectedDetailRecord} 
         onClose={() => setSelectedDetailRecord(null)} 
-        className="max-w-xl m-4"
+        className="max-w-xl sm:m-4"
         title={
           <div className="flex items-center gap-3">
               <div className="flex size-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
@@ -560,7 +531,7 @@ export default function GateTab() {
                         <img 
                             src={
                                 (selectedDetailRecord.photoUrl || selectedDetailRecord.photoEvidenceUrl || selectedDetailRecord.photoEvidence)?.startsWith('/') 
-                                    ? `http://localhost:3000${(selectedDetailRecord.photoUrl || selectedDetailRecord.photoEvidenceUrl || selectedDetailRecord.photoEvidence)}`
+                                    ? `${new URL(API_BASE_URL).origin}${(selectedDetailRecord.photoUrl || selectedDetailRecord.photoEvidenceUrl || selectedDetailRecord.photoEvidence)}`
                                     : (selectedDetailRecord.photoUrl || selectedDetailRecord.photoEvidenceUrl || selectedDetailRecord.photoEvidence)
                             } 
                             alt="Attendance Capture Evidence" 

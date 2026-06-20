@@ -9,6 +9,7 @@ import CustomSelect from "../../../components/molecules/CustomSelect";
 import DatePicker from "../../../components/molecules/DatePicker";
 import Label from "../../../components/atoms/Label";
 import { LeaveSubmission } from "../../../api/types/leave";
+import { API_BASE_URL } from "../../../api/client";
 import { useSubmitLeave, useUpdateSubmission } from "../../../api/hooks/useLeaves";
 import { showSuccess, showError } from "../../../utils/toast";
 
@@ -100,7 +101,7 @@ const LeaveFormModal: React.FC<LeaveFormModalProps> = ({ isOpen, onClose, select
             onClose={onClose} 
             title={selectedEntity ? "Edit Pengajuan Cuti" : "Create Leave Request"}
             description={selectedEntity ? "Update the details of your leave submission." : "Submit a new leave request for approval."}
-            className={selectedEntity?.attachment ? "max-w-4xl" : "max-w-lg"}
+            className={`${selectedEntity?.attachment ? "max-w-4xl" : "max-w-lg"} sm:m-4`}
             footer={
                 <div className="flex justify-end gap-3 w-full sm:w-auto">
                     <Button variant="outline" type="button" onClick={onClose} className="flex-1 sm:flex-none">Batal</Button>
@@ -266,7 +267,7 @@ const LeaveFormModal: React.FC<LeaveFormModalProps> = ({ isOpen, onClose, select
                             <Label>Lampiran Saat Ini</Label>
                             <div className="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex justify-center p-4">
                                 <img 
-                                    src={selectedEntity.attachment.startsWith('http') ? selectedEntity.attachment : `http://localhost:3000/${selectedEntity.attachment}`}
+                                    src={selectedEntity.attachment.startsWith('http') ? selectedEntity.attachment : `${new URL(API_BASE_URL).origin}/${selectedEntity.attachment}`}
                                     alt="Attachment" 
                                     className="max-h-[300px] object-contain"
                                 />

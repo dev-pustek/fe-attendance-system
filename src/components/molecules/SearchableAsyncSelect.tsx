@@ -58,6 +58,8 @@ export const SearchableAsyncSelect: React.FC<SearchableAsyncSelectProps> = ({
   useEffect(() => {
     if (selectedOption) {
       setDisplayLabel(selectedOption.label);
+    } else if (value === "" || value === null || value === undefined) {
+      setDisplayLabel("");
     } else if (initialLabel && !displayLabel) {
        // If no option found but we have initialLabel (e.g. on first load for edit), keep/set it
        setDisplayLabel(initialLabel);
@@ -104,7 +106,12 @@ export const SearchableAsyncSelect: React.FC<SearchableAsyncSelectProps> = ({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(target) &&
+        (!dropdownRef.current || !dropdownRef.current.contains(target))
+      ) {
         setIsOpen(false);
       }
     };
@@ -139,7 +146,13 @@ export const SearchableAsyncSelect: React.FC<SearchableAsyncSelectProps> = ({
           isOpen ? "border-brand-500 ring-4 ring-brand-500/5 shadow-sm" : ""
         }`}
       >
-        <span className={`truncate min-w-0 flex-1 ${displayLabel ? "text-gray-900 dark:text-white font-medium" : "text-gray-400"}`}>
+        <span className={`truncate min-w-0 flex-1 ${
+          disabled 
+            ? "text-gray-400" 
+            : displayLabel 
+              ? "text-gray-900 dark:text-white font-medium" 
+              : "text-gray-400"
+        }`}>
           {displayLabel || placeholder}
         </span>
         <div className="flex items-center gap-2">

@@ -6,6 +6,8 @@ import {
   useBulkSubjectAttendance,
   useSubjectAttendances,
   useValidateSession,
+  useStartSession,
+  useCompleteSession,
 } from "../../../api/hooks/useAttendance";
 import { useClassEnrollments } from "../../../api/hooks/useAcademic";
 import { TeachingSession } from "../../../api/types/attendance";
@@ -113,33 +115,26 @@ const ClassroomCommand: React.FC = () => {
 
   const { mutateAsync: validateSession, isPending: isValidating } = useValidateSession();
   const { createMutation: createSubjectAttendance } = useSubjectAttendances();
+  const { mutateAsync: startSession, isPending: isStarting } = useStartSession();
+  const { mutateAsync: completeSession, isPending: isCompleting } = useCompleteSession();
 
-  const handleTeacherCheckIn = async (session: TeachingSession) => {
+  const handleStartSession = async (session: TeachingSession) => {
     if (!session || !user?.id) return;
     try {
-      await attendanceService.bulkCreateSubjectAttendance({
-        teachingSessionId: session.id,
-        records: [
-          {
-            studentId: user.id.toString(),
-            status: 'present',
-            remarks: 'Teacher check-in',
-            method: 'manual'
-          }
-        ]
-      });
-      
-      if (session.validationStatus === 'invalid' || session.validationStatus === 'valid') {
-        await validateSession({
-          id: session.id,
-          status: 'pending' as any,
-          notes: 'Teacher re-started session'
-        }).catch(() => {});
-      }
-
-      showSuccess("Successfully started session!");
+      await startSession(session.id);
+      showSuccess("Kelas berhasil dimulai!");
     } catch (error: any) {
-      showError(error.response?.data?.message || "Failed to start session");
+      showError(error.response?.data?.message || "Gagal memulai kelas");
+    }
+  };
+
+  const handleCompleteSession = async (session: TeachingSession) => {
+    if (!session || !user?.id) return;
+    try {
+      await completeSession(session.id);
+      showSuccess("Kelas berhasil diakhiri!");
+    } catch (error: any) {
+      showError(error.response?.data?.message || "Gagal mengakhiri kelas");
     }
   };
 
@@ -205,9 +200,11 @@ const ClassroomCommand: React.FC = () => {
                       activeId={activeSession?.id}
                       onSelect={(id) => setSelectedSessionId(id)}
                       isAdmin={isAdmin}
-                      isStarting={createSubjectAttendance.isPending}
+                      isStarting={isStarting}
+                      isCompleting={isCompleting}
                       onValidateClick={handleOpenValidateModal}
-                      onStartSessionClick={handleTeacherCheckIn}
+                      onStartSessionClick={handleStartSession}
+                      onCompleteSessionClick={handleCompleteSession}
                     />
                   </div>
                 );
@@ -551,16 +548,20 @@ const SessionCardList = ({
   onSelect,
   isAdmin,
   isStarting,
+  isCompleting,
   onValidateClick,
   onStartSessionClick,
+  onCompleteSessionClick,
 }: {
   sessions: TeachingSession[];
   activeId: string | number | undefined;
   onSelect: (id: string | number) => void;
   isAdmin?: boolean;
   isStarting?: boolean;
+  isCompleting?: boolean;
   onValidateClick?: (s: TeachingSession) => void;
   onStartSessionClick?: (s: TeachingSession) => void;
+  onCompleteSessionClick?: (s: TeachingSession) => void;
 }) => {
   const getStatusStyles = (s: TeachingSession, isActive: boolean) => {
     const v = s.validationStatus;
@@ -649,22 +650,33 @@ const SessionCardList = ({
                           <EditIcon className="size-3.5" />
                         </button>
                       ) : (
-                        <button
-                          title="Start Session"
-                          onClick={() => onStartSessionClick?.(s)}
-                          disabled={isStarting}
-                          className={`flex items-center justify-center size-7 rounded-full transition-colors ${
-                            s.validationStatus === 'valid'
-                              ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-600 dark:bg-emerald-500/20 dark:hover:bg-emerald-500/30 dark:text-emerald-400'
-                              : 'bg-brand-500 hover:bg-brand-600 text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed'
-                          }`}
-                        >
-                          {isStarting ? (
-                            <div className="size-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                          ) : (
-                            <BoltIcon className="size-3.5" />
-                          )}
-                        </button>
+                        s.status === 'scheduled' ? (
+                          <button
+                            title="Start Session"
+                            onClick={() => onStartSessionClick?.(s)}
+                            disabled={isStarting}
+                            className={`flex items-center justify-center size-7 rounded-full transition-colors bg-brand-500 hover:bg-brand-600 text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed`}
+                          >
+                            {isStarting ? (
+                              <div className="size-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <BoltIcon className="size-3.5" />
+                            )}
+                          </button>
+                        ) : s.status === 'in_progress' ? (
+                          <button
+                            title="Complete Session"
+                            onClick={() => onCompleteSessionClick?.(s)}
+                            disabled={isCompleting}
+                            className={`flex items-center justify-center size-7 rounded-full transition-colors bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed`}
+                          >
+                            {isCompleting ? (
+                              <div className="size-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <CheckLineIcon className="size-3.5" />
+                            )}
+                          </button>
+                        ) : null
                       )}
                     </div>
                   </div>
@@ -733,7 +745,10 @@ const BubbleBoard = ({
     setLocalAttendance(map);
   }, [existingAttendances, enrollments]);
 
+  const isLocked = teachingSession.status !== 'in_progress';
+
   const toggleStatus = (studentId: string) => {
+    if (isLocked) return;
     const current = localAttendance[studentId] || "absent";
     const order = ["present", "late", "absent"] as const;
     const currentIndex = order.indexOf(current as (typeof order)[number]);
@@ -742,6 +757,7 @@ const BubbleBoard = ({
   };
 
   const handleBulkSubmit = async () => {
+    if (isLocked) return;
     try {
       const payload = {
         teachingSessionId: teachingSession.id,
@@ -840,7 +856,11 @@ const BubbleBoard = ({
             <div
               key={en.id}
               onClick={() => toggleStatus(studentId)}
-              className={`relative flex flex-col items-center cursor-pointer group select-none p-3 sm:p-4 rounded-2xl transition-all duration-200 border ${cfg.border} ${cfg.bg} hover:shadow-md active:scale-[0.96]`}
+              className={`relative flex flex-col items-center select-none p-3 sm:p-4 rounded-2xl transition-all duration-200 border ${cfg.border} ${cfg.bg} ${
+                isLocked 
+                  ? "opacity-80 cursor-not-allowed" 
+                  : "cursor-pointer group hover:shadow-md active:scale-[0.96]"
+              }`}
             >
               {/* Avatar */}
               <div className="relative mb-2.5">
@@ -904,9 +924,9 @@ const BubbleBoard = ({
 
           <Button
             onClick={handleBulkSubmit}
-            disabled={isPending}
+            disabled={isPending || isLocked}
             size="sm"
-            className="rounded-xl px-4 sm:px-6 font-bold bg-brand-600 text-white hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-400 shadow-lg shadow-brand-500/20 border-none flex items-center gap-1.5 !py-2.5"
+            className="rounded-xl px-4 sm:px-6 font-bold bg-brand-600 text-white hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-400 shadow-lg shadow-brand-500/20 border-none flex items-center gap-1.5 !py-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isPending ? (
               <div className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />

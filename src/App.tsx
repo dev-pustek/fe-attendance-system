@@ -77,6 +77,7 @@ const EventScanner = lazy(() => import("./pages/Events/EventScanner"));
 const AttendancePolicies = lazy(() => import("./pages/Attendance/AttendancePolicies"));
 const PiketMonitor = lazy(() => import("./pages/Attendance/PiketMonitor"));
 const AttendanceMetrics = lazy(() => import("./pages/Attendance/AttendanceMetrics"));
+const AttendanceReports = lazy(() => import("./pages/Attendance/Reports"));
 
 const AttendanceHistory = lazy(() => import("./pages/Attendance/History"));
 const NotificationTemplateList = lazy(() => import("./pages/Notifications/Templates/NotificationTemplateList"));
@@ -250,7 +251,7 @@ export default function App() {
               <Route path="/student/leaves" element={<StudentLeaveRequest />} />
               <Route path="/attendance/events" element={<AttendanceEvents />} />
               <Route path="/attendance/metrics" element={<AttendanceMetrics />} />
-              <Route path="/attendance/rules" element={<AttendancePolicies />} />
+              <Route path="/attendance/reports" element={<AttendanceReports />} />
               <Route path="/attendance/policies" element={<AttendancePolicies />} />
               <Route path="/attendance/piket" element={<PiketMonitor />} />
               <Route path="/attendance/classroom-command" element={<ClassroomCommand />} />

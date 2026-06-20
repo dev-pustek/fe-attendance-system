@@ -50,6 +50,10 @@ const fixImageUrls = (obj: any, origin: string): any => {
   if (Array.isArray(obj)) {
     return obj.map(item => fixImageUrls(item, origin));
   }
+  // Ignore Blobs and ArrayBuffers
+  if (obj instanceof Blob || obj instanceof ArrayBuffer) {
+    return obj;
+  }
   if (typeof obj === 'object') {
     const newObj: any = {};
     for (const key in obj) {

@@ -1,7 +1,8 @@
 import { useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '../../../store/authStore';
-import { useTeachingScheduleTemplates, useAcademicYears } from '../../../api/hooks/useAcademic';
+import { useAcademicYears } from '../../../api/hooks/useAcademic';
+import { useTeachingSessions } from '../../../api/hooks/useAttendance';
 import { academicService } from '../../../api/services/academicService';
 import { ruleService } from '../../../api/services/ruleService';
 import { useQuery } from '@tanstack/react-query';
@@ -13,8 +14,8 @@ import {
 import { FileIcon, TableIcon } from '../../../components/atoms/Icons'; 
 import CustomSelect from '../../../components/molecules/CustomSelect';
 import { showSuccess, showError, showLoading } from '../../../utils/toast';
-import { format } from 'date-fns';
-import ScheduleMatrix from '../../Academic/TeachingScheduleTemplates/ScheduleMatrix';
+import { format, startOfWeek, endOfWeek } from 'date-fns';
+import WeeklySessionMatrix from '../components/WeeklySessionMatrix';
 import { saveAs } from 'file-saver';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -56,19 +57,28 @@ const StudentWeeklySchedule = () => {
         }
     }, [academicYears, selectedAcademicYearId]);
 
-    // 2. Fetch Templates — filter to logged-in user's own schedule
-    const fetchParams: any = { isActive: true, limit: 100 };
+    // 2. Fetch Sessions — filter to logged-in user's own schedule for the current week
+    const now = new Date();
+    const startOfCurrentWeek = format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+    const endOfCurrentWeek = format(endOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+
+    const fetchParams: any = { 
+        limit: 100,
+        startDate: startOfCurrentWeek,
+        endDate: endOfCurrentWeek
+    };
     if (selectedAcademicYearId) fetchParams.academicYearId = selectedAcademicYearId;
+    
     if (isStudent && userClassId) {
         // Students: show all schedules for their class
         fetchParams.classId = userClassId;
     } else {
-        // Teachers, admins, staff, etc.: show only schedules where they are the assigned teacher
-        fetchParams.teacherId = user?.public_id || user?.id;
+        // Teachers: show only schedules where they are teaching
+        fetchParams.actualTeacherId = user?.public_id || user?.id;
     }
 
-    const { data: weeklyScheduleResponse, isLoading: isLoadingWeekly } = useTeachingScheduleTemplates(fetchParams);
-    const weeklyTemplates = useMemo(() => weeklyScheduleResponse?.data || [], [weeklyScheduleResponse]);
+    const { data: weeklyScheduleResponse, isLoading: isLoadingWeekly } = useTeachingSessions(fetchParams);
+    const weeklySessions = useMemo(() => weeklyScheduleResponse?.data || [], [weeklyScheduleResponse]);
 
     // 2. Fetch Rules
     const { data: rulesResponse } = useQuery({
@@ -309,21 +319,15 @@ const StudentWeeklySchedule = () => {
                                                        <div className="text-center py-12">Memuat jadwal mingguan...</div>
                                                   ) : (isStudent && !userClassId) ? (
                                                        <div className="text-center py-12 text-red-500">Anda belum dimasukkan ke kelas mana pun. Silakan hubungi administrator.</div>
-                                                  ) : (!weeklyTemplates || weeklyTemplates.length === 0) ? (
-                                                       <div className="text-center py-12 text-gray-500">Tidak ada jadwal yang ditetapkan untuk Anda.</div>
+                                                  ) : (!weeklySessions || weeklySessions.length === 0) ? (
+                                                       <div className="text-center py-12 text-gray-500">Tidak ada jadwal yang ditetapkan untuk Anda minggu ini.</div>
                                                   ) : (
-                                                    <ScheduleMatrix 
-                                                        templates={weeklyTemplates}
+                                                    <WeeklySessionMatrix 
+                                                        sessions={weeklySessions}
                                                         viewMode={isStudent ? "subject" : "teacher"}
                                                         availableDays={activeAvailableDays}
-                                                        onAddSession={() => {}}
-                                                        onEditSession={() => {}}
-                                                        onDeleteSession={() => {}}
-                                                        onMoveSession={() => {}}
-                                                        onDropSubject={() => {}}
                                                         effectiveRules={isStudent ? effectiveRules : undefined}
                                                         minutesPerUnit={minutesPerUnit}
-                                                        readOnly={true}
                                                     />
                                                   )}
                                               </div>

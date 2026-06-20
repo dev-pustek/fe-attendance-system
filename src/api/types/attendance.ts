@@ -291,6 +291,9 @@ export interface TeachingSession {
   validatedById?: string | null;
   validationNotes?: string | null;
   validatedBy?: User | null;
+  status?: "scheduled" | "in_progress" | "completed" | string;
+  actualStartTime?: string | null;
+  actualEndTime?: string | null;
 }
 
 export interface TeachingSessionParams extends PaginationParams {

@@ -217,10 +217,64 @@ export const useTeachingSessions = (params?: TeachingSessionParams) => {
   return { ...query, createMutation, updateMutation, deleteMutation };
 };
 
+export const useStartSession = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number | string) => attendanceService.startTeachingSession(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["teaching-sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["grouped-teaching-sessions"] });
+    },
+  });
+};
+
+export const useCompleteSession = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number | string) => attendanceService.completeTeachingSession(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["teaching-sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["grouped-teaching-sessions"] });
+    },
+  });
+};
+
+export const useTeachingSessionsInfinite = (params?: TeachingSessionParams) => {
+  return useInfiniteQuery({
+    queryKey: ["teaching-sessions", "infinite", params],
+    queryFn: ({ pageParam = 1 }) => attendanceService.getTeachingSessions({ ...params, page: pageParam, limit: 10 }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage: any) => {
+      const meta = lastPage?.meta;
+      return meta?.page < meta?.totalPages ? meta.page + 1 : undefined;
+    },
+  });
+};
+
 export const useGroupedTeachingSessions = (params?: TeachingSessionParams) => {
   return useQuery({
     queryKey: ["grouped-teaching-sessions", params],
     queryFn: () => attendanceService.getGroupedTeachingSessions(params),
+  });
+};
+
+export const useGenerateTeachingSessionsDryRun = (params: { classSubjectId?: number; teacherId?: string; startDate?: string; endDate?: string }, enabled: boolean) => {
+  return useQuery({
+    queryKey: ["teaching-sessions-dry-run", params],
+    queryFn: () => attendanceService.generateTeachingSessions({ ...params, startDate: params.startDate!, endDate: params.endDate!, dryRun: true }),
+    enabled: enabled && !!params.startDate && !!params.endDate,
+    staleTime: 5000,
+  });
+};
+
+export const useGenerateTeachingSessions = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { classSubjectId?: number; teacherId?: string; startDate: string; endDate: string; dryRun?: boolean }) => attendanceService.generateTeachingSessions(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["teaching-sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["grouped-teaching-sessions"] });
+    },
   });
 };
 
@@ -324,6 +378,18 @@ export const useValidateSession = () => {
       queryClient.invalidateQueries({ queryKey: ['classroom-command'] });
       queryClient.invalidateQueries({ queryKey: ['today-schedule'] });
       queryClient.invalidateQueries({ queryKey: ['grouped-teaching-sessions'] });
+    },
+  });
+};
+
+export const useAttendanceListInfinite = (params?: AttendanceParams) => {
+  return useInfiniteQuery({
+    queryKey: ["attendance-list", "infinite", params],
+    queryFn: ({ pageParam = 1 }) => attendanceService.getAttendanceList({ ...params, page: pageParam, limit: 10 }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage: any) => {
+      const meta = lastPage?.meta;
+      return meta?.page < meta?.totalPages ? meta.page + 1 : undefined;
     },
   });
 };

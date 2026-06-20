@@ -68,9 +68,11 @@ export const useAppMenu = () => {
   const isKurikulum = hasAnyRole(["kurikulum"]);
   const isKaryawan = hasAnyRole(["karyawan", "staff"]);
   const isGuru = hasAnyRole(["guru", "teacher"]);
-  const isPiket = hasAnyRole(["piket"]);
-  const isStudent = hasAnyRole(["student"]) && !isSuperAdmin;
-  const isParent = hasAnyRole(["parent"]) && !isSuperAdmin;
+  const isPiket = hasAnyRole(["piket", "security"]);
+  // const isStudent = hasAnyRole(["student"]) && !isSuperAdmin;
+  const isStudent = false; // Hidden as per request
+  // const isParent = hasAnyRole(["parent"]) && !isSuperAdmin;
+  const isParent = false; // Hidden as per request
 
   // ─── Derived access flags (ORDER MATTERS — define dependencies first) ───
   // HR features: manage leaves, gate passes, reimbursements, employees
@@ -139,6 +141,7 @@ export const useAppMenu = () => {
           { name: "Rekam Kehadiran", path: "/attendance/records" },
           { name: "Riwayat", path: "/attendance/history" },
           { name: "Metrik", path: "/attendance/metrics", icon: <ChartBarIcon className="size-5" /> },
+          { name: "Laporan", path: "/attendance/reports" },
         ],
       });
     }

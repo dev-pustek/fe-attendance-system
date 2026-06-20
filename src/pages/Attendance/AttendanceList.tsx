@@ -36,6 +36,7 @@ import {
 } from "../../components/atoms/Icons";
 import NumberInput from "../../components/atoms/NumberInput";
 import { format, parseISO } from "date-fns";
+import { API_BASE_URL } from "../../api/client";
 import DatePicker from "../../components/molecules/DatePicker";
 import Button from "../../components/atoms/Button";
 import Modal from "../../components/molecules/Modal";
@@ -196,8 +197,8 @@ const AttendanceList: React.FC = () => {
               videoRef.current.srcObject = stream;
           }
       } catch (err) {
-          console.error("Error accessing camera:", err);
-          showError("Failed to access camera");
+          console.error("Kesalahan mengakses kamera:", err);
+          showError("Gagal mengakses kamera");
           setIsCameraOpen(false);
       }
   };
@@ -263,15 +264,15 @@ const AttendanceList: React.FC = () => {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const handleExportExcel = async (ids?: string[]) => {
-      showError("Export to Excel is not yet implemented on the backend.");
+      showError("Ekspor ke Excel belum diimplementasikan di backend.");
   };
 
   const handleExportPdf = async () => {
-      showError("Export to PDF is not yet implemented on the backend.");
+      showError("Ekspor ke PDF belum diimplementasikan di backend.");
   };
 
   const handleDownloadTemplate = async (withData: boolean) => {
-      showError("Template download is not yet implemented on the backend.");
+      showError("Unduhan template belum diimplementasikan di backend.");
   };
 
   const fetchLocation = React.useCallback(() => {
@@ -290,8 +291,8 @@ const AttendanceList: React.FC = () => {
           }));
         },
         (error) => {
-          console.error("Location fetching error:", error);
-          showError("Location access denied. Coordinates set to 0.");
+          console.error("Kesalahan mengambil lokasi:", error);
+          showError("Akses lokasi ditolak. Koordinat diatur ke 0.");
         }
       );
     }
@@ -323,7 +324,7 @@ const AttendanceList: React.FC = () => {
                 setSelectedClassDetail(null);
             }
         } catch (error) {
-            console.error("Error fetching context details:", error);
+            console.error("Kesalahan mengambil detail konteks:", error);
         } finally {
             setIsDetailLoading(false);
         }
@@ -337,11 +338,15 @@ const AttendanceList: React.FC = () => {
   const searchUsers = React.useCallback(async (term: string) => {
     setIsSearching(true);
     try {
-      const result = await userService.getUsers({ search: term, limit: 20 });
-      const options = result.data.map(u => ({ label: u.name, value: u.public_id }));
+      const result = await userService.getUsers({ search: term, limit: 50 });
+      const options = result.data.map(u => ({ 
+          label: u.name, 
+          value: u.public_id,
+          subLabel: u.email || u.userTypes?.join(', ') || 'User' 
+      }));
       setUserOptions(options);
     } catch (error) {
-      console.error("Failed to search users", error);
+      console.error("Gagal mencari pengguna", error);
     } finally {
       setIsSearching(false);
     }
@@ -395,7 +400,7 @@ const AttendanceList: React.FC = () => {
 
   const handleCreateManual = async () => {
     // Basic validation
-    if (!manualForm.userId) return showError("Please select a user");
+    if (!manualForm.userId) return showError("Harap pilih pengguna");
     // Removed strict photo validation for manual entry
 
     const formData = new FormData();
@@ -406,6 +411,7 @@ const AttendanceList: React.FC = () => {
     formData.append("method", "MANUAL"); // Explicitly setting method
     formData.append("manualCreatorId", "ADMIN"); // Placeholder, backend handles real ID or we get from store
     formData.append("notes", manualForm.notes);
+    formData.append("userId", manualForm.userId);
     if (manualForm.classId) formData.append("classId", String(manualForm.classId));
     if (manualForm.eventId) formData.append("eventId", manualForm.eventId);
     
@@ -422,13 +428,13 @@ const AttendanceList: React.FC = () => {
 
     try {
       await createManualMutation.mutateAsync(formData);
-      showSuccess("Record created/updated manually by admin");
+      showSuccess("Data dibuat/diperbarui secara manual oleh admin");
       setIsCreateModalOpen(false);
       resetManualForm();
       setManualForm(prev => ({ ...prev, photo: null })); // Reset photo specifically
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
-      showError(err?.response?.data?.message || "Failed to create manual record");
+      showError(err?.response?.data?.message || "Gagal membuat data manual");
     }
   };
 
@@ -455,23 +461,23 @@ const AttendanceList: React.FC = () => {
             onSuccess: () => {
                 setIsEditModalOpen(false);
                 setSelectedRecord(null);
-                showSuccess("Attendance record updated successfully");
+                showSuccess("Data kehadiran berhasil diperbarui");
             },
             onError: (error: unknown) => {
                 const err = error as { response?: { data?: { message?: string } } };
-                showError(err.response?.data?.message || "Failed to update record");
+                showError(err.response?.data?.message || "Gagal memperbarui data");
             }
         });
     };
 
     const handleQuickCheckOut = async (record: AttendanceRecord) => {
-        console.log("Quick Checkout Clicked for:", record.public_id);
+        console.log("Check-out Cepat Diklik untuk:", record.public_id);
         const isConfirmed = await confirm({
-            title: "Quick Check-out",
+            title: "Check-out Cepat",
             message: `Are you sure you want to check out ${record.user?.name || "this user"}?`,
-            confirmText: "Check Out",
+            confirmText: "Check-out",
             variant: "warning",
-            cancelText: "Cancel"
+            cancelText: "Batal"
         });
 
         if (isConfirmed) {
@@ -484,18 +490,18 @@ const AttendanceList: React.FC = () => {
                 data: payload
             }, {
                 onSuccess: () => {
-                    showSuccess("User checked out successfully");
+                    showSuccess("Pengguna berhasil melakukan check-out");
                 },
                 onError: (error: unknown) => {
                     const err = error as { response?: { data?: { message?: string } } };
-                    showError(err.response?.data?.message || "Failed to check out user");
+                    showError(err.response?.data?.message || "Gagal melakukan check-out pengguna");
                 }
             });
         }
     };
 
   const handleQrScan = async () => {
-    if (!qrForm.qrData) return showError("Please enter QR data");
+    if (!qrForm.qrData) return showError("Harap masukkan data QR");
     
     // Automated QR Scan: POST /api/v1/attendance/qr-scan
     // Context-Aware: Decides /check-in or /check-out based on status
@@ -510,31 +516,31 @@ const AttendanceList: React.FC = () => {
 
     try {
       await qrScanMutation.mutateAsync(payload);
-      showSuccess("Attendance processed via QR scan (Automated)");
+      showSuccess("Kehadiran diproses melalui pindai QR (Otomatis)");
       setIsCreateModalOpen(false);
       resetQrForm();
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
-      showError(err?.response?.data?.message || "Failed to process QR scan");
+      showError(err?.response?.data?.message || "Gagal memproses pindai QR");
     }
   };
 
 
   const handleDelete = async (id: number | string) => {
     const shouldDelete = await confirm({
-      title: "Delete Attendance Record",
-      message: "Are you sure you want to delete this attendance record? This action cannot be undone.",
+      title: "Hapus Data Kehadiran",
+      message: "Apakah Anda yakin ingin menghapus data kehadiran ini? Tindakan ini tidak dapat dibatalkan.",
       variant: "delete",
-      confirmText: "Delete Record"
+      confirmText: "Hapus Data"
     });
 
     if (shouldDelete) {
       try {
         await deleteMutation.mutateAsync(id);
-        showSuccess("Record deleted successfully");
+        showSuccess("Data berhasil dihapus");
       } catch (error) {
-        console.error("Delete failed", error);
-        showError("Failed to delete record");
+        console.error("Gagal menghapus", error);
+        showError("Gagal menghapus data");
       }
     }
   };
@@ -543,10 +549,10 @@ const AttendanceList: React.FC = () => {
     if (selectedIds.size === 0) return;
 
     const shouldDelete = await confirm({
-      title: "Delete Selected Records",
+      title: "Hapus Data Terpilih",
       message: `Are you sure you want to delete ${selectedIds.size} attendance records? This action cannot be undone.`,
       variant: "delete",
-      confirmText: `Delete ${selectedIds.size} Records`
+      confirmText: `Hapus ${selectedIds.size} Data`
     });
 
     if (shouldDelete) {
@@ -556,8 +562,8 @@ const AttendanceList: React.FC = () => {
         showSuccess(`Successfully deleted ${selectedIds.size} records`);
         setSelectedIds(new Set());
       } catch (error) {
-        console.error("Bulk delete failed", error);
-        showError("Failed to delete some records");
+        console.error("Hapus massal gagal", error);
+        showError("Gagal menghapus beberapa data");
       }
     }
   };
@@ -566,10 +572,10 @@ const AttendanceList: React.FC = () => {
     if (selectedIds.size === 0) return;
 
     const shouldUpdate = await confirm({
-      title: "Update Status for Selected Records",
+      title: "Perbarui Status untuk Data Terpilih",
       message: `Are you sure you want to set the status to "${statusLabel}" for ${selectedIds.size} records?`,
       variant: "warning",
-      confirmText: "Update Status"
+      confirmText: "Perbarui Status"
     });
 
     if (shouldUpdate) {
@@ -584,8 +590,8 @@ const AttendanceList: React.FC = () => {
         showSuccess(`Successfully updated ${selectedIds.size} records`);
         setSelectedIds(new Set());
       } catch (error) {
-        console.error("Bulk update status failed", error);
-        showError("Failed to update status for some records");
+        console.error("Perbarui status massal gagal", error);
+        showError("Gagal memperbarui status untuk beberapa data");
       }
     }
   };
@@ -622,21 +628,21 @@ const AttendanceList: React.FC = () => {
   };
 
   const statusOptions = [
-    { label: "All Statuses", value: "" },
+    { label: "Semua Status", value: "" },
     ...apiStatuses.map(s => ({ label: s.name, value: String(s.id) }))
   ];
 
   const getAttendanceType = (record: AttendanceRecord) => {
-    if (record.eventId) return { label: "Event", context: record.event?.name || "Specific Event" };
-    if (record.classId) return { label: "Class", context: record.class?.name || "Regular Class" };
-    if (record.method === "SHIFT") return { label: "Shift", context: "Assigned Shift" };
-    return { label: "General", context: "Gate Entry" };
+    if (record.eventId) return { label: "Acara", context: record.event?.name || "Acara Spesifik" };
+    if (record.classId) return { label: "Kelas", context: record.class?.name || "Kelas Reguler" };
+    if (record.method === "SHIFT") return { label: "Shift", context: "Shift yang Ditugaskan" };
+    return { label: "General", context: "Gerbang Masuk" };
   };
 
   return (
     <>
-      <PageMeta title="Attendance List | Attendance" description="View attendance records" />
-      <PageBreadcrumb pageTitle="Attendance Records" />
+      <PageMeta title="Daftar Kehadiran | Kehadiran" description="Lihat data kehadiran" />
+      <PageBreadcrumb pageTitle="Data Kehadiran" />
 
       <div className="space-y-6">
         {/* Header Section */}
@@ -646,8 +652,8 @@ const AttendanceList: React.FC = () => {
               <CalenderIcon className="size-5" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">Attendance Records</h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Monitor daily attendance logs.</p>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">Data Kehadiran</h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Pantau log kehadiran harian.</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -677,7 +683,7 @@ const AttendanceList: React.FC = () => {
                   }}
                   className="hidden sm:flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-brand-500/25 transition-all hover:bg-brand-600 active:scale-[.98]"
                 >
-                  <PlusIcon className="fill-white size-4" /> Add Record
+                  <PlusIcon className="fill-white size-4" /> Tambah Data
                 </button>
               ) : null;
             })()}
@@ -700,7 +706,7 @@ const AttendanceList: React.FC = () => {
                             resetQrForm();
                             setIsCreateModalOpen(true);
                         } : undefined}
-                        addAriaLabel="Add Record"
+                        addAriaLabel="Tambah Data"
                         dataActionsProps={{
                             isExporting: isExporting || isDownloadingTemplate,
                             isImporting: isImporting,
@@ -726,11 +732,11 @@ const AttendanceList: React.FC = () => {
                     <div className="flex items-center gap-2 mb-1">
                         <FilterIcon className="size-5 text-brand-500" />
                         <h3 className="text-sm font-bold uppercase tracking-wider text-gray-800 dark:text-gray-200">
-                            Search & Filter Attendance
+                            Cari & Filter Kehadiran
                         </h3>
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Use the criteria below to filter attendance logs based on academic year, class, and date.
+                        Gunakan kriteria di bawah untuk memfilter log kehadiran berdasarkan tahun ajaran, kelas, dan tanggal.
                     </p>
                 </div>
                 <div className="shrink-0 ml-4">
@@ -749,12 +755,12 @@ const AttendanceList: React.FC = () => {
                         
                         {/* Segmented Control */}
                         <div className="flex flex-col gap-3 mb-5">
-                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">Filter Context</label>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">Konteks Filter</label>
                             <div className="inline-flex p-1 bg-gray-100 dark:bg-white/5 rounded-xl w-fit">
                                 {[
-                                    { id: 'academic', label: 'Academic & Class', icon: <GridIcon className="size-3.5" /> },
-                                    { id: 'event', label: 'Attendance Events', icon: <PlusIcon className="size-3.5" /> },
-                                    { id: 'general', label: 'Global Search', icon: <FilterIcon className="size-3.5" /> },
+                                    { id: 'academic', label: 'Tahun Ajaran & Kelas', icon: <GridIcon className="size-3.5" /> },
+                                    { id: 'event', label: 'Kegiatan & Acara', icon: <PlusIcon className="size-3.5" /> },
+                                    { id: 'general', label: 'Pencarian Global', icon: <FilterIcon className="size-3.5" /> },
                                 ].map((tab) => (
                                     <button
                                         key={tab.id}
@@ -794,7 +800,7 @@ const AttendanceList: React.FC = () => {
                                 {filterTab === 'academic' && (
                                     <div className="grid grid-cols-1 gap-5 mb-5 sm:grid-cols-2 lg:grid-cols-4 animate-in fade-in slide-in-from-left-2 duration-300">
                                         <div className="space-y-1.5">
-                                            <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Academic Year</Label>
+                                            <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Tahun Ajaran</Label>
                                             <CustomSelect
                                                 value={academicYearId === "all" || academicYearId === "" ? "" : Number(academicYearId)}
                                                 onChange={(val) => { 
@@ -809,13 +815,13 @@ const AttendanceList: React.FC = () => {
                                                     setClassId("all");
                                                     setPage(1); 
                                                 }}
-                                                placeholder="All Years"
+                                                placeholder="Semua Tahun"
                                                 options={academicYears.map((ay: any) => ({ label: ay.code || ay.name, value: Number(ay.id) }))}
                                                 className="w-full [&>button]:w-full [&>button]:h-11 [&>button]:text-sm [&>button]:rounded-xl"
                                             />
                                         </div>
                                         <div className="space-y-1.5">
-                                            <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Major</Label>
+                                            <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Jurusan</Label>
                                             <CustomSelect
                                                 value={majorId === "all" || majorId === "" ? "" : Number(majorId)}
                                                 onChange={(val) => { 
@@ -828,18 +834,18 @@ const AttendanceList: React.FC = () => {
                                                     setClassId("all");
                                                     setPage(1); 
                                                 }}
-                                                placeholder="All Majors"
+                                                placeholder="Semua Jurusan"
                                                 options={majors.map((m: any) => ({ label: m.name, value: Number(m.id) }))}
                                                 className="w-full [&>button]:w-full [&>button]:h-11 [&>button]:text-sm [&>button]:rounded-xl"
                                             />
                                         </div>
                                         <div className="space-y-1.5">
-                                            <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Class</Label>
+                                            <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Kelas</Label>
                                             <CustomSelect
                                                 value={classId === "all" || classId === "" ? "" : Number(classId)}
                                                 onChange={(val) => { setClassId(val ? String(val) : "all"); setPage(1); }}
                                                 onClear={() => { setClassId("all"); setPage(1); }}
-                                                placeholder="All Classes"
+                                                placeholder="Semua Kelas"
                                                 options={classes.map((c: any) => ({ label: c.name, value: Number(c.id) }))}
                                                 className="w-full [&>button]:w-full [&>button]:h-11 [&>button]:text-sm [&>button]:rounded-xl"
                                             />
@@ -850,10 +856,10 @@ const AttendanceList: React.FC = () => {
                                                 value={attendanceType === "all" || attendanceType === "" ? "" : attendanceType}
                                                 onChange={(val) => { setAttendanceType(val ? String(val) : "all"); setPage(1); }}
                                                 onClear={() => { setAttendanceType("all"); setPage(1); }}
-                                                placeholder="Daily & Class"
+                                                placeholder="Harian & Kelas"
                                                 options={[
-                                                    { label: "Daily Attendance", value: "DAILY" },
-                                                    { label: "Class Attendance", value: "CLASS" },
+                                                    { label: "Kehadiran Harian", value: "DAILY" },
+                                                    { label: "Kehadiran Kelas", value: "CLASS" },
                                                 ]}
                                                 className="w-full [&>button]:w-full [&>button]:h-11 [&>button]:text-sm [&>button]:rounded-xl"
                                             />
@@ -864,12 +870,12 @@ const AttendanceList: React.FC = () => {
                                 {filterTab === 'event' && (
                                     <div className="grid grid-cols-1 gap-5 mb-5 sm:grid-cols-2 lg:grid-cols-4 animate-in fade-in slide-in-from-left-2 duration-300">
                                         <div className="space-y-1.5 lg:col-span-2">
-                                            <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Attendance Event</Label>
+                                            <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Kegiatan / Acara</Label>
                                             <CustomSelect
                                                 value={eventId === "all" || eventId === "" ? "" : Number(eventId)}
                                                 onChange={(val) => { setEventId(val ? String(val) : "all"); setPage(1); }}
                                                 onClear={() => { setEventId("all"); setPage(1); }}
-                                                placeholder="Select Event"
+                                                placeholder="Pilih Acara"
                                                 options={events.map((e: any) => ({ label: e.name, value: Number(e.id) }))}
                                                 className="w-full [&>button]:w-full [&>button]:h-11 [&>button]:text-sm [&>button]:rounded-xl"
                                             />
@@ -892,31 +898,31 @@ const AttendanceList: React.FC = () => {
                                     value={statusId === "all" ? "" : statusId}
                                     onChange={(val) => { setStatusId(val ? String(val) : "all"); setPage(1); }}
                                     onClear={() => { setStatusId("all"); setPage(1); }}
-                                    placeholder="All Statuses"
+                                    placeholder="Semua Status"
                                     options={apiStatuses.map((s: any) => ({ label: s.name, value: String(s.id) }))}
                                     className="w-full [&>button]:w-full [&>button]:h-11 [&>button]:text-sm [&>button]:rounded-xl"
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Start Date</Label>
+                                <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Tanggal Mulai</Label>
                                 <DatePicker
                                     value={startDate}
                                     onChange={(date) => { setStartDate(date); setPage(1); }}
-                                    placeholder="Start date"
+                                    placeholder="Tanggal mulai"
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">End Date</Label>
+                                <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Tanggal Akhir</Label>
                                 <DatePicker
                                     value={endDate}
                                     onChange={(date) => { setEndDate(date); setPage(1); }}
-                                    placeholder="End date"
+                                    placeholder="Tanggal akhir"
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Late Minutes Threshold</Label>
+                                <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Batas Menit Terlambat</Label>
                                 <NumberInput
-                                    placeholder="Minutes..."
+                                    placeholder="Menit..."
                                     value={lateMinutes}
                                     onChange={(val) => { setLateMinutes(val); setPage(1); }}
                                 />
@@ -925,7 +931,7 @@ const AttendanceList: React.FC = () => {
 
                         <div className="grid grid-cols-1 gap-5 items-end md:grid-cols-3">
                             <div className="md:col-span-2 space-y-1.5">
-                                <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Student Name / ID</Label>
+                                <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Nama Siswa / NIS</Label>
                                 <div className="relative">
                                     <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
                                     <input
@@ -938,7 +944,7 @@ const AttendanceList: React.FC = () => {
                                                 setPage(1);
                                             }
                                         }}
-                                        placeholder="Search by Student Name or ID..."
+                                        placeholder="Cari berdasarkan Nama Siswa atau NIS..."
                                         className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-4 text-sm text-gray-900 transition-colors focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-white/[0.08] dark:bg-white/[0.02] dark:text-white dark:focus:border-brand-400 dark:focus:ring-brand-400"
                                     />
                                 </div>
@@ -987,7 +993,7 @@ const AttendanceList: React.FC = () => {
               <div className="size-8 rounded-full bg-brand-500 text-white flex items-center justify-center text-sm font-bold shadow-sm">
                 {selectedIds.size}
               </div>
-              <p className="text-sm font-semibold text-brand-700 dark:text-brand-400">Records Selected</p>
+              <p className="text-sm font-semibold text-brand-700 dark:text-brand-400">Data Terpilih</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <div className="relative group/actions">
@@ -996,11 +1002,11 @@ const AttendanceList: React.FC = () => {
                   </Button>
                   <div className="absolute right-0 top-full mt-2 w-48 py-2 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-white/5 opacity-0 invisible group-hover/actions:opacity-100 group-hover/actions:visible transition-all z-20">
                       {[
-                        { label: "Present (Hadir)", value: "present" },
-                        { label: "Sick (Sakit)", value: "sick" },
-                        { label: "Excused (Izin)", value: "excused" },
-                        { label: "Absent (Alpha)", value: "absent" },
-                        { label: "Late (Terlambat)", value: "late" },
+                        { label: "Hadir", value: "present" },
+                        { label: "Sakit", value: "sick" },
+                        { label: "Izin", value: "excused" },
+                        { label: "Tidak Hadir / Alpha", value: "absent" },
+                        { label: "Terlambat", value: "late" },
                       ].map(status => (
                         <button 
                           key={status.value}
@@ -1028,7 +1034,7 @@ const AttendanceList: React.FC = () => {
             {isLoading ? (
               <div className="flex justify-center py-12"><div className="size-6 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" /></div>
             ) : records.length === 0 ? (
-              <div className="py-12 text-center text-gray-400 text-sm">No records found</div>
+              <div className="py-12 text-center text-gray-400 text-sm">Tidak ada data yang ditemukan</div>
             ) : (
               <div className="grid grid-cols-1 gap-3">
                 {records.map((record) => (
@@ -1078,10 +1084,10 @@ const AttendanceList: React.FC = () => {
                     />
                   </div>
                 </TableCell>
-                <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">User & Identity</TableCell>
-                <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Attendance Details</TableCell>
-                <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status & Source</TableCell>
-                <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">Actions</TableCell>
+                <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Info Pengguna</TableCell>
+                <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Detail Kehadiran</TableCell>
+                <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status & Sumber</TableCell>
+                <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">Aksi</TableCell>
               </TableRow>
             </TableHeader>
             <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
@@ -1123,7 +1129,7 @@ const AttendanceList: React.FC = () => {
                            )}
                         </div>
                         <div className="flex flex-col min-w-0">
-                          <span className="font-bold text-gray-900 dark:text-white text-sm truncate">{record.user?.name || "Unknown User"}</span>
+                          <span className="font-bold text-gray-900 dark:text-white text-sm truncate">{record.user?.name || "Pengguna Tidak Diketahui"}</span>
                           <div className="flex items-center gap-1.5 min-w-0">
                             {(() => {
                                 const user = record.user as any;
@@ -1179,7 +1185,7 @@ const AttendanceList: React.FC = () => {
                     <TableCell className="px-5 py-4 whitespace-nowrap w-fit">
                         <div className="flex flex-col gap-1.5">
                             <Badge color={getStatusColor(record.statusLabel || undefined)}>
-                                {record.status?.name || record.statusLabel || "Unknown"}
+                                {record.status?.name || record.statusLabel || "Tidak Diketahui"}
                             </Badge>
                             {record.clockIn && !record.clockOut && (
                                 <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-brand-50 border border-brand-100 dark:bg-brand-500/10 dark:border-brand-500/20 w-fit">
@@ -1187,7 +1193,7 @@ const AttendanceList: React.FC = () => {
                                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
                                       <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-500"></span>
                                     </span>
-                                    <span className="text-[10px] font-bold text-brand-600 dark:text-brand-400 uppercase tracking-wider">Active</span>
+                                    <span className="text-[10px] font-bold text-brand-600 dark:text-brand-400 uppercase tracking-wider">Aktif</span>
                                 </div>
                             )}
                             <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
@@ -1267,12 +1273,12 @@ const AttendanceList: React.FC = () => {
       <Modal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        className="max-w-xl"
-        title="Create Attendance"
+        className="max-w-xl sm:m-4"
+        title="Buat Kehadiran"
         description="Add a new attendance record manually or via QR scan data."
         footer={
           <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>Batal</Button>
             {createMode === "manual" ? (
                 <Button 
                     variant="primary" 
@@ -1326,9 +1332,9 @@ const AttendanceList: React.FC = () => {
             {createMode === "manual" ? (
               <div className="space-y-4">
                 <SearchableAsyncSelect
-                    label="User"
+                    label="Pengguna"
                     labelClassName="text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    placeholder="Search and select student..."
+                    placeholder="Cari dan pilih pengguna..."
                     onSearch={searchUsers}
                     options={userOptions}
                     isLoading={isSearching}
@@ -1338,29 +1344,29 @@ const AttendanceList: React.FC = () => {
                 
                 <div className="grid grid-cols-2 gap-4">
                     <DatePicker
-                        label="Date"
+                        label="Tanggal"
                         labelClassName="text-xs font-medium text-gray-500 uppercase tracking-wider"
                         value={manualForm.date}
                         onChange={(val) => setManualForm(prev => ({ ...prev, date: val }))}
                     />
                     <CustomSelect
-                        label="Status Label"
+                        label="Label Status"
                         labelClassName="text-xs font-medium text-gray-500 uppercase tracking-wider"
                         value={manualForm.statusLabel}
                         onChange={(val) => setManualForm(prev => ({ ...prev, statusLabel: String(val) as "present" | "late" | "absent" | "sick" | "excused" }))}
                         options={[
-                            { label: "Present (Hadir)", value: "present" },
-                            { label: "Sick (Sakit)", value: "sick" },
-                            { label: "Excused (Izin)", value: "excused" },
-                            { label: "Absent (Alpha)", value: "absent" },
-                            { label: "Late (Terlambat)", value: "late" },
+                            { label: "Hadir", value: "present" },
+                            { label: "Sakit", value: "sick" },
+                            { label: "Izin", value: "excused" },
+                            { label: "Tidak Hadir / Alpha", value: "absent" },
+                            { label: "Terlambat", value: "late" },
                         ]}
                     />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Clock In</label>
+                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Jam Masuk</label>
                         <input 
                             type="time" 
                             step="1"
@@ -1370,7 +1376,7 @@ const AttendanceList: React.FC = () => {
                         />
                     </div>
                     <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Clock Out</label>
+                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Jam Keluar</label>
                         <input 
                             type="time" 
                             step="1"
@@ -1382,28 +1388,30 @@ const AttendanceList: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                     <SearchableAsyncSelect
-                        label="Target Class (Optional)"
+                        label="Pilih Kelas (Opsional)"
                         labelClassName="text-xs font-medium text-gray-500 uppercase tracking-wider"
                         value={manualForm.classId || ""}
                         onChange={(val) => setManualForm(prev => ({ ...prev, classId: String(val) }))}
                         options={classes.map(c => ({ label: c.name, value: String(c.id), subLabel: c.code }))}
-                        onSearch={() => {}} // Classes are pre-fetched, no async search needed
-                        placeholder="Select class..."
+                        placeholder="Pilih kelas..."
+                        onSearch={() => {}}
+                        onClear={() => setManualForm(prev => ({ ...prev, classId: "" }))}
                     />
                     <SearchableAsyncSelect
-                        label="Associated Event (Optional)"
+                        label="Acara Terkait (Opsional)"
                         labelClassName="text-xs font-medium text-gray-500 uppercase tracking-wider"
                         value={manualForm.eventId || ""}
                         onChange={(val) => setManualForm(prev => ({ ...prev, eventId: String(val) }))}
                         options={eventOptions}
+                        placeholder="Pilih acara..."
                         onSearch={setEventSearch}
-                        placeholder="Search event name..."
+                        onClear={() => setManualForm(prev => ({ ...prev, eventId: "" }))}
                     />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                     <div className="relative">
                         <NumberInput
-                            label="Latitude"
+                            label="Garis Lintang"
                             labelClassName="text-xs font-medium text-gray-500 uppercase tracking-wider"
                             value={manualForm.latitude}
                             onChange={(val) => setManualForm(prev => ({ ...prev, latitude: Number(val) }))}
@@ -1427,7 +1435,7 @@ const AttendanceList: React.FC = () => {
                     </div>
                     <div className="relative">
                         <NumberInput
-                            label="Longitude"
+                            label="Garis Bujur"
                             labelClassName="text-xs font-medium text-gray-500 uppercase tracking-wider"
                             value={manualForm.longitude}
                             onChange={(val) => setManualForm(prev => ({ ...prev, longitude: Number(val) }))}
@@ -1452,11 +1460,11 @@ const AttendanceList: React.FC = () => {
                 </div>
 
                 <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</label>
+                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Catatan</label>
                     <textarea 
                         value={manualForm.notes}
                         onChange={(e) => setManualForm(prev => ({ ...prev, notes: e.target.value }))}
-                        placeholder="Add some context..."
+                        placeholder="Tambahkan keterangan..."
                         rows={3}
                         className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm transition-all focus:border-brand-500 focus:outline-none dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-white resize-none"
                     />
@@ -1467,25 +1475,26 @@ const AttendanceList: React.FC = () => {
                 {!isQrActivated ? (
                     <div className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
                          <div className="grid grid-cols-2 gap-4">
-                            <CustomSelect
-                                label="Target Class"
+                            <SearchableAsyncSelect
+                                label="Kelas Tujuan"
                                 labelClassName="text-xs font-medium text-gray-500 uppercase tracking-wider"
                                 value={qrForm.classId}
                                 onChange={(val) => setQrForm(prev => ({ ...prev, classId: val, eventId: "" }))}
-                                options={classes.map(c => ({ label: c.name, value: c.id }))}
-                                placeholder="Select Class"
+                                options={classes.map(c => ({ label: c.name, value: c.id, subLabel: c.code }))}
+                                placeholder="Pilih Kelas"
                                 disabled={!!qrForm.eventId}
+                                onSearch={() => {}}
                                 onClear={() => setQrForm(prev => ({ ...prev, classId: "" }))}
                             />
                             <SearchableAsyncSelect
-                                label="Associated Event"
+                                label="Acara Terkait"
                                 labelClassName="text-xs font-medium text-gray-500 uppercase tracking-wider"
                                 value={qrForm.eventId || ""}
                                 onChange={(val) => setQrForm(prev => ({ ...prev, eventId: String(val), classId: "" }))}
                                 options={eventOptions}
-                                onSearch={setEventSearch}
-                                placeholder="Search Event..."
+                                placeholder="Pilih acara..."
                                 disabled={!!qrForm.classId}
+                                onSearch={setEventSearch}
                                 onClear={() => setQrForm(prev => ({ ...prev, eventId: "" }))}
                             />
                         </div>
@@ -1493,7 +1502,7 @@ const AttendanceList: React.FC = () => {
                         <div className="grid grid-cols-2 gap-4">
                             <div className="relative">
                                 <NumberInput
-                                    label="Latitude"
+                                    label="Garis Lintang"
                                     labelClassName="text-xs font-medium text-gray-500 uppercase tracking-wider"
                                     value={qrForm.latitude}
                                     onChange={(val) => setQrForm(prev => ({ ...prev, latitude: Number(val) }))}
@@ -1517,7 +1526,7 @@ const AttendanceList: React.FC = () => {
                             </div>
                             <div className="relative">
                                 <NumberInput
-                                    label="Longitude"
+                                    label="Garis Bujur"
                                     labelClassName="text-xs font-medium text-gray-500 uppercase tracking-wider"
                                     value={qrForm.longitude}
                                     onChange={(val) => setQrForm(prev => ({ ...prev, longitude: Number(val) }))}
@@ -1546,14 +1555,14 @@ const AttendanceList: React.FC = () => {
                             <textarea 
                                 value={qrForm.notes}
                                 onChange={(e) => setQrForm(prev => ({ ...prev, notes: e.target.value }))}
-                                placeholder="Add context for this scan..."
+                                placeholder="Tambahkan keterangan untuk pindaian ini..."
                                 rows={2}
                                 className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm transition-all focus:border-brand-500 focus:outline-none dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-white resize-none"
                             />
                         </div>
 
                         <div className="space-y-3">
-                            <label className="text-xs font-medium text-gray-500 uppercase tracking-wider block">Select Scanning Mode</label>
+                            <label className="text-xs font-medium text-gray-500 uppercase tracking-wider block">Pilih Mode Pemindaian</label>
                             <div className="grid grid-cols-2 gap-4">
                                 <button
                                     onClick={() => setQrMode("scan")}
@@ -1568,7 +1577,7 @@ const AttendanceList: React.FC = () => {
                                     }`}>
                                         <VideoIcon className="size-6" />
                                     </div>
-                                    <h3 className={`font-bold transition-colors ${qrMode === "scan" ? "text-brand-600 dark:text-brand-400" : "text-gray-900 dark:text-gray-200"}`}>Scan User QR</h3>
+                                    <h3 className={`font-bold transition-colors ${qrMode === "scan" ? "text-brand-600 dark:text-brand-400" : "text-gray-900 dark:text-gray-200"}`}>Pindai QR Pengguna</h3>
                                     <p className="text-xs text-gray-500 mt-1">Record attendance by scanning student/employee QR cards.</p>
                                     {qrMode === "scan" && (
                                         <div className="absolute top-4 right-4 animate-in zoom-in">
@@ -1592,7 +1601,7 @@ const AttendanceList: React.FC = () => {
                                     }`}>
                                         <GridIcon className="size-6" />
                                     </div>
-                                    <h3 className={`font-bold transition-colors ${qrMode === "show" ? "text-brand-600 dark:text-brand-400" : "text-gray-900 dark:text-gray-200"}`}>Show Our QR</h3>
+                                    <h3 className={`font-bold transition-colors ${qrMode === "show" ? "text-brand-600 dark:text-brand-400" : "text-gray-900 dark:text-gray-200"}`}>Tampilkan QR Kami</h3>
                                     <p className="text-xs text-gray-500 mt-1">Display a QR for students to scan with their mobile application.</p>
                                     {qrMode === "show" && (
                                         <div className="absolute top-4 right-4 animate-in zoom-in">
@@ -1610,7 +1619,7 @@ const AttendanceList: React.FC = () => {
                             className="w-full h-14 text-lg font-bold rounded-2xl shadow-xl"
                             onClick={() => setIsQrActivated(true)}
                         >
-                            {qrMode === "scan" ? "Activate Scanner" : "Generate QR Point"}
+                            {qrMode === "scan" ? "Aktifkan Pemindai" : "Buat Titik QR"}
                         </Button>
                     </div>
                 ) : (
@@ -1622,7 +1631,7 @@ const AttendanceList: React.FC = () => {
                                 />
                                 {qrForm.qrData && (
                                     <div className="p-4 bg-success-50 dark:bg-success-500/10 border border-success-100 dark:border-success-500/20 rounded-xl animate-in fade-in zoom-in-95">
-                                        <p className="text-[10px] font-bold text-success-600 uppercase mb-1">Scanned Identity</p>
+                                        <p className="text-[10px] font-bold text-success-600 uppercase mb-1">Identitas Terpindai</p>
                                         <p className="text-xs font-mono text-gray-600 dark:text-gray-300 break-all">{qrForm.qrData}</p>
                                     </div>
                                 )}
@@ -1658,7 +1667,7 @@ const AttendanceList: React.FC = () => {
                                         <FilterIcon className="size-5" />
                                     </div>
                                     <div>
-                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Active Context</p>
+                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Konteks Aktif</p>
                                         {isDetailLoading ? (
                                             <div className="flex items-center gap-2 mt-1">
                                                 <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 animate-pulse rounded" />
@@ -1727,12 +1736,12 @@ const AttendanceList: React.FC = () => {
       <Modal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
-        className="max-w-5xl"
-        title="Update Record"
+        className="max-w-5xl sm:m-4"
+        title="Perbarui Data"
         description={`Modifying record for ${selectedRecord?.user?.name || "Student"}`}
         footer={
             <div className="flex justify-end gap-3">
-                <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>Cancel</Button>
+                <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>Batal</Button>
                 <Button variant="primary" onClick={handleUpdate} isLoading={updateMutation.isPending}>
                     Save Changes
                 </Button>
@@ -1745,28 +1754,29 @@ const AttendanceList: React.FC = () => {
                 {/* User & Date (Read-only/Disabled context) */}
                 <div className="grid grid-cols-2 gap-4">
                     <SearchableAsyncSelect
-                         label="User"
+                         label="Pengguna"
                          labelClassName="text-xs font-medium text-gray-500 uppercase tracking-wider"
                          value={manualForm.userId}
                          onChange={() => {}} // Disabled in Edit
                          options={userOptions}
                          onSearch={searchUsers}
-                         placeholder={selectedRecord?.user?.name || "Select user..."}
+                         placeholder={selectedRecord?.user?.name || "Pilih pengguna..."}
                          isLoading={isSearching}
                          disabled
                     />
                      <DatePicker
-                        label="Date"
+                        label="Tanggal"
                         labelClassName="text-xs font-medium text-gray-500 uppercase tracking-wider"
                         value={manualForm.date}
                         onChange={(val) => setManualForm(prev => ({ ...prev, date: val }))}
+                        disabled
                     />
                 </div>
 
                 {/* Time & Status */}
                 <div className="grid grid-cols-2 gap-4">
                      <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Clock In</label>
+                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Jam Masuk</label>
                         <input 
                             type="time" 
                             step="1"
@@ -1776,7 +1786,7 @@ const AttendanceList: React.FC = () => {
                         />
                     </div>
                     <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Clock Out</label>
+                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Jam Keluar</label>
                          <input 
                             type="time" 
                             step="1"
@@ -1787,39 +1797,44 @@ const AttendanceList: React.FC = () => {
                     </div>
                 </div>
 
-                 <CustomSelect
-                    label="Status Label"
+                 <SearchableAsyncSelect
+                    label="Label Status"
                     labelClassName="text-xs font-medium text-gray-500 uppercase tracking-wider"
                     value={manualForm.statusLabel}
                     onChange={(val) => setManualForm(prev => ({ ...prev, statusLabel: String(val) as "present" | "late" | "absent" | "sick" | "excused" }))}
                     options={[
-                        { label: "Present (Hadir)", value: "present" },
-                        { label: "Sick (Sakit)", value: "sick" },
-                        { label: "Excused (Izin)", value: "excused" },
-                        { label: "Absent (Alpha)", value: "absent" },
-                        { label: "Late (Terlambat)", value: "late" },
+                        { label: "Hadir", value: "present" },
+                        { label: "Sakit", value: "sick" },
+                        { label: "Izin", value: "excused" },
+                        { label: "Tidak Hadir / Alpha", value: "absent" },
+                        { label: "Terlambat", value: "late" },
                     ]}
+                    onSearch={() => {}}
                 />
 
                 {/* Context: Class / Event */}
                 <div className="grid grid-cols-2 gap-4">
                     <SearchableAsyncSelect
-                        label="Target Class"
+                        label="Kelas Tujuan"
                         labelClassName="text-xs font-medium text-gray-500 uppercase tracking-wider"
                         value={manualForm.classId || ""}
                         onChange={(val) => setManualForm(prev => ({ ...prev, classId: String(val) }))}
                         options={classes.map(c => ({ label: c.name, value: String(c.id), subLabel: c.code }))}
+                        placeholder="Pilih kelas..."
                         onSearch={() => {}}
-                        placeholder="Select class..."
+                        onClear={() => setManualForm(prev => ({ ...prev, classId: "" }))}
+                        disabled
                     />
                     <SearchableAsyncSelect
-                        label="Associated Event"
+                        label="Acara Terkait"
                         labelClassName="text-xs font-medium text-gray-500 uppercase tracking-wider"
                         value={manualForm.eventId || ""}
                         onChange={(val) => setManualForm(prev => ({ ...prev, eventId: String(val) }))}
                         options={eventOptions}
+                        placeholder="Pilih acara..."
                         onSearch={setEventSearch}
-                        placeholder="Search event name..."
+                        onClear={() => setManualForm(prev => ({ ...prev, eventId: "" }))}
+                        disabled
                     />
                 </div>
 
@@ -1827,7 +1842,7 @@ const AttendanceList: React.FC = () => {
                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
-                             <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">LATITUDE</label>
+                             <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">GARIS LINTANG</label>
                              <button 
                                 onClick={() => setIsLatUnlocked(!isLatUnlocked)} 
                                 className={`text-[10px] font-bold uppercase tracking-wider transition-colors ${isLatUnlocked ? "text-success-600 hover:text-success-700" : "text-gray-400 hover:text-gray-500"}`}
@@ -1835,12 +1850,12 @@ const AttendanceList: React.FC = () => {
                             >
                                 {isLatUnlocked ? (
                                     <div className="flex items-center gap-1.5">
-                                        <span>Unlocked</span>
+                                        <span>Terbuka</span>
                                         <LockIcon className="size-3" />
                                     </div>
                                 ) : (
                                     <div className="flex items-center gap-1.5">
-                                        <span>Locked</span>
+                                        <span>Terkunci</span>
                                         <LockIcon className="size-3" />
                                     </div>
                                 )}
@@ -1857,7 +1872,7 @@ const AttendanceList: React.FC = () => {
                     </div>
                      <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
-                             <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">LONGITUDE</label>
+                             <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">GARIS BUJUR</label>
                               <button 
                                 onClick={() => setIsLngUnlocked(!isLngUnlocked)} 
                                 className={`text-[10px] font-bold uppercase tracking-wider transition-colors ${isLngUnlocked ? "text-success-600 hover:text-success-700" : "text-gray-400 hover:text-gray-500"}`}
@@ -1865,12 +1880,12 @@ const AttendanceList: React.FC = () => {
                             >
                                 {isLngUnlocked ? (
                                     <div className="flex items-center gap-1.5">
-                                        <span>Unlocked</span>
+                                        <span>Terbuka</span>
                                         <LockIcon className="size-3" />
                                     </div>
                                 ) : (
                                     <div className="flex items-center gap-1.5">
-                                        <span>Locked</span>
+                                        <span>Terkunci</span>
                                         <LockIcon className="size-3" />
                                     </div>
                                 )}
@@ -1888,11 +1903,11 @@ const AttendanceList: React.FC = () => {
                  </div>
 
                  <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Officer Notes</label>
+                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Catatan Petugas</label>
                     <textarea 
                         value={manualForm.notes}
                         onChange={(e) => setManualForm(prev => ({ ...prev, notes: e.target.value }))}
-                        placeholder="Why is this record being modified?"
+                        placeholder="Mengapa data ini diubah?"
                         rows={3}
                         className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm transition-all focus:border-brand-500 focus:outline-none dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-white resize-none"
                     />
@@ -1917,7 +1932,7 @@ const AttendanceList: React.FC = () => {
                                     setFacingMode(newMode);
                                     startCamera(newMode);
                                 }}
-                                title="Switch Camera"
+                                title="Ganti Kamera"
                             >
                                 <ArrowPathIcon className="size-5" />
                             </button>
@@ -1927,7 +1942,7 @@ const AttendanceList: React.FC = () => {
                                     const stream = videoRef.current?.srcObject as MediaStream;
                                     stream?.getTracks().forEach(track => track.stop());
                                     setIsCameraOpen(false);
-                                }}>Cancel</Button>
+                                }}>Batal</Button>
                                 <Button type="button" variant="primary" size="sm" onClick={(e) => {
                                     e.preventDefault();
                                     const video = videoRef.current;
@@ -1953,14 +1968,14 @@ const AttendanceList: React.FC = () => {
                                             }, 'image/jpeg', 0.8);
                                         }
                                     }
-                                }}>Capture</Button>
+                                }}>Ambil Foto</Button>
                             </div>
                         </>
                     ) : manualForm.photo ? (
                         <div className="relative w-full h-full group">
                              <img src={URL.createObjectURL(manualForm.photo)} alt="Preview" className="w-full h-full object-cover" />
                              <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                 <Button variant="outline" size="sm" className="bg-white text-gray-900 border-white" onClick={() => setManualForm(prev => ({ ...prev, photo: null }))}>Retake</Button>
+                                 <Button variant="outline" size="sm" className="bg-white text-gray-900 border-white" onClick={() => setManualForm(prev => ({ ...prev, photo: null }))}>Ulangi Foto</Button>
                              </div>
                         </div>
                     ) : selectedRecord && ((selectedRecord as any).photoUrl || (selectedRecord as any).photoEvidenceUrl || (selectedRecord as any).photoEvidence) ? (
@@ -1968,15 +1983,15 @@ const AttendanceList: React.FC = () => {
                              <img 
                                 src={
                                     ((selectedRecord as any).photoUrl || (selectedRecord as any).photoEvidenceUrl || (selectedRecord as any).photoEvidence)?.startsWith('/') 
-                                        ? `http://localhost:3000${(selectedRecord as any).photoUrl || (selectedRecord as any).photoEvidenceUrl || (selectedRecord as any).photoEvidence}`
+                                        ? `${new URL(API_BASE_URL).origin}${(selectedRecord as any).photoUrl || (selectedRecord as any).photoEvidenceUrl || (selectedRecord as any).photoEvidence}`
                                         : ((selectedRecord as any).photoUrl || (selectedRecord as any).photoEvidenceUrl || (selectedRecord as any).photoEvidence)
                                 } 
                                 alt="Existing Evidence" 
                                 className="w-full h-full object-cover" 
                              />
                              <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-2">
-                                 <span className="text-white text-xs font-bold shadow-sm">Existing Evidence</span>
-                                 <Button variant="outline" size="sm" className="bg-white text-gray-900 border-white font-semibold" onClick={() => setIsCameraOpen(true)}>Take New Photo</Button>
+                                 <span className="text-white text-xs font-bold shadow-sm">Bukti Tersedia</span>
+                                 <Button variant="outline" size="sm" className="bg-white text-gray-900 border-white font-semibold" onClick={() => setIsCameraOpen(true)}>Ambil Foto Baru</Button>
                              </div>
                         </div>
                     ) : (
@@ -1984,13 +1999,13 @@ const AttendanceList: React.FC = () => {
                             <div className="size-16 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center mx-auto mb-4 text-gray-400">
                                 <VideoIcon className="size-8" />
                             </div>
-                             <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Take Photo</h4>
-                             <p className="text-xs text-gray-500 mb-4">Required for validation</p>
+                             <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Ambil Foto</h4>
+                             <p className="text-xs text-gray-500 mb-4">Diperlukan untuk validasi</p>
                             <Button type="button" variant="secondary" size="sm" onClick={async (e) => {
                                 e.preventDefault();
                                 setIsCameraOpen(true);
                                 startCamera(facingMode);
-                            }}>Open Camera</Button>
+                            }}>Buka Kamera</Button>
                         </div>
                     )}
                      </div>
@@ -2001,7 +2016,7 @@ const AttendanceList: React.FC = () => {
                              <LockIcon className="size-4" />
                          </div>
                          <div className="space-y-1">
-                             <h4 className="text-xs font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wide">Validation Rules</h4>
+                             <h4 className="text-xs font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wide">Aturan Validasi</h4>
                              <p className="text-xs text-blue-600 dark:text-blue-300 leading-relaxed">
                                  Please ensure the photo clearly shows the student's face. If editing location, ensure you unlock the coordinates first.
                              </p>
@@ -2016,8 +2031,8 @@ const AttendanceList: React.FC = () => {
       <Modal
         isOpen={isDetailModalOpen}
         onClose={() => setIsDetailModalOpen(false)}
-        className="max-w-2xl"
-        title="Attendance Details"
+        className="max-w-2xl sm:m-4"
+        title="Detail Kehadiran"
         description="Comprehensive overview of student attendance record."
         footer={
             <div className="flex justify-end gap-3 w-full">
@@ -2026,21 +2041,21 @@ const AttendanceList: React.FC = () => {
                     className="mr-auto text-error-600 border-error-100 hover:bg-error-50"
                     onClick={async () => {
                         const confirmed = await confirm({
-                            title: "Delete Attendance Record",
+                            title: "Hapus Data Kehadiran",
                             message: "Are you sure you want to delete this specific record?",
                             variant: "delete"
                         });
                         if (confirmed && selectedRecord?.public_id) {
                             await deleteMutation.mutateAsync(selectedRecord.public_id);
                             setIsDetailModalOpen(false);
-                            showSuccess("Record deleted successfully");
+                            showSuccess("Data berhasil dihapus");
                         }
                     }}
                 >
                     <TrashIcon className="size-4 mr-2" />
                     Delete
                 </Button>
-                <Button variant="outline" onClick={() => setIsDetailModalOpen(false)}>Close</Button>
+                <Button variant="outline" onClick={() => setIsDetailModalOpen(false)}>Tutup</Button>
                 <Button 
                     variant="primary" 
                     onClick={() => {
@@ -2091,7 +2106,7 @@ const AttendanceList: React.FC = () => {
                     </div>
                 </div>
                 <div className="text-right">
-                    <span className="text-[10px] font-bold uppercase text-gray-400 tracking-[0.2em]">Method</span>
+                    <span className="text-[10px] font-bold uppercase text-gray-400 tracking-[0.2em]">Metode</span>
                     <div className="flex items-center justify-end gap-2 mt-1">
                         <MethodIcon method={selectedRecord.method || ""} />
                         <span className="text-sm font-bold text-gray-700 dark:text-gray-300">{selectedRecord.method}</span>
@@ -2101,14 +2116,14 @@ const AttendanceList: React.FC = () => {
 
             <div className="grid grid-cols-3 gap-6">
                 <div className="space-y-1 rounded-2xl border border-gray-100 bg-gray-50/50 p-4 dark:border-white/[0.05] dark:bg-white/[0.02]">
-                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Date</span>
+                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Tanggal</span>
                     <div className="flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
                         <CalenderIcon className="size-4 text-brand-500" />
                         <span>{format(new Date(selectedRecord.date), "MMM dd, yyyy")}</span>
                     </div>
                 </div>
                 <div className="space-y-1 rounded-2xl border border-gray-100 bg-gray-50/50 p-4 dark:border-white/[0.05] dark:bg-white/[0.02]">
-                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Metric Status</span>
+                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status Metrik</span>
                     <div className="flex items-center gap-2">
                         {selectedRecord.isLate ? (
                             <>
@@ -2123,13 +2138,13 @@ const AttendanceList: React.FC = () => {
                         ) : (
                             <>
                                 <div className="size-2 rounded-full bg-success-500"></div>
-                                <span className="text-sm font-bold text-success-600">On Time</span>
+                                <span className="text-sm font-bold text-success-600">Tepat Waktu</span>
                             </>
                         )}
                     </div>
                 </div>
                 <div className="space-y-1 rounded-2xl border border-gray-100 bg-gray-50/50 p-4 dark:border-white/[0.05] dark:bg-white/[0.02]">
-                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Academic Year</span>
+                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Tahun Ajaran</span>
                     <div className="flex items-center gap-2 text-gray-700 dark:text-gray-400 font-medium">
                         <span className="size-2 rounded-full bg-brand-500/20 ring-1 ring-brand-500"></span>
                         <span>{selectedRecord.academicYear?.name || "N/A"}</span>
@@ -2146,7 +2161,7 @@ const AttendanceList: React.FC = () => {
                             <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-gray-100 text-gray-400 dark:bg-white/5">
                                 <MapPinIcon className="size-6" />
                             </div>
-                            <h3 className="mt-3 text-sm font-bold text-gray-900 dark:text-white">Location Not Recorded</h3>
+                            <h3 className="mt-3 text-sm font-bold text-gray-900 dark:text-white">Lokasi Tidak Tercatat</h3>
                             <p className="mt-1 text-xs text-gray-500">This attendance record does not contain GPS coordinates.</p>
                         </div>
                     );
@@ -2168,8 +2183,8 @@ const AttendanceList: React.FC = () => {
                                     <MapPinIcon className="size-4" />
                                 </div>
                                 <div>
-                                    <h3 className="text-sm font-bold text-gray-900 dark:text-white leading-tight">Recorded Location</h3>
-                                    <p className="text-[10px] text-gray-500 uppercase tracking-wider">GPS Coordinates</p>
+                                    <h3 className="text-sm font-bold text-gray-900 dark:text-white leading-tight">Lokasi Tercatat</h3>
+                                    <p className="text-[10px] text-gray-500 uppercase tracking-wider">Koordinat GPS</p>
                                 </div>
                             </div>
                             <div className="space-y-2">
@@ -2200,7 +2215,7 @@ const AttendanceList: React.FC = () => {
                                     </svg>
                                 </div>
                                 <div>
-                                    <h3 className="text-sm font-bold text-gray-900 dark:text-white leading-tight">Distance to School</h3>
+                                    <h3 className="text-sm font-bold text-gray-900 dark:text-white leading-tight">Jarak ke Sekolah</h3>
                                     <p className="text-[10px] text-gray-500 uppercase tracking-wider">Geo-Fencing Status</p>
                                 </div>
                             </div>
@@ -2209,13 +2224,13 @@ const AttendanceList: React.FC = () => {
                                 <div className="flex flex-col h-full justify-center space-y-3 mt-4">
                                     <div className="flex items-end gap-2">
                                         <span className="text-3xl font-bold text-gray-900 dark:text-white leading-none">{distance}</span>
-                                        <span className="text-sm font-medium text-gray-500 pb-0.5">meters away</span>
+                                        <span className="text-sm font-medium text-gray-500 pb-0.5">meter</span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         {isWithinZone ? (
-                                            <Badge color="success" className="px-2 py-0.5 text-[10px]">IN ZONE</Badge>
+                                            <Badge color="success" className="px-2 py-0.5 text-[10px]">DALAM ZONA</Badge>
                                         ) : (
-                                            <Badge color="error" className="px-2 py-0.5 text-[10px]">OUT OF ZONE</Badge>
+                                            <Badge color="error" className="px-2 py-0.5 text-[10px]">LUAR ZONA</Badge>
                                         )}
                                         <span className="text-xs text-gray-400">Radius limit: {radius}m</span>
                                     </div>
@@ -2233,7 +2248,7 @@ const AttendanceList: React.FC = () => {
             <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-3 p-5 rounded-2xl bg-success-50/30 border border-success-100 dark:bg-success-500/5 dark:border-success-500/10 transition-all hover:bg-success-50/50">
                     <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-success-700 dark:text-success-400 uppercase tracking-widest">Clock In</span>
+                        <span className="text-xs font-bold text-success-700 dark:text-success-400 uppercase tracking-widest">Jam Masuk</span>
                         <TimeIcon className="size-4 text-success-500" />
                     </div>
                     <p className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -2243,19 +2258,19 @@ const AttendanceList: React.FC = () => {
                 </div>
                 <div className="space-y-3 p-5 rounded-2xl bg-error-50/30 border border-error-100 dark:bg-error-500/5 dark:border-error-500/10 transition-all hover:bg-error-50/50">
                     <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-error-700 dark:text-error-400 uppercase tracking-widest">Clock Out</span>
+                        <span className="text-xs font-bold text-error-700 dark:text-error-400 uppercase tracking-widest">Jam Keluar</span>
                         <TimeIcon className="size-4 text-error-500" />
                     </div>
                     <p className="text-3xl font-bold text-gray-900 dark:text-white">
                         {selectedRecord.clockOut ? format(parseISO(selectedRecord.clockOut), "HH:mm:ss") : "--:--:--"}
                     </p>
-                    <p className="text-[10px] text-error-600 font-medium uppercase truncate">Processed locally</p>
+                    <p className="text-[10px] text-error-600 font-medium uppercase truncate">Diproses secara lokal</p>
                 </div>
             </div>
 
             {selectedRecord.notes && (
                 <div className="space-y-2">
-                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest px-1">Officer Notes</label>
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest px-1">Catatan Petugas</label>
                     <div className="p-4 rounded-xl border border-gray-100 bg-gray-50/50 text-sm text-gray-600 dark:border-white/[0.05] dark:bg-white/[0.01] dark:text-gray-400 italic font-medium leading-relaxed">
                         "{selectedRecord.notes}"
                     </div>
@@ -2273,7 +2288,7 @@ const AttendanceList: React.FC = () => {
                         <img 
                             src={
                                 ((selectedRecord as any).photoUrl || (selectedRecord as any).photoEvidenceUrl || (selectedRecord as any).photoEvidence)?.startsWith('/') 
-                                    ? `http://localhost:3000${(selectedRecord as any).photoUrl || (selectedRecord as any).photoEvidenceUrl || (selectedRecord as any).photoEvidence}`
+                                    ? `${new URL(API_BASE_URL).origin}${(selectedRecord as any).photoUrl || (selectedRecord as any).photoEvidenceUrl || (selectedRecord as any).photoEvidence}`
                                     : ((selectedRecord as any).photoUrl || (selectedRecord as any).photoEvidenceUrl || (selectedRecord as any).photoEvidence)
                             } 
                             alt="Attendance Capture Evidence" 

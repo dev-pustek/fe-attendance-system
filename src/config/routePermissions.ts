@@ -35,7 +35,8 @@ export const routePermissions: RoutePermission[] = [
   { path: '/attendance/teaching-sessions', allowedRoles: ['admin', 'teacher', 'staff'] },
   { path: '/attendance/subject-attendances', allowedRoles: ['admin', 'teacher', 'staff'] },
   { path: '/attendance/events', allowedRoles: ['admin', 'staff'] },
-  { path: '/attendance/metrics', allowedRoles: ['admin'] },
+  { path: '/attendance/metrics', allowedRoles: ['admin', 'teacher', 'student', 'staff'] },
+  { path: '/attendance/reports', allowedRoles: ['admin', 'staff'] },
   { path: '/attendance/policies', allowedRoles: ['admin'] },
 
   // Academic Management - Admin and Staff only

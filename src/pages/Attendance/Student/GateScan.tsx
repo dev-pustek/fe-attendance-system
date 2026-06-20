@@ -823,7 +823,9 @@ const GateScan = () => {
                     ) : (
                     <>
                     <div>
-                      <span className="block text-[10px] text-white/40 uppercase tracking-wide mb-1">Clock In</span>
+                      <span className="block text-[10px] text-white/40 uppercase tracking-wide mb-1">
+                        {todayStatus?.clockIn ? "Aktual Masuk" : "Jadwal Masuk"}
+                      </span>
                       {todayStatus?.clockIn ? (
                         <span className="text-lg font-mono font-bold text-green-400">
                           {new Date(todayStatus.clockIn).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
@@ -835,7 +837,9 @@ const GateScan = () => {
                       )}
                     </div>
                     <div>
-                      <span className="block text-[10px] text-white/40 uppercase tracking-wide mb-1">Clock Out</span>
+                      <span className="block text-[10px] text-white/40 uppercase tracking-wide mb-1">
+                        {todayStatus?.clockOut ? "Aktual Keluar" : "Jadwal Keluar"}
+                      </span>
                       {todayStatus?.clockOut ? (
                         <span className="text-lg font-mono font-bold text-green-400">
                           {new Date(todayStatus.clockOut).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}

@@ -1,24 +1,123 @@
-import React from "react";
+import React, { useState } from "react";
 import PageMeta from "../../components/atoms/PageMeta";
+import { useAuthStore } from "../../store/authStore";
+import { useAttendanceMetrics } from "../../api/hooks/useAnalytics";
+import AdminMetricsView from "./Metrics/AdminMetricsView";
+import TeacherMetricsView from "./Metrics/TeacherMetricsView";
+import CurriculumMetricsView from "./Metrics/CurriculumMetricsView";
+import PiketMetricsView from "./Metrics/PiketMetricsView";
+import StaffMetricsView from "./Metrics/StaffMetricsView";
+import StudentMetricsView from "./Metrics/StudentMetricsView";
+import { PageIcon } from "../../components/atoms/Icons";
+import { FunnelIcon } from "@heroicons/react/24/outline";
 
 const AttendanceMetrics: React.FC = () => {
+  const { user } = useAuthStore();
+  
+  // States for filters
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+  const [classId, setClassId] = useState<number | undefined>(undefined);
+
+  // Use hook (role auto-detected by backend)
+  const { data: response, isLoading, error } = useAttendanceMetrics({
+    startDate: startDate || undefined,
+    endDate: endDate || undefined,
+    classId
+  });
+
+  const handleFilterSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // The query hook will auto-refetch when state changes
+  };
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-4">
-      <PageMeta title="Metrik Kehadiran | SIAPUS" description="Attendance metrics and analytics" />
-      <div className="w-24 h-24 bg-brand-50 dark:bg-brand-500/10 text-brand-500 rounded-full flex items-center justify-center mb-6 shadow-sm border border-brand-100 dark:border-brand-500/20">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
+    <>
+      <PageMeta
+        title="Metrik Kehadiran | Dashboard"
+        description="Analitik dan Metrik Kehadiran"
+      />
+
+      <div className="space-y-6">
+        <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Metrik Kehadiran</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Analitik performa kehadiran berbasis peran
+            </p>
+          </div>
+          
+          <form onSubmit={handleFilterSubmit} className="flex flex-col gap-3 p-3 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 sm:flex-row sm:items-center sm:p-2 sm:rounded-xl">
+            <div className="flex items-center gap-2">
+              <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-50 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400">
+                <FunnelIcon className="w-4 h-4"/>
+              </span>
+              <div className="flex flex-1 items-center gap-2">
+                <input 
+                  type="date" 
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full text-sm font-medium border-0 bg-transparent py-1.5 focus:ring-0 dark:text-white"
+                  placeholder="Mulai"
+                />
+                <span className="text-gray-300 dark:text-gray-600">-</span>
+                <input 
+                  type="date" 
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full text-sm font-medium border-0 bg-transparent py-1.5 focus:ring-0 dark:text-white"
+                  placeholder="Selesai"
+                />
+              </div>
+            </div>
+            
+            {response?.role === 'admin' && (
+              <div className="flex items-center gap-2 px-2 sm:border-l sm:border-gray-200 dark:sm:border-gray-700">
+                <input 
+                  type="number"
+                  placeholder="ID Kelas"
+                  value={classId || ''}
+                  onChange={(e) => setClassId(e.target.value ? Number(e.target.value) : undefined)}
+                  className="w-full sm:w-24 text-sm font-medium border-0 bg-gray-50 dark:bg-gray-700/50 rounded-lg py-1.5 focus:ring-1 focus:ring-brand-500 dark:text-white"
+                />
+              </div>
+            )}
+            
+            <button type="submit" className="px-3 py-1.5 text-sm bg-brand-50 text-brand-600 rounded-md hover:bg-brand-100 font-medium transition-colors dark:bg-brand-500/10 dark:text-brand-400 dark:hover:bg-brand-500/20">
+              Filter
+            </button>
+          </form>
+        </div>
+
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex h-[400px] items-center justify-center">
+            <div className="size-8 animate-spin rounded-full border-4 border-brand-500 border-t-transparent"></div>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && !isLoading && (
+          <div className="flex h-[400px] flex-col items-center justify-center text-gray-500">
+            <PageIcon className="mb-4 size-12 text-red-400 opacity-50" />
+            <p className="text-red-500 font-medium">Gagal memuat metrik.</p>
+            <p className="text-sm mt-2">{error.message}</p>
+          </div>
+        )}
+
+        {/* Success State */}
+        {response && !isLoading && !error && (
+          <div className="animate-fade-in">
+            {response.role === 'admin' && <AdminMetricsView data={response.data as any} filters={{ startDate: startDate || undefined, endDate: endDate || undefined, classId }} />}
+            {response.role === 'teacher' && <TeacherMetricsView data={response.data as any} />}
+            {response.role === 'curriculum' && <CurriculumMetricsView data={response.data as any} />}
+            {response.role === 'piket' && <PiketMetricsView data={response.data as any} />}
+            {response.role === 'staff' && <StaffMetricsView data={response.data as any} />}
+            {response.role === 'student' && <StudentMetricsView data={response.data as any} />}
+          </div>
+        )}
       </div>
-      <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">Fitur Segera Hadir</h2>
-      <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto text-sm sm:text-base leading-relaxed">
-        Halaman Metrik Kehadiran ini masih dalam tahap pengembangan. Fitur ini akan digunakan untuk benchmarking kehadiran pengguna.
-      </p>
-      <div className="mt-8 px-6 py-2 bg-gray-100 dark:bg-slate-800 rounded-full inline-block">
-        <span className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-widest">Tahap Pengembangan</span>
-      </div>
-    </div>
+    </>
   );
 };
 

@@ -13,6 +13,7 @@ interface DatePickerProps {
   required?: boolean;
   labelClassName?: string;
   mode?: "single" | "multiple" | "range" | "time";
+  disabled?: boolean;
 }
 
 const DatePicker: React.FC<DatePickerProps> = ({
@@ -25,6 +26,7 @@ const DatePicker: React.FC<DatePickerProps> = ({
   required = false,
   labelClassName = "",
   mode = "single",
+  disabled = false,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const flatpickrRef = useRef<flatpickr.Instance | null>(null);
@@ -56,7 +58,8 @@ const DatePicker: React.FC<DatePickerProps> = ({
         ]
       };
 
-      flatpickrRef.current = flatpickr(inputRef.current, config);
+      const fp = flatpickr(inputRef.current, config);
+      flatpickrRef.current = (Array.isArray(fp) ? fp[0] : fp) as flatpickr.Instance;
     }
 
     return () => {
@@ -103,26 +106,25 @@ const DatePicker: React.FC<DatePickerProps> = ({
           {label}
         </label>
       )}
-      <div className="relative">
+      <div className={`relative flex items-center w-full rounded-xl border border-gray-200 bg-white transition-all overflow-hidden dark:border-white/[0.08] dark:bg-white/[0.03] ${
+        disabled ? "bg-gray-50/50 opacity-60 cursor-not-allowed dark:bg-white/[0.01]" : "hover:border-brand-300 focus-within:border-brand-500 focus-within:ring-4 focus-within:ring-brand-500/5"
+      }`}>
+        <div className="pl-3.5 pr-2 text-gray-400 shrink-0 flex items-center justify-center">
+          {type === "time" ? <TimeIcon className="size-4" /> : <CalenderIcon className="size-4" />}
+        </div>
         <input
           ref={inputRef}
           type="text"
+          className={`w-full bg-transparent py-2.5 pr-3 text-sm text-gray-900 outline-none placeholder:text-gray-400 dark:text-white ${disabled ? 'cursor-not-allowed text-gray-400' : ''}`}
           placeholder={placeholder}
           required={required}
-          className="w-full h-11 rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-10 text-sm outline-none transition-all hover:border-brand-300 focus:border-brand-500 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-white"
+          disabled={disabled}
         />
-        <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none z-10">
-          {type === "time" ? (
-            <TimeIcon className="size-4" />
-          ) : (
-            <CalenderIcon className="size-4" />
-          )}
-        </div>
-        {value && (
+        {value && !disabled && (
           <button
             type="button"
             onClick={handleClear}
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 z-10"
+            className="pr-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
           >
             <CloseIcon className="size-3.5" />
           </button>

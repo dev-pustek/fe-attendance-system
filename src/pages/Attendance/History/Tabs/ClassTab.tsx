@@ -17,6 +17,7 @@ import Label from "../../../../components/atoms/Label";
 import { useConfirm } from "../../../../hooks/useConfirm";
 import { showSuccess, showError } from "../../../../utils/toast";
 import ConfirmDialog from "../../../../components/molecules/ConfirmDialog";
+import Modal from "../../../../components/molecules/Modal";
 
 import {
   TrashBinIcon,
@@ -84,9 +85,10 @@ export default function ClassTab() {
   const [dateTo, setDateTo] = useState(format(endOfWeek(new Date()), 'yyyy-MM-dd'));
   
   const [selectedIds, setSelectedIds] = useState<Set<number | string>>(new Set());
+  const [selectedDetailRecord, setSelectedDetailRecord] = useState<any | null>(null);
 
   // Clear selection on filter change
-  useEffect(() => { setSelectedIds(new Set()); }, [page, statusFilter, dateFrom, dateTo]);
+  useEffect(() => { setSelectedIds(new Set()); setSelectedDetailRecord(null); }, [page, statusFilter, dateFrom, dateTo]);
 
   // ── Queries ──
   // Desktop Pagination
@@ -397,14 +399,15 @@ export default function ClassTab() {
           ) : (
             <div className="grid grid-cols-1 gap-3">
               {displayItems.map((item) => (
-                <ClassCard 
-                  key={item.id || item.public_id} 
-                  record={item}
-                  isSelected={selectedIds.has(item.id || item.public_id)}
-                  onToggle={() => toggleOne(item.id || item.public_id)}
-                  onDelete={() => handleDelete(item.id || item.public_id)}
-                  onViewDetails={() => { /* View details for Class */ }}
-                />
+                <div key={item.id || item.public_id} onClick={() => setSelectedDetailRecord(item)} className="cursor-pointer">
+                  <ClassCard 
+                    record={item}
+                    isSelected={selectedIds.has(item.id || item.public_id)}
+                    onToggle={() => toggleOne(item.id || item.public_id)}
+                    onDelete={() => handleDelete(item.id || item.public_id)}
+                    onViewDetails={() => setSelectedDetailRecord(item)}
+                  />
+                </div>
               ))}
             </div>
           )}
@@ -482,7 +485,7 @@ export default function ClassTab() {
                       </TableCell>
                       <TableCell className="px-4 py-4 text-center">
                         <RowActionMenu 
-                          onViewDetails={() => { /* Implement if needed */ }}
+                          onViewDetails={() => setSelectedDetailRecord(record)}
                           onDelete={() => handleDelete(record.id || record.public_id)} 
                         />
                       </TableCell>
@@ -513,6 +516,94 @@ export default function ClassTab() {
           )}
         </div>
       )}
+
+      {/* Detail Modal */}
+      <Modal 
+        isOpen={!!selectedDetailRecord} 
+        onClose={() => setSelectedDetailRecord(null)} 
+        className="max-w-xl sm:m-4"
+        title={
+          <div className="flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+                  <DocsIcon className="size-5" />
+              </div>
+              <div>
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">Detail Kelas / Pelajaran</h2>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                     {selectedDetailRecord?.teachingSession?.sessionDate ? format(parseISO(selectedDetailRecord.teachingSession.sessionDate), "EEEE, dd MMMM yyyy") : "-"}
+                  </p>
+              </div>
+          </div>
+        }
+        footer={
+          <div className="flex justify-end gap-3 w-full border-t border-gray-100 p-4 dark:border-white/[0.05]">
+            <button 
+              onClick={() => setSelectedDetailRecord(null)}
+              className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-bold text-gray-700 transition-colors hover:bg-gray-50 dark:border-white/[0.06] dark:text-gray-300 dark:hover:bg-white/[0.02]"
+            >
+              Tutup
+            </button>
+          </div>
+        }
+      >
+        {selectedDetailRecord && (
+          <div className="space-y-6">
+             <div className="p-5 rounded-2xl border border-gray-100 bg-gray-50/50 dark:border-white/[0.05] dark:bg-white/[0.02] space-y-4">
+                <div>
+                   <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1">Mata Pelajaran</p>
+                   <p className="text-lg font-bold text-gray-900 dark:text-white">
+                      {selectedDetailRecord.teachingSession?.classSubject?.subject?.name || 'Mata Pelajaran Tidak Diketahui'}
+                   </p>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                   <div>
+                      <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1">Guru</p>
+                      <p className="font-medium text-gray-900 dark:text-white">
+                         {selectedDetailRecord.teachingSession?.actualTeacher?.name || 'Guru Tidak Diketahui'}
+                      </p>
+                   </div>
+                   <div>
+                      <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1">Kelas</p>
+                      <p className="font-medium text-gray-900 dark:text-white">
+                         {selectedDetailRecord.teachingSession?.classSubject?.class?.name || '-'}
+                      </p>
+                   </div>
+                </div>
+             </div>
+             
+             <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-3 p-5 rounded-2xl bg-brand-50/30 border border-brand-100 dark:bg-brand-500/5 dark:border-brand-500/10">
+                    <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-brand-700 dark:text-brand-400 uppercase tracking-widest">Waktu Kelas</span>
+                        <TimeIcon className="size-4 text-brand-500" />
+                    </div>
+                    <p className="text-xl font-bold text-gray-900 dark:text-white">
+                        {selectedDetailRecord.teachingSession?.startTime ? selectedDetailRecord.teachingSession.startTime.slice(0, 5) : "--:--"} - {selectedDetailRecord.teachingSession?.endTime ? selectedDetailRecord.teachingSession.endTime.slice(0, 5) : "--:--"}
+                    </p>
+                </div>
+                <div className="space-y-3 p-5 rounded-2xl bg-gray-50/80 border border-gray-100 dark:bg-white/[0.02] dark:border-white/[0.05]">
+                    <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Waktu Terekam</span>
+                        <CheckCircleIcon className="size-4 text-gray-400" />
+                    </div>
+                    <p className="text-xl font-bold text-gray-900 dark:text-white">
+                        {selectedDetailRecord.recordedAt ? format(parseISO(selectedDetailRecord.recordedAt), "HH:mm:ss") : "--:--:--"}
+                    </p>
+                </div>
+             </div>
+             
+             <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest px-1">Status Kehadiran</label>
+                <div className="flex items-center gap-3 p-4 rounded-xl border border-gray-100 bg-white dark:border-white/[0.05] dark:bg-transparent">
+                   {getStatusBadge(selectedDetailRecord.status || 'present')}
+                   <Badge color="light" size="sm" className="uppercase tracking-wider font-semibold">
+                      {selectedDetailRecord.method || 'MANUAL'}
+                   </Badge>
+                </div>
+             </div>
+          </div>
+        )}
+      </Modal>
 
       {/* Confirm Dialog */}
       <ConfirmDialog {...confirmState} />
