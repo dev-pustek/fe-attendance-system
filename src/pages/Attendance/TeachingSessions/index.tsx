@@ -348,7 +348,7 @@ const TeachingSessions: React.FC = () => {
       const newStart = data.startTime.length === 5 ? `${data.startTime}:00` : data.startTime;
       const newEnd = data.endTime.length === 5 ? `${data.endTime}:00` : data.endTime;
 
-      // Overlap Validation Check
+      // Overlap Validation Check: Teacher Conflict
       if (data.actualTeacherId && data.sessionDate) {
         const existingSessionsResp = await attendanceService.getTeachingSessions({
           actualTeacherId: data.actualTeacherId,
@@ -363,19 +363,50 @@ const TeachingSessions: React.FC = () => {
            // Skip cancelled sessions (they don't count as conflicts)
            if (session.isCancelled) return false;
            
-           const existStart = session.startTime;
-           const existEnd = session.endTime;
+           const existStart = session.startTime.slice(0, 5);
+           const existEnd = session.endTime.slice(0, 5);
+           const checkStart = newStart.slice(0, 5);
+           const checkEnd = newEnd.slice(0, 5);
            // Overlap happens if new session starts before existing ends, AND existing starts before new ends
-           return newStart < existEnd && existStart < newEnd;
+           return checkStart < existEnd && existStart < checkEnd;
         });
 
         if (conflictingSession) {
-           const conflictConfirmed = await confirm({
-               variant: "warning",
-               title: "Peringatan: Jadwal Bentrok",
-               message: `Guru ini sudah memiliki sesi mengajar pada waktu yang bersinggungan di kelas ${conflictingSession.classSubject?.class?.name || "Lainnya"} (${conflictingSession.startTime.slice(0, 5)} - ${conflictingSession.endTime.slice(0, 5)}). Apakah Anda yakin tetap ingin merekam sesi ini (misalnya untuk Kelas Gabungan)?`,
-           });
-           if (!conflictConfirmed) return; // Abort submission
+           showError(
+               `Guru ini sudah memiliki sesi mengajar pada waktu yang bersinggungan di kelas ${conflictingSession.classSubject?.class?.name || "Lainnya"} (${conflictingSession.startTime.slice(0, 5)} - ${conflictingSession.endTime.slice(0, 5)}).`,
+               "Jadwal Bentrok (Guru)"
+           );
+           return; // Strict Block
+        }
+      }
+
+      // Overlap Validation Check: Class Conflict
+      if (modalClassId && data.sessionDate) {
+        // Use 'any' cast if classId is not explicitly in the type definition, but supported by the backend
+        const existingClassSessionsResp = await (attendanceService.getTeachingSessions as any)({
+          classId: modalClassId,
+          sessionDate: data.sessionDate,
+          limit: 100,
+        });
+        const existingClassSessions: TeachingSession[] = existingClassSessionsResp.data || [];
+        
+        const conflictingClassSession = existingClassSessions.find(session => {
+           if (selectedEntity && session.id === selectedEntity.id) return false;
+           if (session.isCancelled) return false;
+           
+           const existStart = session.startTime.slice(0, 5);
+           const existEnd = session.endTime.slice(0, 5);
+           const checkStart = newStart.slice(0, 5);
+           const checkEnd = newEnd.slice(0, 5);
+           return checkStart < existEnd && existStart < checkEnd;
+        });
+
+        if (conflictingClassSession) {
+           showError(
+               `Kelas ini sudah memiliki jadwal mata pelajaran ${conflictingClassSession.classSubject?.subject?.name || "Lainnya"} pada waktu tersebut (${conflictingClassSession.startTime.slice(0, 5)} - ${conflictingClassSession.endTime.slice(0, 5)}).`,
+               "Jadwal Bentrok (Kelas)"
+           );
+           return; // Strict Block
         }
       }
 
@@ -545,7 +576,7 @@ const TeachingSessions: React.FC = () => {
                 className="hidden sm:flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-all hover:bg-gray-50 active:scale-[.98] dark:border-white/[0.1] dark:bg-white/[0.02] dark:text-gray-300 dark:hover:bg-white/[0.04]"
               >
                 <span className="text-base leading-none">✨</span>
-                Cetak Jadwal
+                Generate Sesi
               </button>
             )}
             <button
@@ -562,6 +593,16 @@ const TeachingSessions: React.FC = () => {
         {isMobile && (
           <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-3 items-end">
             <DataActionsMenu isMobileFab={true} isExporting={isExporting} onExportExcel={handleExportExcel} onExportPdf={handleExportPdf} />
+            
+            {isGlobalView && (
+              <button
+                onClick={() => setIsGenerateModalOpen(true)}
+                className="flex size-14 items-center justify-center rounded-full bg-white text-gray-700 shadow-[0_8px_30px_rgb(0,0,0,0.12)] shadow-gray-500/20 transition-transform active:scale-95 dark:bg-gray-800 dark:text-white"
+              >
+                <span className="text-xl leading-none">✨</span>
+              </button>
+            )}
+
             <button
               onClick={() => handleOpenModal()}
               className="flex size-14 items-center justify-center rounded-full bg-brand-500 text-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] shadow-brand-500/30 transition-transform active:scale-95"

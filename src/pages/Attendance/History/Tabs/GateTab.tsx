@@ -431,6 +431,7 @@ export default function GateTab() {
                       </TableCell>
                       <TableCell className="px-4 py-4 text-center text-sm font-medium text-gray-900 dark:text-white">
                         {record.clockOut ? format(parseISO(record.clockOut), 'HH:mm') : '--:--'}
+                        {record.isEarlyLeave && <span className="text-[10px] text-warning-600 ml-1 block mt-0.5">-{record.earlyLeaveMinutes}m</span>}
                       </TableCell>
                       <TableCell className="px-4 py-4 text-center">
                         <Badge color="light" size="small" className="uppercase tracking-wider font-semibold text-[10px]">
@@ -509,6 +510,7 @@ export default function GateTab() {
                         {selectedDetailRecord.clockOut ? format(parseISO(selectedDetailRecord.clockOut), "HH:mm:ss") : "--:--:--"}
                     </p>
                     <p className="text-[10px] text-error-600 font-medium uppercase truncate">Processed locally</p>
+                    {selectedDetailRecord.isEarlyLeave && <p className="text-xs text-warning-600 mt-1 font-bold">Pulang Awal: {selectedDetailRecord.earlyLeaveMinutes}m</p>}
                 </div>
             </div>
 

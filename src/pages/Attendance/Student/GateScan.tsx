@@ -1193,8 +1193,11 @@ const GateScan = () => {
                               <div className="text-lg font-bold">
                                   {scanResult.attendanceStatus || "PRESENT"}
                                   {scanResult.record?.lateMinutes > 0 && <span className="text-sm font-medium ml-1 opacity-80">(+{scanResult.record.lateMinutes < 60 ? `${scanResult.record.lateMinutes}m` : `${Math.floor(scanResult.record.lateMinutes/60)}h ${scanResult.record.lateMinutes%60}m`})</span>}
-                                  {scanResult.record?.earlyLeaveMinutes > 0 && <span className="text-sm font-medium ml-1 opacity-80">(-{scanResult.record.earlyLeaveMinutes < 60 ? `${scanResult.record.earlyLeaveMinutes}m` : `${Math.floor(scanResult.record.earlyLeaveMinutes/60)}h ${scanResult.record.earlyLeaveMinutes%60}m`})</span>}
                               </div>
+                              <div className="text-right">
+                                  <div className="text-white font-bold">{scanResult.record?.clockOut ? format(parseISO(scanResult.record.clockOut), "HH:mm") : "--:--"}</div>
+                                  {scanResult.record?.earlyLeaveMinutes > 0 && <span className="text-sm font-medium ml-1 opacity-80">(-{scanResult.record.earlyLeaveMinutes < 60 ? `${scanResult.record.earlyLeaveMinutes}m` : `${Math.floor(scanResult.record.earlyLeaveMinutes/60)}h ${scanResult.record.earlyLeaveMinutes%60}m`})</span>}
+                                </div>
                           </div>
                           <div>
                               <div className="text-white/60 text-xs uppercase tracking-wider mb-1">IP Address</div>

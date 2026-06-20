@@ -45,8 +45,10 @@ export interface AttendanceRecord {
   clockOut: string | null;
   isLate: boolean;
   isEarlyLeave?: boolean;
+  isOvertime?: boolean;
   lateMinutes: number;
   earlyLeaveMinutes?: number;
+  overtimeMinutes?: number;
   firstEventId?: string | null;
   lastEventId?: string | null;
   statusId?: number | null;
@@ -184,7 +186,10 @@ export interface AttendanceParams extends PaginationParams {
   method?: string;
   isLate?: boolean;
   isEarlyLeave?: boolean;
+  isOvertime?: boolean;
   lateMinutes?: number | string;
+  earlyLeaveMinutes?: number | string;
+  overtimeMinutes?: number | string;
   type?: "DAILY" | "CLASS" | string;
   majorId?: string | number;
 }

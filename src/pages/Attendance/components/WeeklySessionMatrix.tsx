@@ -260,7 +260,15 @@ const WeeklySessionMatrix: React.FC<WeeklySessionMatrixProps> = ({
 }) => {
   const [selectedSession, setSelectedSession] = useState<TeachingSession | null>(null);
 
-  const currentDayIndex = new Date().getDay(); // 0 = Sunday, 1 = Monday
+  // Resolve today's index strictly in Asia/Jakarta timezone
+  const getJakartaDayIndex = () => {
+    const d = new Date();
+    const dayStr = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Jakarta', weekday: 'long' }).format(d);
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    return days.indexOf(dayStr);
+  };
+  
+  const currentDayIndex = getJakartaDayIndex(); // 0 = Sunday, 1 = Monday
   const todayValue =
     currentDayIndex === 0 ? "SUNDAY" : availableDays[currentDayIndex - 1]?.value;
 
@@ -384,7 +392,16 @@ const WeeklySessionMatrix: React.FC<WeeklySessionMatrixProps> = ({
               <div className="flex items-center gap-2">
                  <MapPinIcon className="size-4 text-gray-400" />
                  <span>
-                    <span className="font-semibold text-gray-900 dark:text-white">Tanggal:</span> {format(new Date(selectedSession.sessionDate), "dd MMMM yyyy")}
+                    <span className="font-semibold text-gray-900 dark:text-white">Tanggal:</span> {
+                      format(
+                        new Date(
+                          Number(selectedSession.sessionDate.split("-")[0]), 
+                          Number(selectedSession.sessionDate.split("-")[1]) - 1, 
+                          Number(selectedSession.sessionDate.split("-")[2])
+                        ), 
+                        "dd MMMM yyyy"
+                      )
+                    }
                  </span>
               </div>
             </div>

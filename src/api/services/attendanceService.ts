@@ -43,6 +43,14 @@ export const attendanceService = {
     return response.data;
   },
 
+  exportAttendanceExcel: async (params?: AttendanceParams): Promise<Blob> => {
+    const { data } = await apiClient.get<Blob>('/attendance/export/excel', {
+      params,
+      responseType: 'blob',
+    });
+    return data;
+  },
+
   /* getAttendanceRecordById: async (id: number | string): Promise<ApiResponse<AttendanceRecord>> => {
       const response = await apiClient.get<ApiResponse<AttendanceRecord>>(`/attendance/records/${id}`);
       return response.data;
@@ -221,8 +229,16 @@ export const attendanceService = {
 
   // 6. Teaching Sessions: /api/v1/attendance/teaching-sessions
   getTeachingSessions: async (params?: TeachingSessionParams): Promise<PaginatedResponse<TeachingSession>> => {
-    const response = await apiClient.get<PaginatedResponse<TeachingSession>>("/attendance/teaching-sessions", { params });
-    return response.data;
+      const response = await apiClient.get<PaginatedResponse<TeachingSession>>("/attendance/teaching-sessions", { params });
+      return response.data;
+  },
+
+  exportTeachingSessionExcel: async (params?: TeachingSessionParams): Promise<Blob> => {
+    const { data } = await apiClient.get<Blob>('/attendance/teaching-sessions/export/excel', {
+      params,
+      responseType: 'blob',
+    });
+    return data;
   },
 
   createTeachingSession: async (data: CreateTeachingSessionDto): Promise<ApiResponse<TeachingSession>> => {

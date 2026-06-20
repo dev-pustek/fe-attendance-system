@@ -26,6 +26,7 @@ interface SearchableAsyncSelectProps {
   labelClassName?: string;
   disabled?: boolean;
   onClear?: () => void;
+  multiple?: boolean;
 }
 
 export const SearchableAsyncSelect: React.FC<SearchableAsyncSelectProps> = ({
@@ -44,6 +45,7 @@ export const SearchableAsyncSelect: React.FC<SearchableAsyncSelectProps> = ({
   labelClassName = "",
   disabled = false,
   onClear,
+  multiple = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -149,14 +151,16 @@ export const SearchableAsyncSelect: React.FC<SearchableAsyncSelectProps> = ({
         <span className={`truncate min-w-0 flex-1 ${
           disabled 
             ? "text-gray-400" 
-            : displayLabel 
+            : (multiple ? selectedValues && selectedValues.length > 0 : displayLabel)
               ? "text-gray-900 dark:text-white font-medium" 
               : "text-gray-400"
         }`}>
-          {displayLabel || placeholder}
+          {multiple 
+            ? (selectedValues && selectedValues.length > 0 ? `${selectedValues.length} selected` : placeholder)
+            : (displayLabel || placeholder)}
         </span>
         <div className="flex items-center gap-2">
-            {value && !disabled && (
+            {(multiple ? (selectedValues && selectedValues.length > 0) : value) && !disabled && (
                 <button
                     onClick={(e) => {
                         e.stopPropagation();
@@ -230,7 +234,7 @@ export const SearchableAsyncSelect: React.FC<SearchableAsyncSelectProps> = ({
                     if (option.isDisabled) return;
                     onChange(option.value, option.label, option);
                     setDisplayLabel(option.label);
-                    if (closeOnSelect) {
+                    if (closeOnSelect && !multiple) {
                         setIsOpen(false);
                     }
                   }}

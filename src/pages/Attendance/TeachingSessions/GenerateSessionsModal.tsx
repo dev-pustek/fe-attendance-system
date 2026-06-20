@@ -12,6 +12,10 @@ import { profilesService } from "../../../api/services/profilesService";
 import Checkbox from "../../../components/atoms/Checkbox";
 import { XCircleIcon } from "@heroicons/react/24/solid";
 import ConfirmDialog from "../../../components/molecules/ConfirmDialog";
+import { academicService } from "../../../api/services/academicService";
+import { attendanceService } from "../../../api/services/attendanceService";
+import { format, parseISO, addDays, isBefore, isEqual, parse } from "date-fns";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface Props {
   isOpen: boolean;
@@ -19,6 +23,7 @@ interface Props {
 }
 
 export default function GenerateSessionsModal({ isOpen, onClose }: Props) {
+  const queryClient = useQueryClient();
   const [targetType, setTargetType] = useState<"all" | "specific" | "teacher">("all");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -60,7 +65,7 @@ export default function GenerateSessionsModal({ isOpen, onClose }: Props) {
   const subjectOptions = subjectsRes?.data?.map(s => ({ value: s.id, label: s.subject?.name || "Unknown" })) || [];
   const filteredSubjectOptions = subjectSearchTerm ? subjectOptions.filter(s => s.label.toLowerCase().includes(subjectSearchTerm.toLowerCase())) : subjectOptions;
 
-  const { mutateAsync: generate, isPending } = useGenerateTeachingSessions();
+  // Removed backend generate hooks
 
   // Preview Data
   const canPreview = !!startDate && !!endDate && (targetType === "all" || (targetType === "specific" && !!selectedSubjectId) || (targetType === "teacher" && !!selectedTeacherId));
@@ -76,17 +81,67 @@ export default function GenerateSessionsModal({ isOpen, onClose }: Props) {
   const existingSessionsCount = previewData?.meta?.itemCount || previewData?.data?.length || 0;
   const [sessionToDelete, setSessionToDelete] = useState<number | null>(null);
 
-  // Dry Run (Potensi Sesi)
-  const dryRunParams = {
-    classSubjectId: targetType === "specific" && selectedSubjectId ? Number(selectedSubjectId) : undefined,
-    teacherId: targetType === "teacher" && selectedTeacherId ? selectedTeacherId : undefined,
-    startDate: startDate || undefined,
-    endDate: endDate || undefined,
-  };
-  const { data: dryRunData, isLoading: isDryRunLoading } = useGenerateTeachingSessionsDryRun(dryRunParams, canPreview);
-  const potentialSessionsCount = dryRunData?.generatedCount || 0;
+  const [localDryRunData, setLocalDryRunData] = useState<any[]>([]);
+  const [isDryRunLoading, setIsDryRunLoading] = useState(false);
+  const potentialSessionsCount = localDryRunData.length;
 
   const [unselectedSessions, setUnselectedSessions] = useState<Set<string>>(new Set());
+
+  // Compute Dry Run locally
+  useEffect(() => {
+    let isMounted = true;
+    const computeDryRun = async () => {
+      if (!canPreview) {
+        setLocalDryRunData([]);
+        return;
+      }
+      setIsDryRunLoading(true);
+      try {
+        const templatesRes = await academicService.getTeachingScheduleTemplates({
+          classSubjectId: targetType === "specific" && selectedSubjectId ? Number(selectedSubjectId) : undefined,
+          teacherId: targetType === "teacher" && selectedTeacherId ? selectedTeacherId : undefined,
+          limit: 1000,
+          isActive: true
+        });
+        const templates = templatesRes.data || [];
+
+        const potential: any[] = [];
+        let curr = parseISO(startDate);
+        const end = parseISO(endDate);
+
+        while (curr <= end || isEqual(curr, end)) {
+          const dateStr = format(curr, 'yyyy-MM-dd');
+          const dayStr = format(curr, 'EEEE').toUpperCase();
+
+          const matches = templates.filter(t => t.dayOfWeek === dayStr);
+          matches.forEach(t => {
+            const exists = previewData?.data?.some(ex => ex.sessionDate === dateStr && ex.startTime === t.startTime && ex.classSubject?.id === t.classSubject?.id);
+            if (!exists) {
+              potential.push({
+                sessionDate: dateStr,
+                startTime: t.startTime,
+                endTime: t.endTime,
+                classSubjectId: t.classSubject?.id,
+                subjectName: t.classSubject?.subject?.name,
+                className: t.classSubject?.class?.name,
+                teacherId: t.teacher?.id,
+                classId: t.classSubject?.class?.id,
+                teachingUnits: t.plannedUnits
+              });
+            }
+          });
+          curr = addDays(curr, 1);
+        }
+        if (isMounted) setLocalDryRunData(potential);
+      } catch (err) {
+        console.error("Failed to compute dry run:", err);
+      } finally {
+        if (isMounted) setIsDryRunLoading(false);
+      }
+    };
+    computeDryRun();
+    return () => { isMounted = false; };
+  }, [canPreview, startDate, endDate, targetType, selectedSubjectId, selectedTeacherId, previewData]);
 
   useEffect(() => {
     setUnselectedSessions(new Set());
@@ -101,30 +156,68 @@ export default function GenerateSessionsModal({ isOpen, onClose }: Props) {
     });
   };
 
-  const handleGenerate = () => {
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [progressText, setProgressText] = useState("");
+
+  const handleGenerate = async () => {
     if (!startDate || !endDate) return showError(new Error("Start date and end date are required"));
     if (targetType === "specific" && !selectedSubjectId) return showError(new Error("Subject must be selected"));
     if (targetType === "teacher" && !selectedTeacherId) return showError(new Error("Teacher must be selected"));
 
-    const excludedSessions = Array.from(unselectedSessions).map(key => {
-      const [sessionDate, startTime, classSubjectId] = key.split('|');
-      return { sessionDate, startTime, classSubjectId: Number(classSubjectId) };
+    const toGenerate = localDryRunData.filter(d => {
+      const sessionKey = `${d.sessionDate}|${d.startTime}|${d.classSubjectId}`;
+      return !unselectedSessions.has(sessionKey);
     });
 
-    generate({
-      startDate,
-      endDate,
-      classSubjectId: targetType === "specific" ? Number(selectedSubjectId) : undefined,
-      teacherId: targetType === "teacher" ? selectedTeacherId : undefined,
-      excludedSessions: excludedSessions.length > 0 ? excludedSessions : undefined,
-    }).then(res => {
-      showSuccess(`Berhasil: ${res.generatedCount} sesi tercetak.`);
-    }).catch(e => {
-      showError(e, "Gagal men-generate sesi");
-    });
+    if (toGenerate.length === 0) {
+      showError(new Error("Tidak ada sesi yang akan digenerate."));
+      return;
+    }
+
+    setIsGenerating(true);
+    let successCount = 0;
     
-    showSuccess("Proses generate sedang berjalan di latar belakang...");
-    onClose();
+    try {
+      for (let i = 0; i < toGenerate.length; i++) {
+        const session = toGenerate[i];
+        setProgressText(`Memproses sesi ${i + 1} dari ${toGenerate.length}...`);
+        
+        // 1. Create Teaching Session
+        const created = await attendanceService.createTeachingSession({
+          classSubjectId: session.classSubjectId,
+          actualTeacherId: session.teacherId,
+          sessionDate: session.sessionDate,
+          startTime: session.startTime,
+          endTime: session.endTime,
+          teachingUnits: session.teachingUnits || 2,
+          notes: "Generated from template",
+        });
+
+        // 2. Fetch Enrollments & Create Attendance
+        if (created.data?.id && session.classId) {
+          const enrollments = await academicService.getClassEnrollments({ classId: session.classId, limit: 100 });
+          if (enrollments.data && enrollments.data.length > 0) {
+            await attendanceService.bulkCreateSubjectAttendance({
+              teachingSessionId: created.data.id,
+              records: enrollments.data.map(e => ({
+                studentId: e.student.id,
+                status: 'hadir'
+              }))
+            });
+          }
+        }
+        successCount++;
+      }
+      showSuccess(`Berhasil: ${successCount} sesi beserta buku absensi tercetak.`);
+      queryClient.invalidateQueries({ queryKey: ["teaching-sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["grouped-teaching-sessions"] });
+      onClose();
+    } catch (e) {
+      showError(e, "Terjadi kesalahan saat memproses sebagian sesi");
+    } finally {
+      setIsGenerating(false);
+      setProgressText("");
+    }
   };
 
   return (
@@ -132,14 +225,19 @@ export default function GenerateSessionsModal({ isOpen, onClose }: Props) {
       <Modal 
         isOpen={isOpen} 
         onClose={onClose} 
-      title="Cetak Jadwal (Generate Sessions)" 
+      title="Generate Sesi Otomatis (Dari Template)" 
       className="sm:max-w-4xl"
       footer={
-        <div className="flex justify-end gap-3 w-full">
-          <Button variant="outline" onClick={onClose}>Batal</Button>
-          <Button variant="primary" onClick={handleGenerate} disabled={!canPreview}>
-            Generate Sekarang
-          </Button>
+        <div className="flex justify-between items-center w-full">
+          <div className="text-sm font-medium text-brand-600 dark:text-brand-400">
+            {isGenerating && progressText}
+          </div>
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={onClose} disabled={isGenerating}>Batal</Button>
+            <Button variant="primary" onClick={handleGenerate} disabled={!canPreview || isGenerating || isDryRunLoading}>
+              {isGenerating ? "Memproses..." : "Generate Sekarang"}
+            </Button>
+          </div>
         </div>
       }
     >
@@ -327,15 +425,15 @@ export default function GenerateSessionsModal({ isOpen, onClose }: Props) {
                             {potentialSessionsCount} Sesi
                           </span>
                         </div>
-                        {potentialSessionsCount > 0 && dryRunData?.details && (
+                        {potentialSessionsCount > 0 && localDryRunData && (
                           <div className="space-y-2 bg-brand-50/30 dark:bg-brand-900/10 rounded-xl p-3 border border-brand-100/50 dark:border-brand-500/20">
-                            {[...dryRunData.details].sort((a, b) => new Date(`${a.sessionDate}T${a.startTime}`).getTime() - new Date(`${b.sessionDate}T${b.startTime}`).getTime()).map((detail, idx) => {
+                            {[...localDryRunData].sort((a, b) => new Date(`${a.sessionDate}T${a.startTime}`).getTime() - new Date(`${b.sessionDate}T${b.startTime}`).getTime()).map((detail, idx) => {
                               const sessionKey = `${detail.sessionDate}|${detail.startTime}|${detail.classSubjectId}`;
                               const isSelected = !unselectedSessions.has(sessionKey);
                               return (
                                 <div key={idx} className={`flex items-start gap-3 p-3 rounded-xl text-sm transition-all border shadow-sm cursor-pointer ${isSelected ? 'bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100/50 dark:hover:bg-blue-900/30 border-blue-200 dark:border-blue-500/40 hover:border-blue-300 hover:shadow-blue-500/10' : 'bg-red-50 dark:bg-red-900/20 hover:bg-red-100/50 dark:hover:bg-red-900/30 border-red-200 dark:border-red-500/40 hover:border-red-300 hover:shadow-red-500/10'}`} onClick={() => toggleSelection(sessionKey)}>
                                   <div className="pt-1">
-                                    <Checkbox checked={isSelected} className={`pointer-events-none ${!isSelected && 'border-red-400 bg-red-100'}`} />
+                                    <Checkbox checked={isSelected} className={`pointer-events-none ${!isSelected ? 'border-red-400 bg-red-100' : ''}`} onChange={() => {}} />
                                   </div>
                                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 w-full">
                                     <div className="flex flex-col gap-1.5 shrink-0">

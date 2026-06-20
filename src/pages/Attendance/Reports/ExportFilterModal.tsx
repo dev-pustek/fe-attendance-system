@@ -3,8 +3,9 @@ import Modal from "../../../components/molecules/Modal";
 import Label from "../../../components/atoms/Label";
 import DatePicker from "../../../components/molecules/DatePicker";
 import CustomSelect from "../../../components/molecules/CustomSelect";
+import SearchableAsyncSelect from "../../../components/molecules/SearchableAsyncSelect";
 import { useAcademicYears, useClasses, useMajors } from "../../../api/hooks/useAcademic";
-import { useUsers } from "../../../api/hooks/useUsers";
+import { useUsers, useTeachers } from "../../../api/hooks/useUsers";
 import { AttendanceParams } from "../../../api/types/attendance";
 import { UserIcon, DocsIcon } from "../../../components/atoms/Icons";
 
@@ -30,7 +31,6 @@ export default function ExportFilterModal({ isOpen, onClose, onExport, isExporti
   const { data: acaYearsData } = useAcademicYears({ limit: 100 });
   const { data: classesData } = useClasses({ limit: 1000 });
   const { data: majorsData } = useMajors({ limit: 100 });
-  const { data: teachersData } = useUsers({ limit: 1000, roles: "guru" }); // Or some equivalent fetch for teachers
 
   // Shared Filters
   const [startDate, setStartDate] = useState<string>("");
@@ -44,9 +44,25 @@ export default function ExportFilterModal({ isOpen, onClose, onExport, isExporti
   const [majorFilter, setMajorFilter] = useState<string>("all");
   const [isLateFilter, setIsLateFilter] = useState<string>("all");
   const [isEarlyLeaveFilter, setIsEarlyLeaveFilter] = useState<string>("all");
+  
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [filterUserSearch, setFilterUserSearch] = useState("");
+  const { users: filterUsers, isLoading: isFilterUsersLoading } = useUsers({ search: filterUserSearch, limit: 30 });
+  const filterUserOptions = filterUsers.map((u: any) => ({
+      label: u.name || u.full_name,
+      value: String(u.id || u.public_id),
+      subLabel: u.email || u.nis || u.nip || u.role
+  }));
 
   // JP Specific
-  const [teacherFilter, setTeacherFilter] = useState<string>("all");
+  const [selectedTeacherIds, setSelectedTeacherIds] = useState<string[]>([]);
+  const [teacherSearch, setTeacherSearch] = useState("");
+  const { teachers: filterTeachers, isLoading: isFilterTeachersLoading } = useTeachers({ search: teacherSearch, limit: 30 });
+  const filterTeacherOptions = filterTeachers.map((t: any) => ({
+      label: t.name || t.full_name,
+      value: String(t.id || t.public_id),
+      subLabel: t.email || t.nip || t.role
+  }));
   const [validationStatusFilter, setValidationStatusFilter] = useState<string>("all");
 
   const handleExport = () => {
@@ -64,15 +80,16 @@ export default function ExportFilterModal({ isOpen, onClose, onExport, isExporti
         classId: classFilter !== "all" ? classFilter : undefined,
         majorId: majorFilter !== "all" ? majorFilter : undefined,
         method: methodFilter !== "all" ? methodFilter : undefined,
-        isLate: isLateFilter === "yes" ? true : isLateFilter === "no" ? false : undefined,
+        isLate: isLateFilter !== "all" ? (isLateFilter === "yes") : undefined,
         isEarlyLeave: isEarlyLeaveFilter === "yes" ? true : isEarlyLeaveFilter === "no" ? false : undefined,
+        userId: selectedUserIds.length > 0 ? selectedUserIds.join(",") : undefined,
         ...(statusFilter !== "all" && statusFilter === "late" && { isLate: true }),
         ...(statusFilter !== "all" && statusFilter === "present" && { isPresent: true }),
       };
     } else if (exportType === "teaching_session") {
       params = {
         ...commonParams,
-        teacherId: teacherFilter !== "all" ? teacherFilter : undefined,
+        teacherId: selectedTeacherIds.length > 0 ? selectedTeacherIds.join(",") : undefined,
         validationStatus: validationStatusFilter !== "all" ? validationStatusFilter : undefined,
       };
     } else if (exportType === "performance") {
@@ -104,7 +121,7 @@ export default function ExportFilterModal({ isOpen, onClose, onExport, isExporti
         disabled={isExporting}
         className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-brand-500 rounded-xl hover:bg-brand-600 transition-colors disabled:opacity-50"
       >
-        {isExporting ? "Memproses..." : (exportType === "performance" ? "Download Excel" : "Download CSV")}
+        {isExporting ? "Memproses..." : "Download Excel"}
       </button>
     </div>
   );
@@ -135,7 +152,7 @@ export default function ExportFilterModal({ isOpen, onClose, onExport, isExporti
       isOpen={isOpen} 
       onClose={onClose} 
       title="Pusat Komando Export Data" 
-      description="Tentukan spesifikasi data laporan yang ingin Anda unduh (ekspor ke CSV)."
+      description="Tentukan spesifikasi data laporan yang ingin Anda unduh (ekspor ke Excel)."
       className="max-w-2xl"
       subHeader={renderSubHeader()}
       footer={renderFooter()}
@@ -158,6 +175,26 @@ export default function ExportFilterModal({ isOpen, onClose, onExport, isExporti
           <div className="space-y-4">
             <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 border-b pb-2 dark:border-gray-700">Filter Spesifik Kehadiran</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5 sm:col-span-2">
+                  <Label className="text-xs font-semibold">Pengguna Spesifik (Opsional)</Label>
+                  <SearchableAsyncSelect
+                      multiple
+                      placeholder="Semua Pengguna (Cari...)"
+                      options={filterUserOptions}
+                      onSearch={setFilterUserSearch}
+                      isLoading={isFilterUsersLoading}
+                      value={""}
+                      selectedValues={selectedUserIds}
+                      onChange={(val) => {
+                          if (selectedUserIds.includes(String(val))) {
+                              setSelectedUserIds(prev => prev.filter(id => id !== String(val)));
+                          } else {
+                              setSelectedUserIds(prev => [...prev, String(val)]);
+                          }
+                      }}
+                      onClear={() => setSelectedUserIds([])}
+                  />
+              </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold">Tahun Ajaran</Label>
                 <CustomSelect
@@ -248,13 +285,23 @@ export default function ExportFilterModal({ isOpen, onClose, onExport, isExporti
             <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 border-b pb-2 dark:border-gray-700">Filter Sesi Mengajar (JP)</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">Guru (Opsional)</Label>
-                <CustomSelect
-                  value={teacherFilter}
-                  onChange={(val) => setTeacherFilter(val ? String(val) : "all")}
-                  onClear={() => setTeacherFilter("all")}
-                  placeholder="Semua Guru"
-                  options={teachersData?.data?.map((t) => ({ label: t.name, value: String(t.id) })) || []}
+                <Label className="text-xs font-semibold">Guru Spesifik (Opsional)</Label>
+                <SearchableAsyncSelect
+                  multiple
+                  placeholder="Semua Guru (Cari...)"
+                  options={filterTeacherOptions}
+                  onSearch={setTeacherSearch}
+                  isLoading={isFilterTeachersLoading}
+                  value={""}
+                  selectedValues={selectedTeacherIds}
+                  onChange={(val) => {
+                      if (selectedTeacherIds.includes(String(val))) {
+                          setSelectedTeacherIds(prev => prev.filter(id => id !== String(val)));
+                      } else {
+                          setSelectedTeacherIds(prev => [...prev, String(val)]);
+                      }
+                  }}
+                  onClear={() => setSelectedTeacherIds([])}
                   className="w-full"
                 />
               </div>

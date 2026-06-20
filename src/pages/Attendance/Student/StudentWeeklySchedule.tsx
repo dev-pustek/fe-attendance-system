@@ -14,12 +14,13 @@ import {
 import { FileIcon, TableIcon } from '../../../components/atoms/Icons'; 
 import CustomSelect from '../../../components/molecules/CustomSelect';
 import { showSuccess, showError, showLoading } from '../../../utils/toast';
-import { format, startOfWeek, endOfWeek } from 'date-fns';
+import { format, startOfWeek, endOfWeek, parseISO } from 'date-fns';
 import WeeklySessionMatrix from '../components/WeeklySessionMatrix';
 import { saveAs } from 'file-saver';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import toast from 'react-hot-toast';
+import { getJakartaDate } from "../../../utils/date";
 
 // Define generic types for what ScheduleMatrix expects
 type ScheduleMatrixRule = import('../../../api/types/rules').ScheduleRule;
@@ -58,7 +59,7 @@ const StudentWeeklySchedule = () => {
     }, [academicYears, selectedAcademicYearId]);
 
     // 2. Fetch Sessions — filter to logged-in user's own schedule for the current week
-    const now = new Date();
+    const now = getJakartaDate();
     const startOfCurrentWeek = format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd');
     const endOfCurrentWeek = format(endOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd');
 
@@ -173,7 +174,7 @@ const StudentWeeklySchedule = () => {
 
     // 4. Fetch Class Subjects for Summary
     const { data: classSubjectsResponse } = useQuery({
-        queryKey: ['academic', 'class-subjects', userClassId],
+        queryKey: ['academic', 'class-subjects', userClassId, selectedAcademicYearId],
         queryFn: () => userClassId ? academicService.getClassSubjects({
             classId: userClassId,
             academicYearId: selectedAcademicYearId || undefined,
@@ -186,12 +187,12 @@ const StudentWeeklySchedule = () => {
 
     // Calculate Summary Stats
     const totalTarget = classSubjects.reduce((acc, s) => acc + (s.plannedUnitsPerWeek || 0), 0);
-    const totalScheduled = weeklyTemplates.reduce((acc, t) => {
-        if (!t.isActive) return acc;
-        if (t.plannedUnits) return acc + t.plannedUnits;
-        if (t.startTime && t.endTime) {
-            const start = new Date(`1970-01-01T${t.startTime}`);
-            const end = new Date(`1970-01-01T${t.endTime}`);
+    const totalScheduled = weeklySessions.reduce((acc, s) => {
+        if (s.isCancelled) return acc;
+        if (s.teachingUnits) return acc + s.teachingUnits;
+        if (s.startTime && s.endTime) {
+            const start = new Date(`1970-01-01T${s.startTime}`);
+            const end = new Date(`1970-01-01T${s.endTime}`);
             const durationMins = (end.getTime() - start.getTime()) / 60000;
             return acc + (durationMins / minutesPerUnit);
         }
@@ -210,11 +211,16 @@ const StudentWeeklySchedule = () => {
     ], []);
 
     const activeAvailableDays = useMemo(() => {
-        if (!isMobile || !weeklyTemplates) return allAvailableDays;
-        const activeDays = new Set(weeklyTemplates.map(t => t.dayOfWeek));
-        const filtered = allAvailableDays.filter(d => activeDays.has(d.value));
-        return filtered.length > 0 ? filtered : allAvailableDays;
-    }, [isMobile, weeklyTemplates, allAvailableDays]);
+        if (!isMobile || !weeklySessions) return allAvailableDays;
+        const activeDays = new Set(weeklySessions.map(s => {
+            if (s.sessionDate) {
+                return format(parseISO(s.sessionDate), 'EEEE').toUpperCase();
+            }
+            return "";
+        }).filter(Boolean));
+        
+        return allAvailableDays.filter(day => activeDays.has(day.value));
+    }, [isMobile, weeklySessions, allAvailableDays]);
 
     return (
         <DndProvider backend={HTML5Backend}>

@@ -33,6 +33,14 @@ const AttendanceRecordCard: React.FC<AttendanceRecordCardProps> = ({
   onQuickCheckOut,
   getStatusColor,
 }) => {
+  const getDispensasiLabel = (notes?: string | null) => {
+    if (!notes) return 'Dispensasi';
+    const match = notes.match(/^(?:Excused|Dispensasi):\s*([^(]+)/i);
+    return match && match[1] ? match[1].trim() : 'Dispensasi';
+  };
+
+  const dispensasiNotes = record.notes || (record.remarks && record.remarks.length > 0 ? record.remarks[0].reason : null);
+
   return (
     <div
       className={`rounded-2xl border overflow-hidden transition-all ${
@@ -48,7 +56,7 @@ const AttendanceRecordCard: React.FC<AttendanceRecordCardProps> = ({
             {record.user?.studentProfile?.nis || record.user?.public_id?.substring(0,8) || "ID Tidak Diketahui"}
           </span>
           <Badge color={getStatusColor(record.statusLabel || undefined)}>
-            {record.status?.name || record.statusLabel || "Tidak Diketahui"}
+            {record.statusLabel === 'excused' ? getDispensasiLabel(dispensasiNotes) : (record.status?.name || record.statusLabel || "Tidak Diketahui")}
           </Badge>
         </div>
         <Checkbox checked={isSelected} onChange={onToggle} />
@@ -88,11 +96,19 @@ const AttendanceRecordCard: React.FC<AttendanceRecordCardProps> = ({
             </span>
             <span className="text-gray-300 dark:text-gray-600 px-0.5">—</span>
             <span className={record.isEarlyLeave ? "text-warning-600 font-bold" : "text-gray-600 dark:text-gray-400 font-medium"}>
-               OUT: {record.clockOut ? format(parseISO(record.clockOut), "HH:mm") : "--:--"}
-               {record.isEarlyLeave && ` (${record.earlyLeaveMinutes}m)`}
+              OUT: {record.clockOut ? format(parseISO(record.clockOut), "HH:mm") : "--:--"}
+              {record.isEarlyLeave && ` (${record.earlyLeaveMinutes}m)`}
             </span>
           </div>
         </div>
+        {record.statusLabel === 'excused' && dispensasiNotes && (
+          <div className="mt-3 bg-blue-50/50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 rounded-lg p-2.5">
+            <p className="text-[11px] sm:text-xs text-blue-700 dark:text-blue-300">
+              <span className="font-semibold block mb-0.5">Keterangan:</span>
+              {dispensasiNotes}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* FOOTER */}

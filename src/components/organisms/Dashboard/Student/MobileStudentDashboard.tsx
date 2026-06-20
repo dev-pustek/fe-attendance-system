@@ -281,6 +281,8 @@ export default function MobileStudentDashboard({ logs = [] }: MobileStudentDashb
          const diffMs = expectedEnd.getTime() - clockOutDate.getTime();
          return Math.max(0, Math.floor(diffMs / 60000));
       };
+
+      // Removed computeOvertime as overtime is now calculated by the backend and stored in the database
       
       const dynamicRule = userPolicy?.rules?.find((r: any) => r.ruleType === "DYNAMIC_TEACHER_SCHEDULE");
       const isDynamicTeacher = isTeacherUser && dynamicRule && (dynamicRule.ruleValue === "true" || dynamicRule.ruleValue === true);
@@ -373,12 +375,14 @@ export default function MobileStudentDashboard({ logs = [] }: MobileStudentDashb
               (item as any).recordDetail = { 
                 ...todayRecord, 
                 photoUrl: todayRecord.photoOutUrl || null,
-                photoEvidenceUrl: null
+                photoEvidenceUrl: null,
+                overtimeMinutes: todayRecord.overtimeMinutes || 0
               };
            } else {
               (item as any).recordDetail = {
                  isLate: false,
                  earlyLeaveMinutes: computeEarly(userPolicy.todayStatus.clockOut, userPolicy.attendancePolicy.endTime),
+                 overtimeMinutes: 0,
                  statusLabel: userPolicy.todayStatus.statusLabel,
                  latitude: null, longitude: null, ipAddress: null
               };
@@ -664,7 +668,7 @@ export default function MobileStudentDashboard({ logs = [] }: MobileStudentDashb
         {scheduleOverride && (
           <div className="mb-4 p-3 rounded-xl bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 dark:from-blue-950/30 dark:to-cyan-950/30 dark:border-blue-800/50">
             <div className="flex items-center gap-2 mb-1">
-              <ArrowPathIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <ArrowPathIcon className="w-4 h-4 text-blue-600 dark:blue-400" />
               <span className="text-[11px] font-bold text-blue-700 dark:text-blue-300 uppercase tracking-wider">
                 {scheduleOverride.isHoliday ? 'Holiday Override' : 'Schedule Override'}
               </span>
@@ -1252,8 +1256,8 @@ export default function MobileStudentDashboard({ logs = [] }: MobileStudentDashb
               )}
 
               {selectedDetail.earlyLeaveMinutes > 0 && (
-                <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-slate-800">
-                  <span className="text-gray-500 dark:text-gray-400">Early Leave</span>
+                <div className="flex justify-between items-center py-2 border-b border-white/5">
+                  <span className="text-gray-400">Status Waktu</span>
                   <span className="font-semibold text-red-500">{selectedDetail.earlyLeaveMinutes < 60 ? `${selectedDetail.earlyLeaveMinutes} minutes` : `${Math.floor(selectedDetail.earlyLeaveMinutes/60)}h ${selectedDetail.earlyLeaveMinutes%60}m`} early</span>
                 </div>
               )}

@@ -147,56 +147,36 @@ export default function AttendanceReports() {
     setIsExporting(true);
     try {
       if (payload.type === "attendance") {
-        const res = await attendanceService.getAttendanceList(payload.params);
-        const rows = res.data;
-        if (!rows.length) {
-          alert("Tidak ada data kehadiran untuk diekspor berdasarkan filter tersebut.");
+        const blob = await attendanceService.exportAttendanceExcel(payload.params);
+        if (!blob || blob.size === 0) {
+          alert("Tidak ada data kehadiran untuk diekspor.");
           setIsExporting(false);
           return;
         }
-
-        const headers = ["Tanggal", "Nama", "Kelas", "Check-in", "Check-out", "Status"];
-        const csvContent = [
-          headers.join(","),
-          ...rows.map(row => 
-            [
-              row.date,
-              `"${row.studentName || row.user?.name || row.user?.full_name || ''}"`,
-              `"${row.className || row.class?.name || ''}"`,
-              row.clockIn || '',
-              row.clockOut || '',
-              row.statusLabel || ''
-            ].join(",")
-          )
-        ].join("\n");
-        downloadFile(csvContent, `Laporan_Kehadiran_${new Date().toISOString().split('T')[0]}.csv`);
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `Laporan_Kehadiran_${new Date().toISOString().split('T')[0]}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
 
       } else if (payload.type === "teaching_session") {
-        const res = await attendanceService.getTeachingSessions(payload.params);
-        const rows = res.data;
-        if (!rows.length) {
-          alert("Tidak ada data JP/Sesi Mengajar untuk diekspor berdasarkan filter tersebut.");
+        const blob = await attendanceService.exportTeachingSessionExcel(payload.params);
+        if (!blob || blob.size === 0) {
+          alert("Tidak ada data JP/Sesi Mengajar untuk diekspor.");
           setIsExporting(false);
           return;
         }
-
-        const headers = ["Tanggal", "Guru", "Mata Pelajaran", "Waktu Mulai", "Waktu Selesai", "Total JP", "Substitusi", "Status Validasi"];
-        const csvContent = [
-          headers.join(","),
-          ...rows.map(row => 
-            [
-              row.sessionDate,
-              `"${row.actualTeacherId || 'Unknown'}"`, // Would normally be mapped to teacher name if joined
-              `"${row.classSubjectId || 'Unknown'}"`,
-              row.startTime || '',
-              row.endTime || '',
-              row.teachingUnits || 0,
-              row.isSubstitution ? "Ya" : "Tidak",
-              row.validationStatus || "pending"
-            ].join(",")
-          )
-        ].join("\n");
-        downloadFile(csvContent, `Laporan_JP_${new Date().toISOString().split('T')[0]}.csv`);
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `Laporan_Sesi_Mengajar_${new Date().toISOString().split('T')[0]}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
 
       } else if (payload.type === "performance") {
         const blob = await analyticsService.exportBenchmarkExcel(payload.params);
@@ -423,6 +403,8 @@ export default function AttendanceReports() {
                     <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase">Tanggal</TableCell>
                     <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase">Nama</TableCell>
                     <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase">In/Out</TableCell>
+                    <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase">Metode & Info</TableCell>
+                    <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase">Catatan</TableCell>
                     <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase text-center">Status</TableCell>
                   </TableRow>
                 </TableHeader>
@@ -431,7 +413,7 @@ export default function AttendanceReports() {
                     <SkeletonTable rows={5} columns={5} />
                   ) : items.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="py-12 text-center text-gray-500">
+                      <TableCell colSpan={7} className="py-12 text-center text-gray-500">
                         Tidak ada laporan kehadiran
                       </TableCell>
                     </TableRow>
@@ -451,6 +433,38 @@ export default function AttendanceReports() {
                           <TableCell className="px-4 py-4 text-sm text-gray-600 dark:text-gray-300">
                             {row.clockIn?.slice(0,5) || '--:--'} / {row.clockOut?.slice(0,5) || '--:--'}
                           </TableCell>
+                          <TableCell className="px-4 py-4">
+                            <div className="flex flex-col gap-1">
+                              <span className="inline-flex w-fit items-center px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300" title="Metode & Lokasi Presensi">
+                                {row.method || 'CCTV'} 
+                                {((row as any).deviceLocation || (row as any).cameraName || (row as any).location) ? ` • ${((row as any).deviceLocation || (row as any).cameraName || (row as any).location)}` : ''}
+                              </span>
+                              {row.lateMinutes ? (
+                                <span className="text-[11px] text-red-500 dark:text-red-400 font-medium">
+                                  Telat: {row.lateMinutes} mnt
+                                </span>
+                              ) : null}
+                              {row.isEarlyLeave ? (
+                                <span className="text-[11px] text-warning-500 dark:text-warning-400 font-medium">
+                                  Pulang Awal: {row.earlyLeaveMinutes} mnt
+                                </span>
+                              ) : null}
+                              {row.isOvertime ? (
+                                <span className="text-[11px] text-green-500 dark:text-green-400 font-medium">
+                                  Lembur: {row.overtimeMinutes} mnt
+                                </span>
+                              ) : null}
+                            </div>
+                          </TableCell>
+                          <TableCell className="px-4 py-4">
+                            {row.notes ? (
+                              <p className="text-xs text-gray-500 dark:text-gray-400 italic max-w-[150px] truncate" title={row.notes}>
+                                {row.notes}
+                              </p>
+                            ) : (
+                              <span className="text-xs text-gray-400">-</span>
+                            )}
+                          </TableCell>
                           <TableCell className="px-4 py-4 text-center">
                             <Badge color={sc.color}>{sc.label}</Badge>
                           </TableCell>
@@ -459,7 +473,7 @@ export default function AttendanceReports() {
                     })
                   )}
                 </TableBody>
-              </Table>
+                </Table>
             </div>
             
             {/* Desktop Pagination */}
@@ -488,6 +502,8 @@ export default function AttendanceReports() {
             )}
           </div>
         )}
+
+
       </div>
 
       <ExportFilterModal 

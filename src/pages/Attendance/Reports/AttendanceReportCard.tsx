@@ -18,14 +18,20 @@ export default function AttendanceReportCard({
   const isPresent = entity.isPresent;
   
   // Convert API status to Indonesian label and color
-  const getStatusConfig = (status: string, present: boolean, isLate: boolean) => {
-    if (status === 'excused') return { label: 'Dispensasi', color: 'blue' as const };
+  const getStatusConfig = (status: string, present: boolean, isLate: boolean, notes?: string | null) => {
+    if (status === 'excused') {
+        const match = notes?.match(/^(?:Excused|Dispensasi):\s*([^(]+)/i);
+        const label = match && match[1] ? match[1].trim() : 'Dispensasi';
+        return { label, color: 'blue' as const };
+    }
     if (!present) return { label: 'Absen', color: 'error' as const };
     if (isLate) return { label: 'Terlambat', color: 'warning' as const };
     return { label: 'Hadir', color: 'success' as const };
   };
 
-  const statusConfig = getStatusConfig(entity.statusLabel, isPresent, entity.isLate);
+  const dispensasiNotes = entity.notes || (entity.remarks && entity.remarks.length > 0 ? entity.remarks[0].reason : null);
+
+  const statusConfig = getStatusConfig(entity.statusLabel || '', isPresent, entity.isLate, dispensasiNotes);
 
   // Format times safely
   const formatTime = (timeStr?: string | null) => {
@@ -85,11 +91,21 @@ export default function AttendanceReportCard({
               <TimeIcon className="size-3.5 shrink-0 text-gray-400 dark:text-gray-500" />
               <span>In: <span className="font-medium text-gray-700 dark:text-gray-300">{formatTime(entity.clockIn)}</span></span>
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
               <TimeIcon className="size-3.5 shrink-0 text-gray-400 dark:text-gray-500" />
               <span>Out: <span className="font-medium text-gray-700 dark:text-gray-300">{formatTime(entity.clockOut)}</span></span>
+              {entity.isEarlyLeave && <span className="text-warning-600 font-bold ml-1">(-{entity.earlyLeaveMinutes}m)</span>}
+              {entity.isOvertime && <span className="text-success-600 font-bold ml-1">(+{entity.overtimeMinutes}m)</span>}
             </div>
           </div>
+          {entity.statusLabel === 'excused' && dispensasiNotes && (
+            <div className="mt-2 bg-blue-50/50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 rounded-lg p-2.5">
+              <p className="text-[11px] sm:text-xs text-blue-700 dark:text-blue-300">
+                <span className="font-semibold block mb-0.5">Keterangan Dispensasi:</span>
+                {dispensasiNotes}
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

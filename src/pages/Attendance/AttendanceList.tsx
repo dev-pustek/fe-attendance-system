@@ -3,6 +3,7 @@ import { useAttendanceList, useAttendanceStatuses } from "../../api/hooks/useAtt
 import { useEvents } from "../../api/hooks/useEvents";
 import { useClasses, useAcademicYears, useMajors } from "../../api/hooks/useAcademic";
 import { useSettings } from "../../api/hooks/useSettings";
+import { useUsers } from "../../api/hooks/useUsers";
 import { AttendanceRecord } from "../../api/types/attendance";
 import { Class } from "../../api/types/academic";
 import { Event } from "../../api/types/events";
@@ -144,6 +145,8 @@ const AttendanceList: React.FC = () => {
   const { data: settingsResponse } = useSettings({ limit: 100 });
   const [attendanceType, setAttendanceType] = useState<string>("");
   const [eventId, setEventId] = useState("");
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [filterUserSearch, setFilterUserSearch] = useState("");
   const [lateMinutes, setLateMinutes] = useState("");
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
   const [filterTab, setFilterTab] = useState<"academic" | "event" | "general">("academic");
@@ -218,22 +221,32 @@ const AttendanceList: React.FC = () => {
   const [selectedEventDetail, setSelectedEventDetail] = useState<Event | null>(null);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
 
-  const { data: attendanceResponse, isLoading, deleteMutation, updateMutation, createManualMutation, updateManualMutation, qrScanMutation, checkInMutation, checkOutMutation } = useAttendanceList({
+  const { users: filterUsers, isLoading: isFilterUsersLoading } = useUsers({ search: filterUserSearch, limit: 30 });
+  
+  const filterUserOptions = filterUsers.map((u: any) => ({
+      label: u.name || u.full_name,
+      value: String(u.id || u.public_id),
+      subLabel: u.email || u.nis || u.nip || u.role
+  }));
+
+  const queryParams = {
     page,
     limit,
-    userId: searchTerm || undefined,
-    statusId: statusId ? Number(statusId) : undefined,
-    startDate: startDate || undefined,
-    endDate: endDate || undefined,
+    startDate: dateRange.from ? format(dateRange.from, "yyyy-MM-dd") : undefined,
+    endDate: dateRange.to ? format(dateRange.to, "yyyy-MM-dd") : undefined,
     classId: classId || undefined,
     academicYearId: academicYearId || undefined,
     majorId: majorId || undefined,
+    statusId: statusId || undefined,
     type: attendanceType || undefined,
     eventId: eventId || undefined,
+    userId: selectedUserIds.length > 0 ? selectedUserIds.join(",") : undefined,
     lateMinutes: lateMinutes || undefined,
     sortBy: undefined,
     sortOrder: undefined,
-  });
+  };
+
+  const { data: attendanceResponse, isLoading, deleteMutation, updateMutation, createManualMutation, updateManualMutation, qrScanMutation, checkInMutation, checkOutMutation } = useAttendanceList(queryParams);
 
   const records = attendanceResponse?.data || [];
   const meta = attendanceResponse?.meta;
@@ -1184,9 +1197,24 @@ const AttendanceList: React.FC = () => {
                     </TableCell>
                     <TableCell className="px-5 py-4 whitespace-nowrap w-fit">
                         <div className="flex flex-col gap-1.5">
-                            <Badge color={getStatusColor(record.statusLabel || undefined)}>
-                                {record.status?.name || record.statusLabel || "Tidak Diketahui"}
-                            </Badge>
+                            {(() => {
+                                const dispensasiNotes = record.notes || (record.remarks && record.remarks.length > 0 ? record.remarks[0].reason : null);
+                                return (
+                                    <>
+                                        <Badge color={getStatusColor(record.statusLabel || undefined)}>
+                                            {record.statusLabel === 'excused' 
+                                                ? (dispensasiNotes?.match(/^(?:Excused|Dispensasi):\s*([^(]+)/i)?.[1]?.trim() || 'Dispensasi') 
+                                                : (record.status?.name || record.statusLabel || "Tidak Diketahui")}
+                                        </Badge>
+                                        {record.statusLabel === 'excused' && dispensasiNotes && (
+                                            <div className="text-[10px] sm:text-[11px] text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-500/10 p-1.5 rounded-md border border-blue-100 dark:border-blue-500/20 whitespace-normal max-w-[200px] leading-tight mt-1">
+                                                <span className="font-semibold block mb-0.5">Keterangan:</span>
+                                                {dispensasiNotes}
+                                            </div>
+                                        )}
+                                    </>
+                                );
+                            })()}
                             {record.clockIn && !record.clockOut && (
                                 <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-brand-50 border border-brand-100 dark:bg-brand-500/10 dark:border-brand-500/20 w-fit">
                                     <span className="relative flex h-2 w-2">
@@ -2128,12 +2156,12 @@ const AttendanceList: React.FC = () => {
                         {selectedRecord.isLate ? (
                             <>
                                 <div className="size-2 rounded-full bg-error-500"></div>
-                                <span className="text-sm font-bold text-error-600">Late {selectedRecord.lateMinutes}m</span>
+                                <span className="text-sm font-bold text-error-600">Terlambat {selectedRecord.lateMinutes}m</span>
                             </>
                         ) : selectedRecord.isEarlyLeave ? (
                             <>
                                 <div className="size-2 rounded-full bg-warning-500"></div>
-                                <span className="text-sm font-bold text-warning-600">Early {selectedRecord.earlyLeaveMinutes}m</span>
+                                <span className="text-sm font-bold text-warning-600">Pulang Awal {selectedRecord.earlyLeaveMinutes}m</span>
                             </>
                         ) : (
                             <>

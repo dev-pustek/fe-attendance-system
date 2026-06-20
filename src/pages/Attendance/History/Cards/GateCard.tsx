@@ -76,6 +76,7 @@ export default function GateCard({ record, isSelected, onToggle, onDelete, onVie
                   <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase">Keluar</p>
                   <p className="text-sm font-semibold text-gray-900 dark:text-white">
                      {record.clockOut ? format(parseISO(record.clockOut), 'HH:mm') : '--:--'}
+                     {record.isEarlyLeave && <span className="text-xs text-warning-600 ml-1">(-{record.earlyLeaveMinutes}m)</span>}
                   </p>
                </div>
             </div>
