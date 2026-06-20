@@ -586,7 +586,7 @@ const QRScanner = () => {
         return { isRestricted: false, reason: null, message: null };
 
       const now = currentTime;
-      const { startTime, endTime } = userPolicy.attendancePolicy;
+      const { startTime, endTime, baseStartTime } = userPolicy.attendancePolicy;
 
       // Helper: parse HH:MM:SS string to today's Date
       const getTimeDate = (timeStr: string) => {
@@ -596,7 +596,7 @@ const QRScanner = () => {
         return d;
       };
 
-      const startDate = getTimeDate(startTime);
+      const startDate = getTimeDate(baseStartTime || startTime);
       const endDate = getTimeDate(endTime);
 
       // A. Check Early Restriction (CHECKIN_WINDOW_START_MIN)

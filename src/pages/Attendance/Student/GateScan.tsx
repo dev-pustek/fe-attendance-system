@@ -590,7 +590,7 @@ const GateScan = () => {
       return { isRestricted: false, reason: null, message: null };
 
     const now = currentTime;
-    const { startTime, endTime } = userPolicy.attendancePolicy;
+    const { startTime, endTime, baseStartTime } = userPolicy.attendancePolicy;
 
     const getTimeDate = (timeStr: string) => {
       const [h, m] = timeStr.split(":").map(Number);
@@ -599,7 +599,7 @@ const GateScan = () => {
       return d;
     };
 
-    const startDate = getTimeDate(startTime);
+    const startDate = getTimeDate(baseStartTime || startTime);
     const endDate = getTimeDate(endTime);
 
     const checkInWindowRule = userPolicy.rules?.find(
