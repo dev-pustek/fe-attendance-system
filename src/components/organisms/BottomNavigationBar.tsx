@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import { Link, useLocation } from "react-router";
-import { HomeIcon, CalenderIcon, DocsIcon, ListIcon, VideoIcon } from "../atoms/Icons";
+import { HomeIcon, CalenderIcon, DocsIcon, ListIcon, VideoIcon, TimeIcon } from "../atoms/Icons";
+import { useAuthStore } from "../../store/authStore";
 
 const BottomNavigationBar: React.FC = () => {
   const location = useLocation();
@@ -22,11 +23,17 @@ const BottomNavigationBar: React.FC = () => {
     return location.pathname.startsWith(path);
   };
 
+  const { user } = useAuthStore();
+  const isTeacher = user?.roles?.some((r: any) => ["guru", "teacher"].includes(r.name.toLowerCase())) || 
+                    user?.userTypes?.some((t: any) => ["guru", "teacher"].includes(t.toLowerCase()));
+
   const navItems = [
     { name: "Absen", path: "/attendance/gate-scan", icon: <VideoIcon className="w-5 h-5" /> },
     { name: "Izin", path: "/leaves/requests", icon: <DocsIcon className="w-5 h-5" /> },
     { name: "Beranda", path: "/", icon: <HomeIcon className="w-5 h-5" /> },
-    { name: "Jadwal", path: "/student/schedule/weekly", icon: <CalenderIcon className="w-5 h-5" /> },
+    isTeacher 
+      ? { name: "Jadwal", path: "/student/schedule/weekly", icon: <CalenderIcon className="w-5 h-5" /> }
+      : { name: "Riwayat", path: "/attendance/history", icon: <TimeIcon className="w-5 h-5" /> },
     { name: "Lainnya", path: "/menu", icon: <ListIcon className="w-5 h-5" /> },
   ];
 
