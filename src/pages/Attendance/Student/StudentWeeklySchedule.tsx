@@ -186,7 +186,7 @@ const StudentWeeklySchedule = () => {
     const classSubjects = useMemo(() => classSubjectsResponse?.data || [], [classSubjectsResponse]);
 
     // Calculate Summary Stats
-    const totalTarget = classSubjects.reduce((acc, s) => acc + (s.plannedUnitsPerWeek || 0), 0);
+    let totalTarget = classSubjects.reduce((acc, s) => acc + (s.plannedUnitsPerWeek || 0), 0);
     const totalScheduled = weeklySessions.reduce((acc, s) => {
         if (s.isCancelled) return acc;
         if (s.teachingUnits) return acc + s.teachingUnits;
@@ -198,6 +198,11 @@ const StudentWeeklySchedule = () => {
         }
         return acc;
     }, 0);
+    
+    if (totalTarget === 0 && totalScheduled > 0) {
+        totalTarget = totalScheduled;
+    }
+    
     const percent = totalTarget > 0 ? (totalScheduled / totalTarget) * 100 : 0;
 
     const allAvailableDays = useMemo(() => [
