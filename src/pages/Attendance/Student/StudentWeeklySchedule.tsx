@@ -9,7 +9,10 @@ import { useQuery } from '@tanstack/react-query';
 import PageMeta from '../../../components/atoms/PageMeta';
 import PageBreadcrumb from '../../../components/molecules/PageBreadcrumb';
 import { 
-    TableCellsIcon 
+    TableCellsIcon,
+    CalendarIcon,
+    ExclamationCircleIcon,
+    DocumentMagnifyingGlassIcon
 } from '@heroicons/react/24/outline';
 import { FileIcon, TableIcon } from '../../../components/atoms/Icons'; 
 import CustomSelect from '../../../components/molecules/CustomSelect';
@@ -327,11 +330,35 @@ const StudentWeeklySchedule = () => {
                                           <div className="bg-gray-50 dark:bg-[#0B0B0F] flex-1 min-w-0 grid grid-cols-1">
                                               <div className="w-full">
                                                   {isLoadingWeekly ? (
-                                                       <div className="text-center py-12">Memuat jadwal mingguan...</div>
+                                                       <div className="flex flex-col items-center justify-center py-20 text-center px-4">
+                                                           <div className="size-16 rounded-2xl bg-brand-50 dark:bg-brand-500/10 flex items-center justify-center text-brand-600 dark:text-brand-400 mb-4 animate-pulse">
+                                                               <CalendarIcon className="size-8" />
+                                                           </div>
+                                                           <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Memuat Jadwal...</h3>
+                                                           <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm mx-auto">
+                                                               Harap tunggu sebentar, kami sedang mengambil jadwal mingguan Anda dari server.
+                                                           </p>
+                                                       </div>
                                                   ) : (isStudent && !userClassId) ? (
-                                                       <div className="text-center py-12 text-red-500">Anda belum dimasukkan ke kelas mana pun. Silakan hubungi administrator.</div>
+                                                       <div className="flex flex-col items-center justify-center py-20 text-center px-4">
+                                                           <div className="size-16 rounded-2xl bg-error-50 dark:bg-error-500/10 flex items-center justify-center text-error-600 dark:text-error-400 mb-4">
+                                                               <ExclamationCircleIcon className="size-8" />
+                                                           </div>
+                                                           <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Kelas Belum Diatur</h3>
+                                                           <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm mx-auto">
+                                                               Anda belum dimasukkan ke kelas mana pun. Silakan hubungi administrator sekolah untuk pengaturan kelas Anda.
+                                                           </p>
+                                                       </div>
                                                   ) : (!weeklySessions || weeklySessions.length === 0) ? (
-                                                       <div className="text-center py-12 text-gray-500">Tidak ada jadwal yang ditetapkan untuk Anda minggu ini.</div>
+                                                       <div className="flex flex-col items-center justify-center py-20 text-center px-4">
+                                                           <div className="size-16 rounded-full bg-gray-50 dark:bg-white/5 flex items-center justify-center text-gray-400 dark:text-gray-500 mb-4 ring-8 ring-gray-50/50 dark:ring-white/5">
+                                                               <DocumentMagnifyingGlassIcon className="size-8" />
+                                                           </div>
+                                                           <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Tidak Ada Jadwal</h3>
+                                                           <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm mx-auto">
+                                                               Belum ada jadwal kelas yang ditetapkan untuk Anda pada minggu ini. Silakan periksa kembali nanti atau pilih tahun ajaran lain.
+                                                           </p>
+                                                       </div>
                                                   ) : (
                                                     <WeeklySessionMatrix 
                                                         sessions={weeklySessions}
