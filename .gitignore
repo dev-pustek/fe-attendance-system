@@ -39,6 +39,7 @@ out
 .cache
 .parcel-cache
 .output
+dev-dist
 
 # Testing
 coverage
