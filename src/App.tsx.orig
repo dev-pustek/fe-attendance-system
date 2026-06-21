@@ -1,5 +1,4 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router";
-import React, { lazy, Suspense } from "react";
 const SignIn = lazy(() => import("./pages/AuthPages/SignIn"));
 import { Navigate } from "react-router";
 const SignUp = lazy(() => import("./pages/AuthPages/SignUp"));
@@ -37,6 +36,7 @@ const TeacherSubjects = lazy(() => import("./pages/Academic/TeacherSubjects"));
 const ClassSubjects = lazy(() => import("./pages/Academic/ClassSubjects"));
 const TeachingAssignments = lazy(() => import("./pages/Academic/TeachingAssignments"));
 const TeachingUnitPolicies = lazy(() => import("./pages/Academic/TeachingUnitPolicies"));
+import { lazy } from "react";
 const WorkloadContracts = lazy(() => import("./pages/Academic/WorkloadContracts"));
 const TeachingScheduleTemplates = lazy(() => import("./pages/Academic/TeachingScheduleTemplates"));
 const ClassSchedules = lazy(() => import("./pages/Academic/ClassSchedules"));
@@ -177,7 +177,7 @@ export default function App() {
       />
       <Router>
         <ScrollToTop />
-        <Suspense fallback={
+        <React.Suspense fallback={
           <div className="flex h-screen w-screen items-center justify-center bg-gray-50 dark:bg-slate-900">
             <div className="flex flex-col items-center gap-4">
               <div className="h-12 w-12 animate-spin rounded-full border-4 border-brand-500 border-t-transparent"></div>
@@ -315,7 +315,6 @@ export default function App() {
           {/* Fallback Route */}
           <Route path="*" element={<NotFound />} />
         </Routes>
-        </Suspense>
       </Router>
     </>
   );

@@ -3,45 +3,48 @@ import { DashboardOverview } from "../../../../api/types/dashboard";
 
 interface Props {
   overview: DashboardOverview;
+  dateLabel?: string;
 }
 
-export default function AdminSummaryCards({ overview }: Props) {
+export default function AdminSummaryCards({ overview, dateLabel = "Hari Ini" }: Props) {
+  const isPeriod = dateLabel !== "Hari Ini";
+  
   const cards = [
     {
-      title: "Total Population",
+      title: "Total Populasi",
       value: overview.totalUsers.toLocaleString(),
       icon: UsersIcon,
       gradient: "from-blue-600 to-indigo-500",
       iconBg: "bg-blue-500/20",
       iconColor: "text-blue-100",
-      subtitle: "Active students & staff",
+      subtitle: "Seluruh pengguna",
     },
     {
-      title: "Present Today",
+      title: `Hadir ${dateLabel}`,
       value: overview.presentToday.toLocaleString(),
       icon: CheckBadgeIcon,
       gradient: "from-emerald-500 to-teal-400",
       iconBg: "bg-emerald-500/20",
       iconColor: "text-emerald-100",
-      subtitle: `Attendance Rate: ${overview.attendanceRate}%`,
+      subtitle: `Tingkat Kehadiran: ${typeof overview.attendanceRate === 'number' ? overview.attendanceRate.toFixed(1) : overview.attendanceRate}%`,
     },
     {
-      title: "Late Arrivals",
+      title: "Terlambat",
       value: overview.lateToday.toLocaleString(),
       icon: ClockIcon,
       gradient: "from-amber-500 to-orange-500",
       iconBg: "bg-amber-500/20",
       iconColor: "text-amber-100",
-      subtitle: "Recorded late today",
+      subtitle: `Tercatat terlambat ${dateLabel.toLowerCase()}`,
     },
     {
-      title: "Absences",
+      title: "Tidak Hadir",
       value: "...", // Note: API overview doesn't have absentToday in the new schema, but it's in stats
       icon: ExclamationTriangleIcon,
       gradient: "from-rose-500 to-red-500",
       iconBg: "bg-rose-500/20",
       iconColor: "text-rose-100",
-      subtitle: "Pending verification",
+      subtitle: "Menunggu verifikasi",
     },
   ];
 

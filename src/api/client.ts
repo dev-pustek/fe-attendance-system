@@ -84,12 +84,12 @@ apiClient.interceptors.response.use(
       // If there is metadata (like total, page, etc.) at the root level, 
       // we merge it with the data if data is an object, 
       // or return a combined object if data is an array.
-      if (Object.keys(metadata).length > 0) {
+      if (metadata && Object.keys(metadata).length > 0) {
         return {
           ...response,
           data: Array.isArray(data) 
             ? { data, ...metadata } // Paginated structure: { data: [], total: 10, ... }
-            : { ...data, ...metadata } // Simple object with extra root fields
+            : { ...(data || {}), ...metadata } // Simple object with extra root fields
         };
       }
 

@@ -3,13 +3,14 @@ import { DashboardStats } from "../../../../api/types/dashboard";
 
 interface Props {
   stats: DashboardStats;
+  dateLabel?: string;
 }
 
-export default function StatusDistributionChart({ stats }: Props) {
+export default function StatusDistributionChart({ stats, dateLabel = "Hari Ini" }: Props) {
   const distribution = [
-      { name: "Present", value: stats.present, color: "#10B981" },
-      { name: "Late", value: stats.late, color: "#F59E0B" },
-      { name: "Absent", value: stats.absent, color: "#EF4444" },
+      { name: "Hadir", value: stats.present, color: "#10B981" },
+      { name: "Terlambat", value: stats.late, color: "#F59E0B" },
+      { name: "Tidak Hadir", value: stats.absent, color: "#EF4444" },
   ];
 
   const total = distribution.reduce((sum, item) => sum + item.value, 0);
@@ -33,11 +34,11 @@ export default function StatusDistributionChart({ stats }: Props) {
       <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl group-hover:bg-indigo-500/20 transition-all duration-500"></div>
 
       <div className="relative z-10 mb-2">
-        <h3 className="text-2xl font-semibold text-gray-900 dark:text-white tracking-tight">Today's Attendance</h3>
-        <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-1">Overall distribution</p>
+        <h3 className="text-2xl font-semibold text-gray-900 dark:text-white tracking-tight">Kehadiran {dateLabel}</h3>
+        <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-1">Distribusi keseluruhan</p>
       </div>
       
-      <div className="relative flex-1 min-h-[250px] w-full mt-4 flex items-center justify-center">
+      <div className="relative w-full mt-4 flex items-center justify-center h-[250px]">
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-0">
             <span className="text-4xl font-bold text-gray-900 dark:text-white drop-shadow-sm">{total.toLocaleString()}</span>
             <span className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Total</span>

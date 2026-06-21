@@ -43,9 +43,11 @@ const BottomNavigationBar: React.FC = () => {
   // ── Geometry ──
   const navH = 64;
   const paddingX = 16; // px-4
-  const gridW = w - paddingX * 2;
+  // The grid has max-w-lg (512px) and mx-auto
+  const gridW = Math.min(w - paddingX * 2, 512);
+  const gridStartX = (w - gridW) / 2;
   const colW = gridW / 5;
-  const cx = paddingX + colW * activeIndex + colW / 2;
+  const cx = gridStartX + colW * activeIndex + colW / 2;
 
   // The sliding container is very wide (3x screen width)
   const svgW = w * 3;

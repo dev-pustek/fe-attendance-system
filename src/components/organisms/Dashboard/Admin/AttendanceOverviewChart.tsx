@@ -14,7 +14,7 @@ export default function AttendanceOverviewChart({ trends }: Props) {
           {payload.map((entry: any, index: number) => (
             <div key={index} className="flex items-center gap-3 mb-1.5">
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color, boxShadow: `0 0 8px ${entry.color}` }}></div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 capitalize">Attendance:</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 capitalize">Kehadiran:</p>
               <p className="text-sm font-semibold text-gray-900 dark:text-white ml-auto">{entry.value}</p>
             </div>
           ))}
@@ -30,12 +30,12 @@ export default function AttendanceOverviewChart({ trends }: Props) {
       
       <div className="relative z-10 mb-6 flex justify-between items-end">
         <div>
-          <h3 className="text-2xl font-semibold text-gray-900 dark:text-white tracking-tight">Attendance Trends</h3>
-          <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-1">Daily system attendance count</p>
+          <h3 className="text-2xl font-semibold text-gray-900 dark:text-white tracking-tight">Tren Kehadiran</h3>
+          <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-1">Jumlah kehadiran sistem harian</p>
         </div>
       </div>
       
-      <div className="relative z-10 flex-1 min-h-[400px] w-full mt-4">
+      <div className="relative z-10 w-full mt-4 h-[400px]">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={trends} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <defs>
@@ -52,7 +52,7 @@ export default function AttendanceOverviewChart({ trends }: Props) {
             <Area 
                 type="monotone" 
                 dataKey="count" 
-                name="Total Present" 
+                name="Total Hadir" 
                 stroke="#6366F1" 
                 strokeWidth={4} 
                 fillOpacity={1} 

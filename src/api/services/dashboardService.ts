@@ -2,8 +2,8 @@ import apiClient from "../client";
 import { DashboardSummary, StudentDashboardSummary, StudentRoadmapItem } from "../types/dashboard";
 
 export const dashboardService = {
-  getSummary: async (): Promise<DashboardSummary> => {
-    const response = await apiClient.get<DashboardSummary>("/dashboard/summary");
+  getSummary: async (params?: { startDate?: string; endDate?: string }): Promise<DashboardSummary> => {
+    const response = await apiClient.get<DashboardSummary>("/dashboard/summary", { params });
     return response.data;
   },
 

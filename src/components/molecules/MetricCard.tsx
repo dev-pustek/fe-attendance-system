@@ -37,33 +37,33 @@ const MetricCard: React.FC<MetricCardProps> = ({
     const theme = colorMap[color];
 
     return (
-        <div className={`relative overflow-hidden rounded-[20px] border border-gray-100 bg-white p-4 md:p-5 dark:border-white/[0.05] dark:bg-[#111118] shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_8px_24px_-8px_rgba(255,255,255,0.05)] transition-all duration-300 group flex flex-col justify-between ${className}`}>
+        <div className={`relative overflow-hidden rounded-[12px] border border-gray-100 bg-white p-2 md:p-3 dark:border-white/[0.05] dark:bg-[#111118] shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_8px_24px_-8px_rgba(255,255,255,0.05)] transition-all duration-300 group flex items-center gap-3 ${className}`}>
             
             {/* Abstract Background Elements */}
-            <div className={`absolute -right-6 -top-6 w-28 h-28 rounded-full bg-gradient-to-br ${theme.gradient} to-transparent opacity-[0.04] dark:opacity-[0.08] group-hover:scale-125 transition-transform duration-700 ease-out`} />
-            <div className={`absolute right-4 bottom-4 w-12 h-12 rounded-full bg-gradient-to-tl ${theme.gradient} to-transparent opacity-0 group-hover:opacity-[0.03] dark:group-hover:opacity-[0.06] transition-opacity duration-500`} />
+            <div className={`absolute -right-4 -top-4 w-16 h-16 rounded-full bg-gradient-to-br ${theme.gradient} to-transparent opacity-[0.04] dark:opacity-[0.08] group-hover:scale-125 transition-transform duration-700 ease-out`} />
 
-            <div className="relative z-10 flex items-start justify-between">
-                <div className={`flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-2xl shadow-sm transition-all duration-300 group-hover:scale-[1.12] group-hover:-rotate-3 group-hover:${theme.glow} ${theme.lightBg} ${theme.text}`}>
+            <div className="relative z-10 flex-shrink-0">
+                <div className={`flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-xl shadow-sm transition-all duration-300 group-hover:scale-[1.12] group-hover:-rotate-3 group-hover:${theme.glow} ${theme.lightBg} ${theme.text}`}>
                     {React.isValidElement(icon)
-                        ? React.cloneElement(icon as React.ReactElement<{ className?: string }>, { className: `size-5 md:size-6 drop-shadow-sm ${((icon as React.ReactElement).props as { className?: string }).className || ''}` })
+                        ? React.cloneElement(icon as React.ReactElement<{ className?: string }>, { className: `size-4 md:size-5 drop-shadow-sm ${((icon as React.ReactElement).props as { className?: string }).className || ''}` })
                         : icon}
                 </div>
-                
-                {badge && (
-                    <Badge color={badge.color} className="flex items-center gap-1 scale-90 md:scale-100 origin-top-right shadow-sm backdrop-blur-md bg-white/80 dark:bg-black/20 relative z-20">
-                        {badge.icon}
-                        {badge.text}
-                    </Badge>
-                )}
             </div>
 
-            <div className="relative z-10 mt-4 md:mt-5 min-w-0">
-                <span className="text-[11px] md:text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest block truncate group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors">
-                    {title}
-                </span>
-                <div className="mt-1 flex items-baseline gap-2">
-                   <h4 className="font-black text-gray-900 text-xl md:text-3xl dark:text-white truncate tracking-tight drop-shadow-sm">
+            <div className="relative z-10 flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                    <span className="text-[9px] md:text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest block truncate group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors">
+                        {title}
+                    </span>
+                    {badge && (
+                        <Badge color={badge.color} className="scale-[0.7] md:scale-75 origin-right ml-1">
+                            {badge.icon}
+                            {badge.text}
+                        </Badge>
+                    )}
+                </div>
+                <div className="flex items-baseline mt-0.5">
+                   <h4 className="font-black text-gray-900 text-base md:text-xl dark:text-white truncate tracking-tight drop-shadow-sm leading-none">
                        {value}
                    </h4>
                 </div>

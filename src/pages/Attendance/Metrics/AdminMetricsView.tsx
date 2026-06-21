@@ -17,11 +17,21 @@ interface AdminMetricsViewProps {
 
 const COLORS = ['#10B981', '#F59E0B', '#EF4444'];
 
+const formatDate = (dateStr: string) => {
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    return d.toLocaleDateString('id-ID', { month: 'short', day: 'numeric' });
+  } catch {
+    return dateStr;
+  }
+};
+
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
       <div className="rounded-lg border border-gray-100 bg-white p-3 shadow-lg dark:border-white/[0.05] dark:bg-gray-900">
-        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{label}</p>
+        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{formatDate(label)}</p>
         {payload.map((entry: any, index: number) => (
           <p key={`item-${index}`} className="text-sm font-bold flex items-center gap-2" style={{ color: entry.color }}>
             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
@@ -107,7 +117,7 @@ const AdminMetricsView: React.FC<AdminMetricsViewProps> = ({ data, filters }) =>
 
       {/* Overview Cards */}
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
         <MetricCard
           title="Total Pengguna"
           value={overview.totalUsers.toLocaleString()}
@@ -134,13 +144,13 @@ const AdminMetricsView: React.FC<AdminMetricsViewProps> = ({ data, filters }) =>
         />
         <MetricCard
           title="Tingkat Kehadiran"
-          value={`${overview.attendanceRate.toFixed(1)}%`}
+          value={`${overview?.attendanceRate?.toFixed(1) ?? '0.0'}%`}
           icon={<ChartBarIcon />}
           color="blue"
         />
         <MetricCard
           title="Rata-rata Terlambat"
-          value={`${overview.avgLateMinutes.toFixed(0)} mnt`}
+          value={`${overview?.avgLateMinutes?.toFixed(0) ?? '0'} mnt`}
           icon={<ClockIcon />}
           color="yellow"
         />
@@ -163,7 +173,7 @@ const AdminMetricsView: React.FC<AdminMetricsViewProps> = ({ data, filters }) =>
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" opacity={0.5} />
-                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10 }} />
+                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10 }} tickFormatter={formatDate} minTickGap={30} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10 }} />
                 <Tooltip content={<CustomTooltip />} />
                 <Area type="monotone" dataKey="present" stroke="#10B981" fillOpacity={1} fill="url(#colorPresent)" stackId="1" />
@@ -173,16 +183,19 @@ const AdminMetricsView: React.FC<AdminMetricsViewProps> = ({ data, filters }) =>
           </div>
         </ComponentCard>
 
-        {/* Class Comparison */}
-        <ComponentCard title="Kehadiran Berdasarkan Kelas">
+        {/* Weekly Pattern */}
+        <ComponentCard title="Pola Kehadiran Mingguan">
           <div className="h-[300px] w-full pt-4 pr-4">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={classComparison.map(c => ({...c, rate: Number(c.rate) || 0}))} layout="vertical" margin={{ left: 20, right: 20 }}>
+              <BarChart data={data.dayOfWeekPattern} layout="vertical" margin={{ left: 20, right: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#E2E8F0" opacity={0.5} />
-                <XAxis type="number" domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fontSize: 10 }} tickFormatter={(val) => `${val}%`} />
-                <YAxis dataKey="className" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 11 }} width={80} />
+                <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 10 }} />
+                <YAxis dataKey="day" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 11 }} width={80} />
                 <Tooltip cursor={{ fill: 'transparent' }} />
-                <Bar dataKey="rate" fill="#3C50E0" radius={[0, 4, 4, 0]} barSize={20} name="Tingkat Hadir (%)" />
+                <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
+                <Bar dataKey="present" stackId="a" fill="#10B981" radius={[0, 0, 0, 0]} barSize={20} name="Hadir" />
+                <Bar dataKey="late" stackId="a" fill="#F59E0B" radius={[0, 0, 0, 0]} barSize={20} name="Terlambat" />
+                <Bar dataKey="absent" stackId="a" fill="#EF4444" radius={[0, 4, 4, 0]} barSize={20} name="Absen/Cuti" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -205,8 +218,8 @@ const AdminMetricsView: React.FC<AdminMetricsViewProps> = ({ data, filters }) =>
           </div>
         </ComponentCard>
 
-        {/* Top Late Students */}
-        <ComponentCard title="Siswa Sering Terlambat (Top 10)">
+        {/* Top Late Users */}
+        <ComponentCard title="Karyawan Sering Terlambat (Top 10)">
           {/* Mobile view: Cards */}
           <div className="block sm:hidden space-y-3 mt-2">
             {topLateStudents.length === 0 ? (
@@ -234,8 +247,8 @@ const AdminMetricsView: React.FC<AdminMetricsViewProps> = ({ data, filters }) =>
             <table className="w-full text-left text-sm text-gray-500 dark:text-gray-400">
               <thead className="bg-gray-50 text-xs uppercase text-gray-700 dark:bg-gray-800 dark:text-gray-400">
                 <tr>
-                  <th className="px-4 py-3">Nama Siswa</th>
-                  <th className="px-4 py-3">Kelas</th>
+                  <th className="px-4 py-3">Nama Karyawan</th>
+                  <th className="px-4 py-3">Posisi</th>
                   <th className="px-4 py-3 text-center">Jml Terlambat</th>
                   <th className="px-4 py-3 text-center">Rata-rata (Menit)</th>
                 </tr>

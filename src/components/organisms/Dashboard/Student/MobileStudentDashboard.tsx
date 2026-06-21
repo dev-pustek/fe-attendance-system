@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, react-hooks/exhaustive-deps */
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import QRCode from "react-qr-code";
 import { Link, useNavigate } from "react-router";
 import { BellIcon, SparklesIcon } from "@heroicons/react/24/solid";
@@ -25,50 +25,43 @@ interface MobileStudentDashboardProps {
   logs?: any[];
 }
 
+import { useGlobalTime } from "../../../../hooks/useGlobalTime";
+
 function CurrentTimeClock() {
-  const [time, setTime] = useState<Date>(new Date());
-  useEffect(() => {
-    const timer = setInterval(() => setTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
-  return <>{time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</>;
+  const time = useGlobalTime();
+  return <span translate="no">{time.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>;
 }
 
 function BreakCountdown({ timeRange, isActive }: { timeRange: string, isActive: boolean }) {
   const [timeLeft, setTimeLeft] = useState<string>("");
+  const now = useGlobalTime();
 
   useEffect(() => {
     // timeRange format: "12:00 - 13:00"
     const [startStr, endStr] = timeRange.split(" - ");
     if (!startStr || !endStr) return;
 
-    const timer = setInterval(() => {
-      const now = new Date();
-      const targetStr = isActive ? endStr : startStr;
-      
-      const targetTime = new Date();
-      const [h, m] = targetStr.split(":").map(Number);
-      targetTime.setHours(h, m, 0, 0);
+    const targetStr = isActive ? endStr : startStr;
+    const targetTime = new Date(now);
+    const [h, m] = targetStr.split(":").map(Number);
+    targetTime.setHours(h, m, 0, 0);
 
-      const diff = targetTime.getTime() - now.getTime();
-      
-      if (diff <= 0) {
-        setTimeLeft(isActive ? "Break Over" : "Break Starting");
-      } else {
-        const totalMinutes = Math.floor(diff / (1000 * 60));
-        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-        setTimeLeft(`${totalMinutes}m ${seconds}s`);
-      }
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [timeRange, isActive]);
+    const diff = targetTime.getTime() - now.getTime();
+    
+    if (diff <= 0) {
+      setTimeLeft(isActive ? "Break Over" : "Break Starting");
+    } else {
+      const totalMinutes = Math.floor(diff / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      setTimeLeft(`${totalMinutes}m ${seconds}s`);
+    }
+  }, [timeRange, isActive, now]);
 
   if (!timeLeft) return null;
 
   return (
-    <span className={`font-mono text-[10px] ml-1 px-1.5 py-0.5 rounded-md ${isActive ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'}`}>
-      {isActive ? 'Ends in ' : 'Starts in '}{timeLeft}
+    <span translate="no" className={`font-mono text-[10px] ml-1 px-1.5 py-0.5 rounded-md ${isActive ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'}`}>
+      {isActive ? 'Ends in ' + timeLeft : 'Starts in ' + timeLeft}
     </span>
   );
 }
@@ -76,51 +69,47 @@ function BreakCountdown({ timeRange, isActive }: { timeRange: string, isActive: 
 function GateCountdown({ targetTime, onComplete }: { targetTime: string, onComplete: () => void }) {
   const [timeLeft, setTimeLeft] = useState<string>("");
   const hasTriggeredRef = useRef(false);
+  const now = useGlobalTime();
 
   useEffect(() => {
     if (!targetTime) return;
 
-    const timer = setInterval(() => {
-      const now = new Date();
-      const targetTimeDate = new Date();
-      const [h, m, s] = targetTime.split(":").map(Number);
-      targetTimeDate.setHours(h, m, s || 0, 0);
+    const targetTimeDate = new Date(now);
+    const [h, m, s] = targetTime.split(":").map(Number);
+    targetTimeDate.setHours(h, m, s || 0, 0);
 
-      const diff = targetTimeDate.getTime() - now.getTime();
-      
-      if (diff <= 0) {
-        setTimeLeft("Sekarang");
-        if (!hasTriggeredRef.current) {
-          hasTriggeredRef.current = true;
-          // Add a delay to allow server time to catch up, then trigger refresh
+    const diff = targetTimeDate.getTime() - now.getTime();
+    
+    if (diff <= 0) {
+      setTimeLeft("Sekarang");
+      if (!hasTriggeredRef.current) {
+        hasTriggeredRef.current = true;
+        // Add a delay to allow server time to catch up, then trigger refresh
+        setTimeout(() => {
+          onComplete();
+          // Reset trigger after 5 seconds to retry if backend still returns 'upcoming'
           setTimeout(() => {
-            onComplete();
-            // Reset trigger after 5 seconds to retry if backend still returns 'upcoming'
-            setTimeout(() => {
-              hasTriggeredRef.current = false;
-            }, 5000);
-          }, 1000);
-        }
-      } else {
-        const totalHours = Math.floor(diff / (1000 * 60 * 60));
-        const remainingMinutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-        
-        if (totalHours > 0) {
-          setTimeLeft(`${totalHours} jam ${remainingMinutes}m ${seconds}s`);
-        } else {
-          setTimeLeft(`${remainingMinutes}m ${seconds}s`);
-        }
+            hasTriggeredRef.current = false;
+          }, 5000);
+        }, 1000);
       }
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [targetTime, onComplete]);
+    } else {
+      const totalHours = Math.floor(diff / (1000 * 60 * 60));
+      const remainingMinutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      
+      if (totalHours > 0) {
+        setTimeLeft(`${totalHours} jam ${remainingMinutes}m ${seconds}s`);
+      } else {
+        setTimeLeft(`${remainingMinutes}m ${seconds}s`);
+      }
+    }
+  }, [targetTime, onComplete, now]);
 
   if (!timeLeft) return null;
 
   return (
-    <span className="inline-flex items-center gap-1 text-[9px] font-bold text-pink-600 dark:text-pink-400 bg-pink-50 dark:bg-pink-500/10 border border-pink-100 dark:border-pink-500/20 rounded-md px-1.5 py-0.5">
+    <span translate="no" className="inline-flex items-center gap-1 text-[9px] font-bold text-pink-600 dark:text-pink-400 bg-pink-50 dark:bg-pink-500/10 border border-pink-100 dark:border-pink-500/20 rounded-md px-1.5 py-0.5">
       <ClockIcon className={timeLeft === "Sekarang" ? "w-3 h-3 animate-spin" : "w-3 h-3"} />
       {timeLeft === "Sekarang" ? "Memuat..." : `Dibuka dlm ${timeLeft}`}
     </span>
@@ -174,70 +163,64 @@ export default function MobileStudentDashboard({ logs = [] }: MobileStudentDashb
   const { navGroups } = useAppMenu();
 
   // Roles identification
-  const isSuperAdmin = user?.roles?.some(r => r.name.toLowerCase() === 'superadmin' || r.name.toLowerCase() === 'super admin') || false;
-  const isAdmin = user?.roles?.some(r => r.name.toLowerCase() === 'admin') || false;
-  const isPiket = user?.roles?.some(r => r.name.toLowerCase() === 'piket' || r.name.toLowerCase() === 'security') || false;
-  const isKurikulum = user?.roles?.some(r => r.name.toLowerCase() === 'kurikulum') || false;
-  const isTeacherUser = user?.userTypes?.includes('teacher') || user?.userTypes?.includes('employee') || user?.roles?.some(r => r.name.toLowerCase() === 'teacher' || r.name.toLowerCase() === 'guru' || r.name.toLowerCase() === 'employee') || (user as any)?.role === 'teacher';
+  const isSuperAdmin = useMemo(() => user?.roles?.some(r => r.name.toLowerCase() === 'superadmin' || r.name.toLowerCase() === 'super admin') || false, [user]);
+  const isAdmin = useMemo(() => user?.roles?.some(r => r.name.toLowerCase() === 'admin') || false, [user]);
+  const isPiket = useMemo(() => user?.roles?.some(r => r.name.toLowerCase() === 'piket' || r.name.toLowerCase() === 'security') || false, [user]);
+  const isKurikulum = useMemo(() => user?.roles?.some(r => r.name.toLowerCase() === 'kurikulum') || false, [user]);
+  const isTeacherUser = useMemo(() => user?.userTypes?.includes('teacher') || user?.userTypes?.includes('employee') || user?.roles?.some(r => r.name.toLowerCase() === 'teacher' || r.name.toLowerCase() === 'guru' || r.name.toLowerCase() === 'employee') || (user as any)?.role === 'teacher', [user]);
 
-  let PREFERRED_PATHS = ["/attendance/metrics", "/attendance/history", "/events", "/profile"];
-
-  if (isSuperAdmin) {
-    PREFERRED_PATHS = ["/attendance/policies", "/attendance/metrics", "/attendance/reports", "/hr/employees"];
-  } else if (isAdmin) {
-    PREFERRED_PATHS = ["/attendance/metrics", "/attendance/reports", "/events", "/hr/employees"];
-  } else if (isKurikulum) {
-    PREFERRED_PATHS = ["/attendance/metrics", "/attendance/reports", "/hr/employees", "/attendance/policies"];
-  } else if (isPiket) {
-    PREFERRED_PATHS = ["/attendance/metrics", "/attendance/reports", "/attendance/piket", "/events"];
-  } else if (isTeacherUser) {
-    PREFERRED_PATHS = ["/attendance/metrics", "/attendance/history", "/attendance/teaching-sessions", "/profile"];
-  } else {
-    // others employee
-    PREFERRED_PATHS = ["/attendance/metrics", "/attendance/history", "/events", "/profile"];
-  }
+  const PREFERRED_PATHS = useMemo(() => {
+    if (isSuperAdmin) return ["/attendance/policies", "/attendance/metrics", "/attendance/reports", "/hr/employees"];
+    if (isAdmin) return ["/attendance/metrics", "/attendance/reports", "/events", "/hr/employees"];
+    if (isKurikulum) return ["/attendance/metrics", "/attendance/reports", "/hr/employees", "/attendance/policies"];
+    if (isPiket) return ["/attendance/metrics", "/attendance/reports", "/attendance/piket", "/events"];
+    if (isTeacherUser) return ["/attendance/metrics", "/attendance/history", "/attendance/teaching-sessions", "/profile"];
+    return ["/attendance/metrics", "/attendance/history", "/events", "/profile"];
+  }, [isSuperAdmin, isAdmin, isKurikulum, isPiket, isTeacherUser]);
 
   // Dynamically extract up to 4 quick access links that are not in the bottom bar
-  const EXCLUDED_PATHS = ["/", "/attendance/gate-scan", "/leaves/requests", "/student/schedule/weekly", "/menu"];
-  const allLinks = navGroups.flatMap(group => 
-    group.items.flatMap(item => {
-      if (item.subItems) {
-        return item.subItems.map(sub => ({
-          name: sub.name,
-          path: sub.path,
-          icon: sub.icon || item.icon
-        }));
-      }
-      if (item.path) {
-        return [{
-          name: item.name,
-          path: item.path,
-          icon: item.icon
-        }];
-      }
-      return [];
-    })
-  );
-  
-  const availableLinks = allLinks.filter(link => !EXCLUDED_PATHS.includes(link.path));
-  
-  const quickAccessLinks = availableLinks.sort((a, b) => {
-    const idxA = PREFERRED_PATHS.indexOf(a.path);
-    const idxB = PREFERRED_PATHS.indexOf(b.path);
-    if (idxA !== -1 && idxB !== -1) return idxA - idxB;
-    if (idxA !== -1) return -1;
-    if (idxB !== -1) return 1;
-    return 0;
-  }).slice(0, 4);
+  const quickAccessLinks = useMemo(() => {
+    const EXCLUDED_PATHS = ["/", "/attendance/gate-scan", "/leaves/requests", "/student/schedule/weekly", "/menu"];
+    const allLinks = navGroups.flatMap(group => 
+      group.items.flatMap(item => {
+        if (item.subItems) {
+          return item.subItems.map(sub => ({
+            name: sub.name,
+            path: sub.path,
+            icon: sub.icon || item.icon
+          }));
+        }
+        if (item.path) {
+          return [{
+            name: item.name,
+            path: item.path,
+            icon: item.icon
+          }];
+        }
+        return [];
+      })
+    );
+    
+    const availableLinks = allLinks.filter(link => !EXCLUDED_PATHS.includes(link.path));
+    
+    return availableLinks.sort((a, b) => {
+      const idxA = PREFERRED_PATHS.indexOf(a.path);
+      const idxB = PREFERRED_PATHS.indexOf(b.path);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      return 0;
+    }).slice(0, 4);
+  }, [navGroups, PREFERRED_PATHS]);
 
-  const QUICK_ACCESS_STYLES = [
+  const QUICK_ACCESS_STYLES = useMemo(() => [
     "from-brand-400 to-brand-600 shadow-[0_8px_16px_rgba(79,70,229,0.25)] dark:from-brand-500 dark:to-brand-700",
     "from-orange-400 to-orange-500 shadow-[0_8px_16px_rgba(249,115,22,0.25)] dark:from-orange-500 dark:to-orange-700",
     "from-purple-400 to-purple-600 shadow-[0_8px_16px_rgba(168,85,247,0.25)] dark:from-purple-500 dark:to-purple-700",
     "from-blue-400 to-blue-500 shadow-[0_8px_16px_rgba(59,130,246,0.25)] dark:from-blue-500 dark:to-blue-700"
-  ];
+  ], []);
 
-  const firstName = user?.name?.split(' ')[0] || "User";
+  const firstName = useMemo(() => user?.name?.split(' ')[0] || "User", [user?.name]);
   const [coords, setCoords] = useState<{lat: number, lng: number} | null>(null);
   const [selectedDetail, setSelectedDetail] = useState<any>(null);
   const [confirmClassItem, setConfirmClassItem] = useState<StudentRoadmapItem | null>(null);
@@ -570,7 +553,7 @@ export default function MobileStudentDashboard({ logs = [] }: MobileStudentDashb
   };
 
   // Dynamic Date Formatter
-  const todayDate = new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date());
+  const todayDate = new Intl.DateTimeFormat('id-ID', { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date());
 
   return (
     <div className="bg-gray-50 dark:bg-slate-900 font-sans relative">
@@ -599,9 +582,9 @@ export default function MobileStudentDashboard({ logs = [] }: MobileStudentDashb
           </div>
 
           <div className="space-y-1 mb-2">
-            <p className="text-brand-100/90 text-[11px] font-medium tracking-wide uppercase">Time to do what you do best</p>
+            <p className="text-brand-100/90 text-[11px] font-medium tracking-wide uppercase">Waktunya melakukan yang terbaik</p>
             <h1 className="text-white text-2xl font-bold tracking-tight drop-shadow-sm">
-              What's up, {firstName}!
+              Halo, {firstName}!
             </h1>
           </div>
 

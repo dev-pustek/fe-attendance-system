@@ -11,10 +11,10 @@ export default function RecentLogs({ logs }: RecentLogsProps) {
     <div className="relative overflow-hidden bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl rounded-[2rem] p-8 shadow-sm border border-white/40 dark:border-white/5 h-full w-full flex flex-col">
       <div className="flex items-center justify-between mb-6 relative z-10">
         <h3 className="text-2xl font-semibold text-gray-900 dark:text-white tracking-tight">
-            Recent Activity
+            Aktivitas Terbaru
         </h3>
-        <a href="/attendance/all" className="text-sm font-medium text-brand-500 hover:text-brand-600">
-            View All
+        <a href="/attendance/records" className="text-sm font-medium text-brand-500 hover:text-brand-600">
+            Lihat Semua
         </a>
       </div>
 
@@ -40,19 +40,19 @@ export default function RecentLogs({ logs }: RecentLogsProps) {
                         {log.userName}
                     </h4>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        Scanned at {log.time}
+                        Dipindai pada {log.time}
                     </p>
                 </div>
 
                 <Badge color={log.status === 'present' ? 'success' : log.status === 'late' ? 'warning' : 'error'}>
-                    {log.status}
+                    {log.status === 'present' ? 'Hadir' : log.status === 'late' ? 'Terlambat' : log.status === 'absent' ? 'Tidak Hadir' : log.status}
                 </Badge>
             </div>
         ))}
 
         {logs.length === 0 && (
              <div className="py-8 text-center text-sm text-gray-500">
-                No recent activity recorded
+                Tidak ada aktivitas terbaru yang tercatat
             </div>
         )}
       </div>
