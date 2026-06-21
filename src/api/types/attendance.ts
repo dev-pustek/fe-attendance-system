@@ -308,6 +308,8 @@ export interface TeachingSessionParams extends PaginationParams {
   startDate?: string;
   endDate?: string;
   isCancelled?: boolean;
+  academicYearId?: number | string;
+  classId?: number | string;
 }
 
 export interface CreateTeachingSessionDto {
