@@ -232,8 +232,8 @@ const AttendanceList: React.FC = () => {
   const queryParams = {
     page,
     limit,
-    startDate: dateRange.from ? format(dateRange.from, "yyyy-MM-dd") : undefined,
-    endDate: dateRange.to ? format(dateRange.to, "yyyy-MM-dd") : undefined,
+    startDate: startDate || undefined,
+    endDate: endDate || undefined,
     classId: classId || undefined,
     academicYearId: academicYearId || undefined,
     majorId: majorId || undefined,
