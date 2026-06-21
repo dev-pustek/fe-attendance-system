@@ -173,9 +173,32 @@ export default function MobileStudentDashboard({ logs = [] }: MobileStudentDashb
   const navigate = useNavigate();
   const { navGroups } = useAppMenu();
 
+  // Roles identification
+  const isSuperAdmin = user?.roles?.some(r => r.name.toLowerCase() === 'superadmin' || r.name.toLowerCase() === 'super admin') || false;
+  const isAdmin = user?.roles?.some(r => r.name.toLowerCase() === 'admin') || false;
+  const isPiket = user?.roles?.some(r => r.name.toLowerCase() === 'piket' || r.name.toLowerCase() === 'security') || false;
+  const isKurikulum = user?.roles?.some(r => r.name.toLowerCase() === 'kurikulum') || false;
+  const isTeacherUser = user?.userTypes?.includes('teacher') || user?.userTypes?.includes('employee') || user?.roles?.some(r => r.name.toLowerCase() === 'teacher' || r.name.toLowerCase() === 'guru' || r.name.toLowerCase() === 'employee') || (user as any)?.role === 'teacher';
+
+  let PREFERRED_PATHS = ["/attendance/metrics", "/attendance/history", "/events", "/profile"];
+
+  if (isSuperAdmin) {
+    PREFERRED_PATHS = ["/attendance/policies", "/attendance/metrics", "/attendance/reports", "/hr/employees"];
+  } else if (isAdmin) {
+    PREFERRED_PATHS = ["/attendance/metrics", "/attendance/reports", "/events", "/hr/employees"];
+  } else if (isKurikulum) {
+    PREFERRED_PATHS = ["/attendance/metrics", "/attendance/reports", "/hr/employees", "/attendance/policies"];
+  } else if (isPiket) {
+    PREFERRED_PATHS = ["/attendance/metrics", "/attendance/reports", "/attendance/piket", "/events"];
+  } else if (isTeacherUser) {
+    PREFERRED_PATHS = ["/attendance/metrics", "/attendance/history", "/attendance/teaching-sessions", "/profile"];
+  } else {
+    // others employee
+    PREFERRED_PATHS = ["/attendance/metrics", "/attendance/history", "/events", "/profile"];
+  }
+
   // Dynamically extract up to 4 quick access links that are not in the bottom bar
   const EXCLUDED_PATHS = ["/", "/attendance/gate-scan", "/leaves/requests", "/student/schedule/weekly", "/menu"];
-  const PREFERRED_PATHS = ["/attendance/metrics", "/attendance/history", "/events", "/profile"];
   const allLinks = navGroups.flatMap(group => 
     group.items.flatMap(item => {
       if (item.subItems) {
@@ -214,8 +237,7 @@ export default function MobileStudentDashboard({ logs = [] }: MobileStudentDashb
     "from-blue-400 to-blue-500 shadow-[0_8px_16px_rgba(59,130,246,0.25)] dark:from-blue-500 dark:to-blue-700"
   ];
 
-  const isTeacherUser = user?.userTypes?.includes('teacher') || user?.userTypes?.includes('employee') || user?.roles?.some(r => r.name.toLowerCase() === 'teacher' || r.name.toLowerCase() === 'guru' || r.name.toLowerCase() === 'employee') || (user as any)?.role === 'teacher';
-  const firstName = user?.name?.split(' ')[0] || "Chandra";
+  const firstName = user?.name?.split(' ')[0] || "User";
   const [coords, setCoords] = useState<{lat: number, lng: number} | null>(null);
   const [selectedDetail, setSelectedDetail] = useState<any>(null);
   const [confirmClassItem, setConfirmClassItem] = useState<StudentRoadmapItem | null>(null);
@@ -226,7 +248,7 @@ export default function MobileStudentDashboard({ logs = [] }: MobileStudentDashb
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        (err) => console.log("Location err:", err)
+        (err) => { /* console.log removed */ }
       );
     }
   }, []);

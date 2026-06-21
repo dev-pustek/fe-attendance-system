@@ -132,7 +132,7 @@ export const hasRoutePermission = (
 
   // 2. SUPER ADMIN BYPASS: If user is superadmin, they can access EVERYTHING
   if (roleNames.some(r => r === 'super admin' || r === 'superadmin')) {
-    console.log('🛡️ Super Admin Bypass Granted for:', routePath);
+    /* console.log removed */
     return true;
   }
 

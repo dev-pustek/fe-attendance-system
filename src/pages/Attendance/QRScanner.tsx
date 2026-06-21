@@ -162,12 +162,7 @@ const QRScanner = () => {
           record.user?.id ||
           record.student?.id;
 
-        console.log(
-          "Scan successful, extracted userId:",
-          userId,
-          "Full response:",
-          response
-        );
+        /* console.log removed */
 
         if (isSelfScan) {
             toast.success("You have checked in successfully.");
@@ -519,7 +514,7 @@ const QRScanner = () => {
              }
           }
 
-          console.log("Policy response:", res, "Extracted:", policyData);
+          /* console.log removed */
           setUserPolicy(policyData);
           setPolicyError(null);
 
@@ -544,11 +539,7 @@ const QRScanner = () => {
 
     // Prevent double fetch if same ID
     if (targetId && targetId !== lastFetchedIdRef.current) {
-      console.log(
-        "Mounting QRScanner.",
-        "Target ID:",
-        targetId
-      );
+      /* console.log removed */
 
       lastFetchedIdRef.current = targetId;
       fetchPolicy();

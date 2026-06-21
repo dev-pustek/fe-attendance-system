@@ -119,7 +119,7 @@ export default function StudentEvents() {
   const handleScanSuccess = useCallback(async (_decodedText: string) => {
     if (isProcessingScanRef.current || scanStatus === 'verifying' || scanStatus === 'success') return;
     isProcessingScanRef.current = true;
-    console.log("Scanned:", _decodedText);
+    /* console.log removed */
     
     try {
         setScanStatus('verifying');

@@ -484,7 +484,7 @@ const AttendanceList: React.FC = () => {
     };
 
     const handleQuickCheckOut = async (record: AttendanceRecord) => {
-        console.log("Check-out Cepat Diklik untuk:", record.public_id);
+        /* console.log removed */
         const isConfirmed = await confirm({
             title: "Check-out Cepat",
             message: `Are you sure you want to check out ${record.user?.name || "this user"}?`,

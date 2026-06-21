@@ -1,148 +1,21 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-
-import { useAttendanceList, useAttendanceListInfinite } from "../../../api/hooks/useAttendance";
-import { AttendanceRecord, AttendanceParams } from "../../../api/types/attendance";
-import { attendanceService } from "../../../api/services/attendanceService";
-import { analyticsService } from "../../../api/services/analyticsService";
-import { ExportPayload } from "./ExportFilterModal";
-
+import React, { useState } from "react";
 import PageMeta from "../../../components/atoms/PageMeta";
 import PageBreadcrumb from "../../../components/molecules/PageBreadcrumb";
-import { Table, TableBody, TableCell, TableHeader, TableRow } from "../../../components/atoms/Table";
-import TableToolbar from "../../../components/molecules/TableToolbar";
-import { SkeletonTable } from "../../../components/molecules/SkeletonRow";
-import CustomSelect from "../../../components/molecules/CustomSelect";
-import DatePicker from "../../../components/molecules/DatePicker";
-import Label from "../../../components/atoms/Label";
-import Checkbox from "../../../components/atoms/Checkbox";
-import Badge from "../../../components/atoms/Badge";
-import DataActionsMenu from "../../../components/molecules/DataActionsMenu";
-import MobileFloatingActions from "../../../components/molecules/MobileFloatingActions";
-
-import AttendanceReportCard from "./AttendanceReportCard";
-import ExportFilterModal from "./ExportFilterModal";
-import { useDebounce } from "../../../hooks/useDebounce";
-
-import {
-  FilterIcon,
-  SearchIcon,
-  ChevronDownIcon,
-  DocsIcon,
-} from "../../../components/atoms/Icons";
-
-function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 640);
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 640);
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-  return isMobile;
-}
+import ExportFilterModal, { ExportPayload, ExportType } from "./ExportFilterModal";
+import { attendanceService } from "../../../api/services/attendanceService";
+import { analyticsService } from "../../../api/services/analyticsService";
+import { DocumentTextIcon, AcademicCapIcon, ChartBarIcon, ArrowRightIcon } from "@heroicons/react/24/solid";
 
 export default function AttendanceReports() {
-  const isMobile = useIsMobile();
-  const queryClient = useQueryClient();
-
-  // ── Pagination & Filters ──
-  const [page, setPage] = useState(1);
-  const [limit] = useState(10);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
-  
-  // Specific filters (Basic for page view)
-  const [startDate, setStartDate] = useState<string>("");
-  const [endDate, setEndDate] = useState<string>("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-
-  const [selectedIds, setSelectedIds] = useState<Set<number | string>>(new Set());
-  const [isExporting, setIsExporting] = useState(false);
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [selectedReportType, setSelectedReportType] = useState<ExportType>("attendance");
 
-  // Debounce search typing
-  const debouncedSearch = useDebounce(searchQuery, 500);
-  useEffect(() => {
-    setSearchTerm(debouncedSearch);
-    setPage(1);
-  }, [debouncedSearch]);
-
-  const queryParams: AttendanceParams = {
-    page,
-    limit,
-    search: searchTerm || undefined,
-    startDate: startDate || undefined,
-    endDate: endDate || undefined,
-    ...(statusFilter !== "all" && statusFilter === "late" && { isLate: true }),
-    ...(statusFilter !== "all" && statusFilter === "present" && { isPresent: true }),
+  const openFilterModal = (type: ExportType) => {
+    setSelectedReportType(type);
+    setIsExportModalOpen(true);
   };
 
-  // ── Data Fetching ──
-  const {
-    data: desktopData,
-    isLoading: isDesktopLoading,
-    isFetching: isDesktopFetching,
-  } = useAttendanceList(isMobile ? undefined : queryParams);
-
-  const {
-    data: infiniteData,
-    isLoading: isInfiniteLoading,
-    isFetchingNextPage,
-    hasNextPage,
-    fetchNextPage,
-  } = useAttendanceListInfinite(isMobile ? queryParams : undefined);
-
-  // Intersection Observer for mobile infinite scroll
-  const sentinelRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!isMobile || !hasNextPage || isFetchingNextPage) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          fetchNextPage();
-        }
-      },
-      { rootMargin: "100px" }
-    );
-    if (sentinelRef.current) observer.observe(sentinelRef.current);
-    return () => observer.disconnect();
-  }, [isMobile, hasNextPage, isFetchingNextPage, fetchNextPage]);
-
-  // Derived state
-  const items = isMobile
-    ? infiniteData?.pages.flatMap((page) => page.data) || []
-    : desktopData?.data || [];
-  
-  const isLoading = isMobile ? isInfiniteLoading : isDesktopLoading;
-  const allSelected = items.length > 0 && selectedIds.size === items.length;
-
-  // ── Handlers ──
-  const toggleAll = () => {
-    if (allSelected) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(items.map((i) => i.public_id || (i as any).id)));
-    }
-  };
-
-  const toggleOne = (id: number | string) => {
-    const newSet = new Set(selectedIds);
-    if (newSet.has(id)) newSet.delete(id);
-    else newSet.add(id);
-    setSelectedIds(newSet);
-  };
-
-  const handleResetFilter = () => {
-    setSearchQuery("");
-    setSearchTerm("");
-    setStartDate("");
-    setEndDate("");
-    setStatusFilter("all");
-    setPage(1);
-  };
-
-  // This handles the actual export using payload from ExportFilterModal
   const executeExportCSV = async (payload: ExportPayload) => {
     setIsExporting(true);
     try {
@@ -218,292 +91,81 @@ export default function AttendanceReports() {
     }
   };
 
-  const downloadFile = (csvContent: string, filename: string) => {
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const getStatusConfig = (status: string, present: boolean, isLate: boolean) => {
-    if (status === 'excused') return { label: 'Dispensasi', color: 'blue' as const };
-    if (!present) return { label: 'Absen', color: 'error' as const };
-    if (isLate) return { label: 'Terlambat', color: 'warning' as const };
-    return { label: 'Hadir', color: 'success' as const };
-  };
+  const reportCategories = [
+    {
+      id: "attendance" as ExportType,
+      title: "Laporan Kehadiran",
+      description: "Ekspor riwayat kehadiran harian/bulanan dengan filter.",
+      icon: <DocumentTextIcon className="size-6" />,
+      color: "bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400",
+      bgGradient: "from-brand-500 to-indigo-600",
+      hoverBorder: "hover:border-brand-300 dark:hover:border-brand-500/50 hover:shadow-brand-500/10"
+    },
+    {
+      id: "teaching_session" as ExportType,
+      title: "Sesi Mengajar (JP)",
+      description: "Rekapitulasi JP aktual dan kalkulasi pencapaian KPI guru.",
+      icon: <AcademicCapIcon className="size-6" />,
+      color: "bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400",
+      bgGradient: "from-purple-500 to-fuchsia-600",
+      hoverBorder: "hover:border-purple-300 dark:hover:border-purple-500/50 hover:shadow-purple-500/10"
+    },
+    {
+      id: "performance" as ExportType,
+      title: "Kinerja / Benchmark",
+      description: "Metrik performa kedisiplinan guru & karyawan.",
+      icon: <ChartBarIcon className="size-6" />,
+      color: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400",
+      bgGradient: "from-emerald-500 to-teal-600",
+      hoverBorder: "hover:border-emerald-300 dark:hover:border-emerald-500/50 hover:shadow-emerald-500/10"
+    }
+  ];
 
   return (
     <>
-      <PageMeta title="Laporan Kehadiran | Attendance System" description="Laporan riwayat kehadiran pegawai dan murid" />
-      <PageBreadcrumb pageTitle="Laporan Kehadiran" />
+      <PageMeta title="Laporan | Attendance System" description="Pusat unduhan laporan dan rekapitulasi data" />
+      <div className="hidden sm:block">
+        <PageBreadcrumb pageTitle="Pusat Laporan" />
+      </div>
 
-      <div className="space-y-6">
-        {/* Page Header - Desktop Only */}
-        <div className="hidden sm:flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-brand-50 text-brand-500 dark:bg-brand-500/10">
-              <DocsIcon className="size-5" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">Laporan Kehadiran</h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Rekapitulasi data kehadiran untuk keperluan administrasi.</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <DataActionsMenu
-              isExporting={isExporting}
-              onExportExcel={() => setIsExportModalOpen(true)}
-            />
-          </div>
+      <div className="space-y-4 sm:space-y-8 animate-in fade-in duration-500 mt-2 sm:mt-0">
+        <div className="flex flex-col gap-2 px-2 sm:px-0">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Pusat Laporan</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Pilih jenis laporan yang ingin Anda unduh. Anda dapat menyesuaikan filter tanggal dan spesifikasi data lainnya setelah memilih kategori.</p>
         </div>
 
-        {/* Mobile FAB */}
-        {isMobile && (
-            <MobileFloatingActions
-                dataActionsProps={{
-                    isExporting,
-                    onExportExcel: () => setIsExportModalOpen(true)
-                }}
-            />
-        )}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {reportCategories.map((report) => (
+            <button
+              key={report.id}
+              onClick={() => openFilterModal(report.id)}
+              className={`group relative flex items-center gap-4 p-5 rounded-2xl border bg-white dark:bg-white/[0.02] shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${report.hoverBorder} dark:border-white/10 text-left overflow-hidden z-10`}
+            >
+              {/* Background gradient effect on hover */}
+              <div className={`absolute inset-0 opacity-0 group-hover:opacity-[0.03] dark:group-hover:opacity-[0.08] transition-opacity duration-300 -z-10 bg-gradient-to-br ${report.bgGradient}`} />
+              
+              {/* Icon */}
+              <div className={`shrink-0 p-3.5 rounded-2xl transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 ${report.color}`}>
+                {report.icon}
+              </div>
 
-        {/* Basic Filter Card */}
-        <div className="mb-4 rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-white/[0.05] dark:bg-white/[0.02] overflow-hidden">
-          <button 
-              onClick={() => setIsFilterOpen(!isFilterOpen)} 
-              className="w-full flex items-center justify-between p-5 hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors"
-          >
-              <div className="text-left">
-                  <div className="flex items-center gap-2 mb-1">
-                      <FilterIcon className="size-5 text-brand-500" />
-                      <h3 className="text-sm font-bold uppercase tracking-wider text-gray-800 dark:text-gray-200">
-                          Pencarian & Tampilan
-                      </h3>
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Cari data kehadiran berdasarkan nama atau tanggal. Klik Export untuk filter kompleks.
-                  </p>
+              {/* Content */}
+              <div className="flex-1 min-w-0 pr-2">
+                <h2 className="text-[15px] font-bold text-gray-900 dark:text-white mb-1 tracking-tight group-hover:text-gray-800 transition-colors">{report.title}</h2>
+                <p className="text-[13px] text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
+                  {report.description}
+                </p>
               </div>
-              <div className="shrink-0 ml-4">
-                  <ChevronDownIcon className={`size-5 text-gray-400 transition-transform duration-200 ${isFilterOpen ? "rotate-180" : ""}`} />
+              
+              {/* Action Arrow */}
+              <div className="shrink-0 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 ease-out">
+                <div className={`size-8 rounded-full flex items-center justify-center ${report.color} shadow-sm border border-current/10`}>
+                  <ArrowRightIcon className="size-4" />
+                </div>
               </div>
-          </button>
-          
-          <div className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${
-                  isFilterOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
-              }`}>
-              <div className="overflow-hidden min-h-0">
-                  <div className="px-5 pb-5">
-                      <hr className="mb-5 border-gray-100 dark:border-white/[0.05]" />
-                      
-                      <div className="grid grid-cols-1 gap-5 mb-5 sm:grid-cols-2 lg:grid-cols-4">
-                          <div className="space-y-1.5">
-                              <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Tanggal Mulai</Label>
-                              <DatePicker value={startDate} onChange={setStartDate} placeholder="Pilih tanggal" />
-                          </div>
-                          <div className="space-y-1.5">
-                              <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Tanggal Akhir</Label>
-                              <DatePicker value={endDate} onChange={setEndDate} placeholder="Pilih tanggal" />
-                          </div>
-                          <div className="space-y-1.5">
-                              <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Status Absen</Label>
-                              <CustomSelect
-                                  value={statusFilter === "all" ? "" : statusFilter}
-                                  onChange={(val) => { setStatusFilter(val ? String(val) : "all"); setPage(1); }}
-                                  onClear={() => { setStatusFilter("all"); setPage(1); }}
-                                  placeholder="Semua Status"
-                                  options={[
-                                      { label: "Hadir", value: "present" },
-                                      { label: "Terlambat", value: "late" },
-                                      { label: "Absen/Alpha", value: "absent" },
-                                      { label: "Dispensasi", value: "excused" },
-                                  ]}
-                                  className="w-full [&>button]:w-full [&>button]:h-11 [&>button]:text-sm [&>button]:rounded-xl"
-                              />
-                          </div>
-                          <div className="space-y-1.5">
-                              <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Cari Nama / NIS</Label>
-                              <div className="relative">
-                                  <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
-                                  <input
-                                      type="text"
-                                      value={searchQuery}
-                                      onChange={(e) => setSearchQuery(e.target.value)}
-                                      placeholder="Ketik nama atau NIS..."
-                                      className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-4 text-sm text-gray-900 transition-colors focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-white/[0.08] dark:bg-white/[0.02] dark:text-white"
-                                  />
-                              </div>
-                          </div>
-                      </div>
-                      
-                      <div className="flex justify-end items-center gap-3">
-                          <button onClick={handleResetFilter} className="h-11 px-6 rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 dark:border-white/[0.08] dark:bg-transparent dark:text-gray-300">
-                              Reset
-                          </button>
-                      </div>
-                  </div>
-              </div>
-          </div>
+            </button>
+          ))}
         </div>
-
-        <TableToolbar selectedCount={selectedIds.size} onClearSelection={() => setSelectedIds(new Set())} bulkActions={[]} />
-
-        {/* Content */}
-        {isMobile ? (
-          <div className="space-y-3">
-            {items.length > 0 && (
-              <div className="flex items-center gap-3 px-1">
-                <Checkbox checked={allSelected} onChange={toggleAll} />
-                <span className="text-xs text-gray-500 dark:text-gray-400">
-                  {selectedIds.size > 0 ? `${selectedIds.size} dipilih` : "Pilih semua"}
-                </span>
-              </div>
-            )}
-            
-            {isLoading && items.length === 0 ? (
-               <div className="space-y-3">
-                  {[1,2,3].map(i => <div key={i} className="h-28 w-full rounded-2xl bg-gray-100 animate-pulse dark:bg-gray-800" />)}
-               </div>
-            ) : items.length === 0 ? (
-               <div className="flex flex-col items-center justify-center p-10 text-center text-gray-500">
-                  <DocsIcon className="size-10 mb-4 text-gray-300" />
-                  <p>Tidak ada data laporan ditemukan</p>
-               </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-3">
-                {items.map((item, idx) => {
-                  const itemId = item.public_id || (item as any).id || idx;
-                  return (
-                    <AttendanceReportCard 
-                      key={itemId} 
-                      entity={item} 
-                      isSelected={selectedIds.has(itemId)}
-                      onToggle={() => toggleOne(itemId)} 
-                    />
-                  );
-                })}
-              </div>
-            )}
-            <div ref={sentinelRef} className="py-2 flex items-center justify-center">
-              {isFetchingNextPage && <div className="size-5 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />}
-            </div>
-          </div>
-        ) : (
-          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-white/[0.05] dark:bg-white/[0.03] overflow-hidden">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader className="border-b border-gray-100 bg-gray-50/60 dark:border-white/[0.05] dark:bg-white/[0.01]">
-                  <TableRow>
-                    <TableCell isHeader className="w-10 px-4 py-3.5">
-                      <Checkbox checked={allSelected} onChange={toggleAll} />
-                    </TableCell>
-                    <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase">Tanggal</TableCell>
-                    <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase">Nama</TableCell>
-                    <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase">In/Out</TableCell>
-                    <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase">Metode & Info</TableCell>
-                    <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase">Catatan</TableCell>
-                    <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase text-center">Status</TableCell>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {isLoading && items.length === 0 ? (
-                    <SkeletonTable rows={5} columns={5} />
-                  ) : items.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} className="py-12 text-center text-gray-500">
-                        Tidak ada laporan kehadiran
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    items.map((row, idx) => {
-                      const rowId = row.public_id || (row as any).id || idx;
-                      const isSelected = selectedIds.has(rowId);
-                      const sc = getStatusConfig(row.statusLabel, row.isPresent, row.isLate);
-                      return (
-                        <TableRow key={rowId} className={`group transition-colors ${isSelected ? "bg-brand-50/60 dark:bg-brand-500/5" : "hover:bg-gray-50/60 dark:hover:bg-white/[0.015]"}`}>
-                          <TableCell className="w-10 px-4 py-4"><Checkbox checked={isSelected} onChange={() => toggleOne(rowId)} /></TableCell>
-                          <TableCell className="px-4 py-4 text-sm font-medium">{row.date}</TableCell>
-                          <TableCell className="px-4 py-4 text-sm">
-                            <div className="font-semibold text-gray-900 dark:text-white">{row.studentName || row.user?.name || row.user?.full_name || 'Unknown User'}</div>
-                            <div className="text-xs text-gray-500">{row.className || row.class?.name || 'Tanpa Kelas'}</div>
-                          </TableCell>
-                          <TableCell className="px-4 py-4 text-sm text-gray-600 dark:text-gray-300">
-                            {row.clockIn?.slice(0,5) || '--:--'} / {row.clockOut?.slice(0,5) || '--:--'}
-                          </TableCell>
-                          <TableCell className="px-4 py-4">
-                            <div className="flex flex-col gap-1">
-                              <span className="inline-flex w-fit items-center px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300" title="Metode & Lokasi Presensi">
-                                {row.method || 'CCTV'} 
-                                {((row as any).deviceLocation || (row as any).cameraName || (row as any).location) ? ` • ${((row as any).deviceLocation || (row as any).cameraName || (row as any).location)}` : ''}
-                              </span>
-                              {row.lateMinutes ? (
-                                <span className="text-[11px] text-red-500 dark:text-red-400 font-medium">
-                                  Telat: {row.lateMinutes} mnt
-                                </span>
-                              ) : null}
-                              {row.isEarlyLeave ? (
-                                <span className="text-[11px] text-warning-500 dark:text-warning-400 font-medium">
-                                  Pulang Awal: {row.earlyLeaveMinutes} mnt
-                                </span>
-                              ) : null}
-                              {row.isOvertime ? (
-                                <span className="text-[11px] text-green-500 dark:text-green-400 font-medium">
-                                  Lembur: {row.overtimeMinutes} mnt
-                                </span>
-                              ) : null}
-                            </div>
-                          </TableCell>
-                          <TableCell className="px-4 py-4">
-                            {row.notes ? (
-                              <p className="text-xs text-gray-500 dark:text-gray-400 italic max-w-[150px] truncate" title={row.notes}>
-                                {row.notes}
-                              </p>
-                            ) : (
-                              <span className="text-xs text-gray-400">-</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="px-4 py-4 text-center">
-                            <Badge color={sc.color}>{sc.label}</Badge>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
-                  )}
-                </TableBody>
-                </Table>
-            </div>
-            
-            {/* Desktop Pagination */}
-            {!isLoading && desktopData && desktopData.meta && (
-              <div className="flex items-center justify-between border-t border-gray-100 bg-gray-50/50 px-5 py-3 dark:border-white/[0.05] dark:bg-white/[0.01]">
-                <div className="text-sm text-gray-500 font-medium">
-                  Menampilkan {items.length} dari {desktopData.meta.itemCount || desktopData.meta.totalItems} catatan
-                </div>
-                <div className="flex gap-2">
-                  <button 
-                    disabled={page === 1}
-                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                    className="px-3 py-1.5 text-sm bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 dark:bg-gray-800 dark:border-gray-700"
-                  >
-                    Sebelumnya
-                  </button>
-                  <button 
-                    disabled={page === desktopData.meta.totalPages}
-                    onClick={() => setPage(p => Math.min(desktopData.meta.totalPages, p + 1))}
-                    className="px-3 py-1.5 text-sm bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 dark:bg-gray-800 dark:border-gray-700"
-                  >
-                    Selanjutnya
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-
       </div>
 
       <ExportFilterModal 
@@ -511,6 +173,7 @@ export default function AttendanceReports() {
         onClose={() => setIsExportModalOpen(false)} 
         onExport={executeExportCSV} 
         isExporting={isExporting} 
+        initialTab={selectedReportType}
       />
     </>
   );

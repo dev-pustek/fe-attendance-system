@@ -21,11 +21,19 @@ interface ExportFilterModalProps {
   onClose: () => void;
   onExport: (payload: ExportPayload) => void;
   isExporting: boolean;
+  initialTab?: ExportType;
 }
 
-export default function ExportFilterModal({ isOpen, onClose, onExport, isExporting }: ExportFilterModalProps) {
+export default function ExportFilterModal({ isOpen, onClose, onExport, isExporting, initialTab = "attendance" }: ExportFilterModalProps) {
   // Tabs
-  const [exportType, setExportType] = useState<ExportType>("attendance");
+  const [exportType, setExportType] = useState<ExportType>(initialTab);
+
+  // Sync tab when opened
+  React.useEffect(() => {
+    if (isOpen && initialTab) {
+      setExportType(initialTab);
+    }
+  }, [isOpen, initialTab]);
 
   // Fetch Dropdown Data
   const { data: acaYearsData } = useAcademicYears({ limit: 100 });
@@ -102,11 +110,17 @@ export default function ExportFilterModal({ isOpen, onClose, onExport, isExporti
     onExport({ type: exportType, params });
   };
 
-  const tabs = [
-    { id: "attendance", label: "Harian", icon: <UserIcon className="size-4" /> },
-    { id: "teaching_session", label: "Jam Pelajaran", icon: <DocsIcon className="size-4" /> },
-    { id: "performance", label: "Kinerja", icon: <DocsIcon className="size-4" /> }, // fallback to DocsIcon
-  ];
+  const modalTitles = {
+    attendance: "Export Laporan Kehadiran",
+    teaching_session: "Export Laporan Sesi Mengajar (JP)",
+    performance: "Export Laporan Kinerja / Benchmark",
+  };
+
+  const modalDescriptions = {
+    attendance: "Tentukan spesifikasi filter data kehadiran harian yang ingin Anda unduh.",
+    teaching_session: "Tentukan spesifikasi filter rekap jam pelajaran (JP) guru yang ingin Anda unduh.",
+    performance: "Tentukan spesifikasi filter metrik performa kedisiplinan yang ingin Anda unduh.",
+  };
 
   const renderFooter = () => (
     <div className="flex justify-end gap-3">
@@ -126,35 +140,13 @@ export default function ExportFilterModal({ isOpen, onClose, onExport, isExporti
     </div>
   );
 
-  const renderSubHeader = () => (
-    <div className="px-6 py-3 bg-gray-50/50 dark:bg-white/[0.01]">
-      <div className="flex p-1 space-x-1 bg-gray-100/80 rounded-xl dark:bg-gray-800/50">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setExportType(tab.id as ExportType)}
-            className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
-              exportType === tab.id
-                ? "bg-white text-brand-600 shadow-sm dark:bg-gray-700 dark:text-brand-400"
-                : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-            }`}
-          >
-            {tab.icon}
-            {tab.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-
   return (
     <Modal 
       isOpen={isOpen} 
       onClose={onClose} 
-      title="Pusat Komando Export Data" 
-      description="Tentukan spesifikasi data laporan yang ingin Anda unduh (ekspor ke Excel)."
+      title={modalTitles[exportType] || "Export Laporan"} 
+      description={modalDescriptions[exportType] || "Tentukan spesifikasi data yang ingin Anda unduh."}
       className="max-w-2xl"
-      subHeader={renderSubHeader()}
       footer={renderFooter()}
     >
       <div className="space-y-6">

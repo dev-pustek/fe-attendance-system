@@ -109,12 +109,7 @@ const AttendanceRules: React.FC = () => {
 
   // Debug Context Resolution
   useEffect(() => {
-     console.log("Context Debug:", { 
-         selected: selectedContext, 
-         contexts: contexts?.data, 
-         policyContext,
-         scheduleContext
-     });
+     /* console.log removed */
   }, [selectedContext, contexts, policyContext, scheduleContext]);
 
   const handleEnsureContext = async (purpose: RulePurpose): Promise<number | undefined> => {

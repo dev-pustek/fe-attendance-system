@@ -48,7 +48,7 @@ const CctvPlayer: React.FC<CctvPlayerProps> = ({
   };
 
   React.useEffect(() => {
-    console.log(`[CctvPlayer] Mounting stream: ${streamUrl}`);
+    /* console.log removed */
     const timer = setTimeout(() => {
       if (isLoading) {
         console.warn(
@@ -85,7 +85,7 @@ const CctvPlayer: React.FC<CctvPlayerProps> = ({
           alt={`Live feed from ${deviceName}`}
           className={`relative z-10 h-full w-full object-cover transition-opacity duration-300 min-h-full ${imgClassName}`}
           onLoad={() => {
-            console.log(`[CctvPlayer] Loaded: ${streamUrl}`);
+            /* console.log removed */
             setIsLoading(false);
           }}
           onError={(e) => {

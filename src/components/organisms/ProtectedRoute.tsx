@@ -12,18 +12,10 @@ const ProtectedRoute = () => {
   }
 
   // Debug logging
-  console.log('=== ProtectedRoute Debug ===');
-  console.log('Route:', location.pathname);
-  console.log('User:', user);
-  console.log('User Types:', user?.userTypes);
-  console.log('User Roles:', user?.roles);
-  console.log('User Types type:', typeof user?.userTypes, Array.isArray(user?.userTypes));
+  // Logging removed
 
   // Check route permissions - pass both userTypes and roles
   const hasPermission = hasRoutePermission(user?.userTypes, location.pathname, user?.roles as Array<{ name: string }> | undefined);
-  
-  console.log('Has Permission:', hasPermission);
-  console.log('=== End Debug ===');
 
   if (!hasPermission) {
     // Redirect to unauthorized page or home

@@ -17,7 +17,15 @@ import {
   ListIcon,
 } from "../components/atoms/Icons";
 import { useAuthStore } from "../store/authStore";
-import { ChartBarIcon } from "@heroicons/react/24/solid";
+import { 
+  ChartBarIcon, 
+  DocumentTextIcon, 
+  ClockIcon, 
+  ComputerDesktopIcon, 
+  ClipboardDocumentCheckIcon, 
+  UserGroupIcon, 
+  AcademicCapIcon 
+} from "@heroicons/react/24/solid";
 
 export type SubItem = {
   name: string;
@@ -137,11 +145,11 @@ export const useAppMenu = () => {
         icon: <TimeIcon />,
         name: "Kehadiran Gerbang",
         subItems: [
-          { name: "Monitor Piket", path: "/attendance/piket" },
+          { name: "Monitor Piket", path: "/attendance/piket", icon: <ComputerDesktopIcon className="size-5" /> },
           { name: "Rekam Kehadiran", path: "/attendance/records" },
-          { name: "Riwayat", path: "/attendance/history" },
+          { name: "Riwayat", path: "/attendance/history", icon: <ClockIcon className="size-5" /> },
           { name: "Metrik", path: "/attendance/metrics", icon: <ChartBarIcon className="size-5" /> },
-          { name: "Laporan", path: "/attendance/reports" },
+          { name: "Laporan", path: "/attendance/reports", icon: <DocumentTextIcon className="size-5" /> },
         ],
       });
     }
@@ -152,7 +160,7 @@ export const useAppMenu = () => {
         icon: <TaskIcon />,
         name: "Kehadiran Kelas",
         subItems: [
-          { name: "Sesi Mengajar", path: "/attendance/teaching-sessions" },
+          { name: "Sesi Mengajar", path: "/attendance/teaching-sessions", icon: <AcademicCapIcon className="size-5" /> },
           { name: "Kehadiran Mata Pelajaran", path: "/attendance/subject-attendances" },
         ],
       });
@@ -271,8 +279,10 @@ export const useAppMenu = () => {
         name: "Klaim Biaya",
         path: "/reimbursements",
       });
+    }
+    if (isHR || isKurikulum) {
       hrItems.push({
-        icon: <UserIcon />,
+        icon: <UserGroupIcon className="size-5" />,
         name: "Pegawai",
         path: "/hr/employees",
       });
@@ -326,13 +336,12 @@ export const useAppMenu = () => {
       adminItems.push({ icon: <TableIcon />, name: "Tipe Cuti", path: "/leaves/types" });
     }
 
-    // Policies
     const policySubItems: SubItem[] = [];
     if (isGuru || isAcademicAdmin) {
       policySubItems.push({ name: "Perintah Kelas", path: "/teacher/classroom" });
     }
-    if (isAdmin || isSuperAdmin) {
-      policySubItems.push({ name: "Kebijakan Kehadiran", path: "/attendance/policies" });
+    if (isAdmin || isSuperAdmin || isKurikulum) {
+      policySubItems.push({ name: "Kebijakan Kehadiran", path: "/attendance/policies", icon: <ClipboardDocumentCheckIcon className="size-5" /> });
       policySubItems.push({ name: "Kebijakan Unit Mengajar", path: "/academic/teaching-unit-policies" });
     }
     

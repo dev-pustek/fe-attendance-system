@@ -73,8 +73,8 @@ const PoliciesTab: React.FC<PoliciesTabProps> = ({ contextId, selectedContext, o
       const changes: Promise<unknown>[] = [];
       
       // strict check: log available rules for debugging
-      console.log("Current Rules:", rules);
-      console.log("Form Values:", formValues);
+      /* console.log removed */
+      /* console.log removed */
 
       Object.entries(formValues).forEach(([type, value]) => {
         const existingRule = rules.find(r => r.ruleType === type);
@@ -83,7 +83,7 @@ const PoliciesTab: React.FC<PoliciesTabProps> = ({ contextId, selectedContext, o
         if (existingRule) {
              // Rule exists: Check if value changed
              if (String(existingRule.ruleValue) !== stringValue) {
-                 console.log(`Updating Rule [${type}] from ${existingRule.ruleValue} to ${stringValue}`);
+                 /* console.log removed */
                  changes.push(
                      updateMutation.mutateAsync({ 
                          id: existingRule.id, 
@@ -99,7 +99,7 @@ const PoliciesTab: React.FC<PoliciesTabProps> = ({ contextId, selectedContext, o
                  return; 
              }
 
-             console.log(`Creating New Rule [${type}] with value ${stringValue}`);
+             /* console.log removed */
              
              const payload: CreateAttendanceRuleDto = {
                  ruleType: type,

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import PageMeta from "../../components/atoms/PageMeta";
 import { useAuthStore } from "../../store/authStore";
 import { useAttendanceMetrics } from "../../api/hooks/useAnalytics";
+import { useClasses, useAcademicYears } from "../../api/hooks/useAcademic";
 import AdminMetricsView from "./Metrics/AdminMetricsView";
 import TeacherMetricsView from "./Metrics/TeacherMetricsView";
 import CurriculumMetricsView from "./Metrics/CurriculumMetricsView";
@@ -10,6 +11,10 @@ import StaffMetricsView from "./Metrics/StaffMetricsView";
 import StudentMetricsView from "./Metrics/StudentMetricsView";
 import { PageIcon } from "../../components/atoms/Icons";
 import { FunnelIcon } from "@heroicons/react/24/outline";
+import DatePicker from "../../components/molecules/DatePicker";
+import { CustomSelect } from "../../components/molecules/CustomSelect";
+import { SearchableAsyncSelect } from "../../components/molecules/SearchableAsyncSelect";
+import Label from "../../components/atoms/Label";
 
 const AttendanceMetrics: React.FC = () => {
   const { user } = useAuthStore();
@@ -17,12 +22,19 @@ const AttendanceMetrics: React.FC = () => {
   // States for filters
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
+  const [academicYearId, setAcademicYearId] = useState<number | undefined>(undefined);
   const [classId, setClassId] = useState<number | undefined>(undefined);
+  const [classSearch, setClassSearch] = useState("");
+
+  // Fetch reference data
+  const { data: acaYearsData } = useAcademicYears({ limit: 100 });
+  const { data: classesData } = useClasses({ limit: 1000, academicYearId });
 
   // Use hook (role auto-detected by backend)
-  const { data: response, isLoading, error } = useAttendanceMetrics({
+  const { data: response, isLoading, isFetching, error } = useAttendanceMetrics({
     startDate: startDate || undefined,
     endDate: endDate || undefined,
+    academicYearId,
     classId
   });
 
@@ -47,44 +59,57 @@ const AttendanceMetrics: React.FC = () => {
             </p>
           </div>
           
-          <form onSubmit={handleFilterSubmit} className="flex flex-col gap-3 p-3 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 sm:flex-row sm:items-center sm:p-2 sm:rounded-xl">
-            <div className="flex items-center gap-2">
-              <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-50 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400">
-                <FunnelIcon className="w-4 h-4"/>
-              </span>
-              <div className="flex flex-1 items-center gap-2">
-                <input 
-                  type="date" 
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full text-sm font-medium border-0 bg-transparent py-1.5 focus:ring-0 dark:text-white"
-                  placeholder="Mulai"
-                />
-                <span className="text-gray-300 dark:text-gray-600">-</span>
-                <input 
-                  type="date" 
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full text-sm font-medium border-0 bg-transparent py-1.5 focus:ring-0 dark:text-white"
-                  placeholder="Selesai"
-                />
-              </div>
+          <form onSubmit={handleFilterSubmit} className="flex flex-col gap-4 p-4 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-white/5 sm:flex-row sm:items-end">
+            
+            <div className="flex-1 space-y-1.5 min-w-[150px]">
+              <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Tanggal Mulai</Label>
+              <DatePicker value={startDate} onChange={setStartDate} placeholder="Pilih tanggal" />
+            </div>
+
+            <div className="flex-1 space-y-1.5 min-w-[150px]">
+              <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Tanggal Akhir</Label>
+              <DatePicker value={endDate} onChange={setEndDate} placeholder="Pilih tanggal" />
             </div>
             
-            {response?.role === 'admin' && (
-              <div className="flex items-center gap-2 px-2 sm:border-l sm:border-gray-200 dark:sm:border-gray-700">
-                <input 
-                  type="number"
-                  placeholder="ID Kelas"
-                  value={classId || ''}
-                  onChange={(e) => setClassId(e.target.value ? Number(e.target.value) : undefined)}
-                  className="w-full sm:w-24 text-sm font-medium border-0 bg-gray-50 dark:bg-gray-700/50 rounded-lg py-1.5 focus:ring-1 focus:ring-brand-500 dark:text-white"
-                />
-              </div>
+            {(response?.role === 'admin' || response?.role === 'teacher') && (
+              <>
+                <div className="flex-1 space-y-1.5 min-w-[150px]">
+                  <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Tahun Ajaran</Label>
+                  <CustomSelect
+                    value={academicYearId ? String(academicYearId) : ""}
+                    onChange={(val) => setAcademicYearId(val ? Number(val) : undefined)}
+                    onClear={() => setAcademicYearId(undefined)}
+                    placeholder="Semua Tahun Ajaran"
+                    options={acaYearsData?.data?.map((y) => ({ label: y.name, value: String(y.id) })) || []}
+                    className="w-full"
+                  />
+                </div>
+                <div className="flex-1 space-y-1.5 min-w-[150px]">
+                  <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Kelas Spesifik</Label>
+                  <SearchableAsyncSelect
+                    value={classId ? String(classId) : ""}
+                    onChange={(val) => setClassId(val ? Number(val) : undefined)}
+                    onSearch={setClassSearch}
+                    onClear={() => setClassId(undefined)}
+                    placeholder="Cari kelas..."
+                    options={
+                      classesData?.data
+                        ?.filter((c) => c.name.toLowerCase().includes(classSearch.toLowerCase()))
+                        .map((c) => ({ label: c.name, value: String(c.id) })) || []
+                    }
+                    className="w-full"
+                  />
+                </div>
+              </>
             )}
             
-            <button type="submit" className="px-3 py-1.5 text-sm bg-brand-50 text-brand-600 rounded-md hover:bg-brand-100 font-medium transition-colors dark:bg-brand-500/10 dark:text-brand-400 dark:hover:bg-brand-500/20">
-              Filter
+            <button type="submit" disabled={isFetching} className="flex items-center justify-center gap-2 px-5 py-2.5 sm:py-2 text-sm bg-brand-500 text-white rounded-xl hover:bg-brand-600 font-medium transition-colors shadow-sm sm:mb-[2px] w-full sm:w-auto h-[42px] disabled:opacity-70">
+              {isFetching ? (
+                <div className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+              ) : (
+                <FunnelIcon className="w-4 h-4" />
+              )}
+              {isFetching ? "Memuat..." : "Terapkan Filter"}
             </button>
           </form>
         </div>

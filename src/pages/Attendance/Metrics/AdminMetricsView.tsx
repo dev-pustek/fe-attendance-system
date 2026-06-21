@@ -175,11 +175,11 @@ const AdminMetricsView: React.FC<AdminMetricsViewProps> = ({ data, filters }) =>
 
         {/* Class Comparison */}
         <ComponentCard title="Kehadiran Berdasarkan Kelas">
-          <div className="h-[300px] w-full pt-4">
+          <div className="h-[300px] w-full pt-4 pr-4">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={classComparison} layout="vertical" margin={{ left: 20 }}>
+              <BarChart data={classComparison.map(c => ({...c, rate: Number(c.rate) || 0}))} layout="vertical" margin={{ left: 20, right: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#E2E8F0" opacity={0.5} />
-                <XAxis type="number" hide />
+                <XAxis type="number" domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fontSize: 10 }} tickFormatter={(val) => `${val}%`} />
                 <YAxis dataKey="className" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 11 }} width={80} />
                 <Tooltip cursor={{ fill: 'transparent' }} />
                 <Bar dataKey="rate" fill="#3C50E0" radius={[0, 4, 4, 0]} barSize={20} name="Tingkat Hadir (%)" />
@@ -194,7 +194,7 @@ const AdminMetricsView: React.FC<AdminMetricsViewProps> = ({ data, filters }) =>
         <ComponentCard title="Distribusi Jam Masuk">
           <div className="h-[300px] w-full pt-4">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={clockInDistribution}>
+              <BarChart data={clockInDistribution} margin={{ right: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" opacity={0.5} />
                 <XAxis dataKey="hour" axisLine={false} tickLine={false} tick={{ fontSize: 10 }} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10 }} />
@@ -207,13 +207,36 @@ const AdminMetricsView: React.FC<AdminMetricsViewProps> = ({ data, filters }) =>
 
         {/* Top Late Students */}
         <ComponentCard title="Siswa Sering Terlambat (Top 10)">
-          <div className="overflow-x-auto">
+          {/* Mobile view: Cards */}
+          <div className="block sm:hidden space-y-3 mt-2">
+            {topLateStudents.length === 0 ? (
+              <div className="text-center py-6 text-gray-500 text-sm">Tidak ada data keterlambatan.</div>
+            ) : (
+              topLateStudents.map((student, idx) => (
+                <div key={idx} className="flex items-center justify-between p-3 border border-gray-100 rounded-xl dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-gray-900 dark:text-white text-sm">{student.userName}</span>
+                    <span className="text-xs text-gray-500">{student.className}</span>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-500/20 dark:text-orange-400">
+                      {student.lateCount} kali telat
+                    </span>
+                    <span className="text-xs text-red-500 font-medium">Avg: {student.avgLateMinutes.toFixed(0)} mnt</span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop view: Table */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-left text-sm text-gray-500 dark:text-gray-400">
               <thead className="bg-gray-50 text-xs uppercase text-gray-700 dark:bg-gray-800 dark:text-gray-400">
                 <tr>
                   <th className="px-4 py-3">Nama Siswa</th>
                   <th className="px-4 py-3">Kelas</th>
-                  <th className="px-4 py-3 text-center">Jumlah Keterlambatan</th>
+                  <th className="px-4 py-3 text-center">Jml Terlambat</th>
                   <th className="px-4 py-3 text-center">Rata-rata (Menit)</th>
                 </tr>
               </thead>

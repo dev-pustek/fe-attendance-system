@@ -4,8 +4,8 @@ import StudentSchedule from './Student/StudentTodaySchedule';
 
 const ScheduleWrapper = () => {
     const { user } = useAuthStore();
-    console.log('ScheduleWrapper user:', user);
-    console.log('ScheduleWrapper userTypes:', user?.userTypes);
+    /* console.log removed */
+    /* console.log removed */
     const isStudent = user?.userTypes?.some(t => t.toLowerCase() === 'student') 
         || (user?.profile?.nis && user?.profile?.nis.length > 0)
         || user?.userTypes?.includes('Student');
