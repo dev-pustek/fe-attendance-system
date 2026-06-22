@@ -72,7 +72,7 @@ export const useAppMenu = () => {
 
   // ─── Base role flags ───
   const isAdmin = hasAnyRole(["admin"]);
-  const isSuperAdmin = hasAnyRole(["superadmin", "super admin"]);
+  const isSuperAdmin = hasAnyRole(["superadmin", "super admin", "super_admin"]);
   const isKurikulum = hasAnyRole(["kurikulum"]);
   const isKaryawan = hasAnyRole(["karyawan", "staff"]);
   const isGuru = hasAnyRole(["guru", "teacher"]);
