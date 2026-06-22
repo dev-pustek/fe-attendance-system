@@ -154,8 +154,8 @@ export const useAppMenu = () => {
       });
     }
 
-    // Teacher: class attendance (teaching sessions, subject attendances)
-    if (isGuru) {
+    // Teacher & Super Admin: class attendance (teaching sessions, subject attendances)
+    if (isGuru || isSuperAdmin) {
       attendanceItems.push({
         icon: <TaskIcon />,
         name: "Kehadiran Kelas",
