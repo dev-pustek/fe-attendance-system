@@ -76,6 +76,12 @@ export const useDeleteUser = () => {
   });
 };
 
+export const useResetPassword = () => {
+  return useMutation({
+    mutationFn: (id: string) => userService.adminResetPassword(id),
+  });
+};
+
 export const useMyQrCode = () => {
   return useQuery({
     queryKey: ["users", "me", "qrcode"],

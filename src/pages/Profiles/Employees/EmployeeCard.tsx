@@ -13,6 +13,8 @@ interface EmployeeCardProps {
     onToggle: () => void;
     onEdit: () => void;
     onDelete: () => void;
+    onResetPassword?: () => void;
+    showResetPassword?: boolean;
 }
 
 const EmployeeCard: React.FC<EmployeeCardProps> = ({
@@ -21,6 +23,8 @@ const EmployeeCard: React.FC<EmployeeCardProps> = ({
     onToggle,
     onEdit,
     onDelete,
+    onResetPassword,
+    showResetPassword = false,
 }) => {
     return (
         <div className={`rounded-2xl border overflow-hidden transition-all ${
@@ -80,7 +84,13 @@ const EmployeeCard: React.FC<EmployeeCardProps> = ({
             </div>
 
             {/* Card Footer */}
-            <div className="flex items-center justify-end border-t border-gray-100 bg-gray-50/30 px-4 py-3 sm:px-5 dark:border-white/[0.05] dark:bg-white/[0.01]">
+            <div className="flex items-center justify-end border-t border-gray-100 bg-gray-50/30 px-4 py-3 sm:px-5 dark:border-white/[0.05] dark:bg-white/[0.01] gap-1">
+                {showResetPassword && onResetPassword && (
+                    <button onClick={(e) => { e.stopPropagation(); onResetPassword(); }}
+                        className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-500/10">
+                        Reset Password
+                    </button>
+                )}
                 <button onClick={(e) => { e.stopPropagation(); onEdit(); }}
                     className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/[0.04]">
                     <PencilIcon className="size-3.5" /> Edit

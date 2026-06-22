@@ -97,6 +97,10 @@ export const userService = {
     await apiClient.delete(`/users/${id}`);
   },
 
+  adminResetPassword: async (id: string): Promise<void> => {
+    await apiClient.patch(`/users/${id}/reset-password`);
+  },
+
   getMyQrCode: async (): Promise<{ qrCode: string }> => {
     const response = await apiClient.get("/users/me/qrcode");
     return response.data;

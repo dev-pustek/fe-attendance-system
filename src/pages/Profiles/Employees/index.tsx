@@ -3,7 +3,9 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useEmployees, useEmployeesInfinite, useImportEmployees, useCreateEmployee, useUpdateEmployee, useDeleteEmployee } from "../../../api/hooks/useProfiles";
+import { useResetPassword } from "../../../api/hooks/useUsers";
 import { EmployeeProfile } from "../../../api/types/profiles";
+import { useAppMenu } from "../../../hooks/useAppMenu";
 import { profilesService } from "../../../api/services/profilesService";
 import { accessControlService } from "../../../api/services/accessControlService";
 import PageMeta from "../../../components/atoms/PageMeta";
@@ -76,7 +78,19 @@ const MoreHorizontalIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-const RowActionMenu = ({ onEdit, onDelete, onAcademic }: { onEdit: () => void; onDelete: () => void; onAcademic: () => void; }) => {
+const RowActionMenu = ({ 
+  onEdit, 
+  onDelete, 
+  onAcademic, 
+  onResetPassword,
+  showResetPassword = false
+}: { 
+  onEdit: () => void; 
+  onDelete: () => void; 
+  onAcademic: () => void; 
+  onResetPassword?: () => void;
+  showResetPassword?: boolean;
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <div className="relative flex justify-center">
@@ -109,6 +123,17 @@ const RowActionMenu = ({ onEdit, onDelete, onAcademic }: { onEdit: () => void; o
         >
           <PencilIcon className="size-3.5" /> Edit
         </DropdownItem>
+        {showResetPassword && onResetPassword && (
+          <DropdownItem
+            onClick={() => {
+              setIsOpen(false);
+              onResetPassword();
+            }}
+            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-500/10"
+          >
+            <UserCircleIcon className="size-3.5" /> Reset Password
+          </DropdownItem>
+        )}
         <DropdownItem
           onClick={() => {
             setIsOpen(false);
@@ -189,6 +214,10 @@ const EmployeesList: React.FC = () => {
   const createMutation = useCreateEmployee();
   const updateMutation = useUpdateEmployee();
   const deleteMutation = useDeleteEmployee();
+  const resetPasswordMutation = useResetPassword();
+  
+  const { isAdmin, isSuperAdmin } = useAppMenu();
+  const showResetPassword = isAdmin || isSuperAdmin;
 
   // ── Mobile infinite query ─────────────────────────────────────────────────
   const infiniteQuery = useEmployeesInfinite({
@@ -397,6 +426,22 @@ const EmployeesList: React.FC = () => {
         showSuccess("Employee deleted successfully!");
       } catch (error) {
         showError(error, "Failed to delete employee");
+      }
+    }
+  };
+
+  const handleResetPassword = async (id: string, name: string) => {
+    const confirmed = await confirm({
+      variant: "update",
+      title: "Reset Password",
+      message: `Are you sure you want to reset password for ${name}? The new password will be "Password123!".`,
+    });
+    if (confirmed) {
+      try {
+        await resetPasswordMutation.mutateAsync(id);
+        showSuccess("Password reset successfully!");
+      } catch (error) {
+        showError(error, "Failed to reset password");
       }
     }
   };
@@ -705,6 +750,8 @@ const EmployeesList: React.FC = () => {
                     onToggle={() => toggleOne(employee.userId)}
                     onEdit={() => handleOpenModal(employee)}
                     onDelete={() => handleDelete(employee.userId)}
+                    showResetPassword={showResetPassword}
+                    onResetPassword={() => handleResetPassword(employee.userId, employee.user?.name || "Employee")}
                   />
                 ))}
               </div>
@@ -815,6 +862,8 @@ const EmployeesList: React.FC = () => {
                                 onEdit={() => handleOpenModal(employee)} 
                                 onDelete={() => handleDelete(employee.userId)} 
                                 onAcademic={() => navigate(`/hr/employees/${employee.userId}/academic-profile`)}
+                                showResetPassword={showResetPassword}
+                                onResetPassword={() => handleResetPassword(employee.userId, employee.user?.name || "Employee")}
                             />
                           </TableCell>
                         </TableRow>
