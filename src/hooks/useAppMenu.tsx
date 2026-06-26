@@ -154,12 +154,13 @@ export const useAppMenu = () => {
       });
     }
 
-    // Teacher & Super Admin: class attendance (teaching sessions, subject attendances)
-    if (isGuru || isSuperAdmin) {
+    // Teacher, Admin, Super Admin, and Piket: class attendance (teaching sessions, subject attendances)
+    if (isGuru || hasGateAccess) {
       attendanceItems.push({
         icon: <TaskIcon />,
         name: "Kehadiran Kelas",
         subItems: [
+          { name: "Perintah Kelas", path: "/attendance/classroom-command", icon: <ComputerDesktopIcon className="size-5" /> },
           { name: "Sesi Mengajar", path: "/attendance/teaching-sessions", icon: <AcademicCapIcon className="size-5" /> },
           { name: "Kehadiran Mata Pelajaran", path: "/attendance/subject-attendances" },
         ],
@@ -337,9 +338,6 @@ export const useAppMenu = () => {
     }
 
     const policySubItems: SubItem[] = [];
-    if (isGuru || isAcademicAdmin) {
-      policySubItems.push({ name: "Perintah Kelas", path: "/teacher/classroom" });
-    }
     if (isAdmin || isSuperAdmin || isKurikulum) {
       policySubItems.push({ name: "Kebijakan Kehadiran", path: "/attendance/policies", icon: <ClipboardDocumentCheckIcon className="size-5" /> });
       policySubItems.push({ name: "Kebijakan Unit Mengajar", path: "/academic/teaching-unit-policies" });
