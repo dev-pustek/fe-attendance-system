@@ -13,6 +13,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../../store/authStore";
 import { useAttendanceRules } from "../../api/hooks/useRules";
+import { useEvent } from "../../api/hooks/useEvents";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createPortal } from "react-dom";
 import { Modal } from "../../components/molecules/Modal";
@@ -23,6 +24,8 @@ const EventScanner = () => {
   const { user } = useAuthStore();
   const [searchParams] = useSearchParams();
   const eventId = searchParams.get("eventId");
+  const { data: event } = useEvent(eventId || "");
+
   useEffect(() => {
     if (!eventId) {
       toast.error("Event ID is missing");
@@ -676,23 +679,17 @@ const EventScanner = () => {
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-50 p-6 flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
         <button 
-          onClick={() => {
-            if (requireSelfie && requireQrCode) {
-               setRequireSelfie(false);
-            } else {
-               setViewMode("landing");
-            }
-          }}
+          onClick={() => navigate("/events")}
           className="p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors backdrop-blur-md border border-white/10 pointer-events-auto active:scale-95"
         >
           <ChevronLeftIcon className="size-6" />
         </button>
         <div className="text-center pointer-events-auto">
           <h1 className="text-lg sm:text-xl font-bold text-white mb-1 tracking-tight">
-            {requireSelfie ? "Take a Selfie" : "Absen Kehadiran"}
+            {requireSelfie ? "Take a Selfie" : "Scan Event QR"}
           </h1>
           <p className="text-white/70 text-xs font-medium">
-            {requireSelfie ? "Position your face in the frame" : "Scan QR Code"}
+            {requireSelfie ? "Position your face in the frame" : (event ? event.name : "Scan QR Code to attend")}
           </p>
         </div>
         <div className="w-10" />
@@ -843,6 +840,20 @@ const EventScanner = () => {
                     </button>
                 </motion.div>
             </div>
+        )}
+
+        {/* Event Info Display */}
+        {event && (
+          <div className="absolute bottom-20 left-0 right-0 z-20 flex justify-center pointer-events-none">
+            <div className="bg-black/50 backdrop-blur-md px-6 py-3 rounded-2xl border border-white/10 shadow-lg flex flex-col items-center gap-1 max-w-[80%]">
+              <span className="text-white font-bold text-sm text-center truncate w-full">
+                {event.name}
+              </span>
+              <span className="text-white/70 text-xs font-medium text-center truncate w-full">
+                {event.location || "No Location Specified"}
+              </span>
+            </div>
+          </div>
         )}
 
         {/* Live Location Display */}
