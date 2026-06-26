@@ -1,5 +1,5 @@
 // Role-based route permissions configuration
-export type UserRole = 'admin' | 'superadmin' | 'super admin' | 'teacher' | 'student' | 'staff' | 'parent';
+export type UserRole = 'admin' | 'superadmin' | 'super admin' | 'teacher' | 'student' | 'staff' | 'parent' | 'piket' | 'security';
 
 export interface RoutePermission {
   path: string;
@@ -10,15 +10,15 @@ export interface RoutePermission {
 // Define which routes are accessible to which roles
 export const routePermissions: RoutePermission[] = [
   // Dashboard - Everyone
-  { path: '/', allowedRoles: ['admin', 'teacher', 'student', 'staff', 'parent'] },
-  { path: '/calendar', allowedRoles: ['admin', 'teacher', 'student', 'staff'] },
-  { path: '/profile', allowedRoles: ['admin', 'teacher', 'student', 'staff', 'parent'] },
-  { path: '/notifications', allowedRoles: ['admin', 'teacher', 'student', 'staff', 'parent'] },
+  { path: '/', allowedRoles: ['admin', 'teacher', 'student', 'staff', 'parent', 'piket', 'security'] },
+  { path: '/calendar', allowedRoles: ['admin', 'teacher', 'student', 'staff', 'piket', 'security'] },
+  { path: '/profile', allowedRoles: ['admin', 'teacher', 'student', 'staff', 'parent', 'piket', 'security'] },
+  { path: '/notifications', allowedRoles: ['admin', 'teacher', 'student', 'staff', 'parent', 'piket', 'security'] },
 
   // Student-specific routes
   { path: '/student/my-schedule', allowedRoles: ['student'] },
   { path: '/student/leaves', allowedRoles: ['student'] },
-  { path: '/students/:userId', allowedRoles: ['admin', 'teacher', 'student', 'staff'] },
+  { path: '/students/:userId', allowedRoles: ['admin', 'teacher', 'student', 'staff', 'piket', 'security'] },
 
   // Teacher-specific routes
   { path: '/teacher/classroom', allowedRoles: ['admin', 'teacher'] },
@@ -26,16 +26,16 @@ export const routePermissions: RoutePermission[] = [
   { path: '/hr/employees/:employeeId/academic-profile', allowedRoles: ['admin', 'teacher'] },
 
   // Attendance - Different access levels
-  { path: '/attendance/records', allowedRoles: ['admin', 'teacher', 'student', 'staff'] },
-  { path: '/attendance/history', allowedRoles: ['admin', 'teacher', 'staff', 'student'] },
-  { path: '/attendance/gate-scan', allowedRoles: ['admin', 'teacher', 'student', 'staff', 'parent'] }, // Everyone can scan for attendance
-  { path: '/attendance/piket', allowedRoles: ['admin', 'staff'] },
-  { path: '/attendance/classroom-command', allowedRoles: ['admin', 'staff', 'teacher'] },
-  { path: '/attendance/history', allowedRoles: ['admin', 'staff', 'student'] },
+  { path: '/attendance/records', allowedRoles: ['admin', 'teacher', 'student', 'staff', 'piket', 'security'] },
+  { path: '/attendance/history', allowedRoles: ['admin', 'teacher', 'staff', 'student', 'piket', 'security'] },
+  { path: '/attendance/gate-scan', allowedRoles: ['admin', 'teacher', 'student', 'staff', 'parent', 'piket', 'security'] }, // Everyone can scan for attendance
+  { path: '/attendance/piket', allowedRoles: ['admin', 'staff', 'piket', 'security'] },
+  { path: '/attendance/classroom-command', allowedRoles: ['admin', 'staff', 'teacher', 'piket', 'security'] },
+  { path: '/attendance/history', allowedRoles: ['admin', 'staff', 'student', 'piket', 'security'] },
   { path: '/attendance/teaching-sessions', allowedRoles: ['admin', 'teacher', 'staff'] },
   { path: '/attendance/subject-attendances', allowedRoles: ['admin', 'teacher', 'staff'] },
-  { path: '/attendance/events', allowedRoles: ['admin', 'staff'] },
-  { path: '/attendance/metrics', allowedRoles: ['admin', 'teacher', 'student', 'staff'] },
+  { path: '/attendance/events', allowedRoles: ['admin', 'staff', 'piket', 'security'] },
+  { path: '/attendance/metrics', allowedRoles: ['admin', 'teacher', 'student', 'staff', 'piket', 'security'] },
   { path: '/attendance/reports', allowedRoles: ['admin', 'staff'] },
   { path: '/attendance/policies', allowedRoles: ['admin'] },
 
@@ -80,13 +80,13 @@ export const routePermissions: RoutePermission[] = [
   { path: '/leaves/requests', allowedRoles: ['admin', 'teacher', 'student', 'staff'] },
 
   // Events - Most users
-  { path: '/events', allowedRoles: ['admin', 'teacher', 'student', 'staff'] },
+  { path: '/events', allowedRoles: ['admin', 'teacher', 'student', 'staff', 'piket', 'security'] },
   { path: '/events/:id/invitations', allowedRoles: ['admin', 'staff'] },
   { path: '/events/:id/invitation-paper', allowedRoles: ['admin', 'teacher', 'student', 'staff'] },
 
   // Guests - Admin and Staff
-  { path: '/guests', allowedRoles: ['admin', 'staff'] },
-  { path: '/guests/visits', allowedRoles: ['admin', 'staff'] },
+  { path: '/guests', allowedRoles: ['admin', 'staff', 'piket', 'security'] },
+  { path: '/guests/visits', allowedRoles: ['admin', 'staff', 'piket', 'security'] },
 
   // Scheduling
   { path: '/scheduling/templates', allowedRoles: ['admin', 'staff'] },
@@ -171,6 +171,8 @@ export const getPrimaryRole = (_userTypes: string[] | undefined, roles?: Array<{
     const roleNames = roles.map(r => r.name.toLowerCase());
     if (roleNames.some(r => r.includes('admin'))) return 'admin';
     if (roleNames.some(r => r.includes('teacher'))) return 'teacher';
+    if (roleNames.some(r => r.includes('piket'))) return 'piket';
+    if (roleNames.some(r => r.includes('security'))) return 'security';
     if (roleNames.some(r => r.includes('staff'))) return 'staff';
     if (roleNames.some(r => r.includes('student'))) return 'student';
     if (roleNames.some(r => r.includes('parent'))) return 'parent';
