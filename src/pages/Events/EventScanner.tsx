@@ -708,7 +708,7 @@ const EventScanner = () => {
 
         {/* Adjust darkness: Reduced shadow alpha for clearer view */}
         {!requireSelfie && (
-            <div className="absolute inset-0 bg-black/40 z-10">
+            <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden">
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] h-[280px] sm:w-[350px] sm:h-[350px] bg-transparent shadow-[0_0_0_9999px_rgba(0,0,0,0.4)] rounded-3xl" />
             </div>
         )}
