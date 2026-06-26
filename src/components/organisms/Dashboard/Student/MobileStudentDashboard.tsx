@@ -1142,14 +1142,14 @@ export default function MobileStudentDashboard({ logs = [] }: MobileStudentDashb
                                 ) : (
                                   <button 
                                     onClick={() => {
-                                      if (item.type === 'class' && isTeacherUser && !!item.sessionId && (item as any).validationStatus !== 'invalid') {
-                                        toast.success("This session is already running.");
+                                      if (item.type === 'class' && isTeacherUser && !!(item as any).isOngoing && (item as any).validationStatus !== 'invalid') {
+                                        toast.success("Sesi ini sedang berlangsung.");
                                         return;
                                       }
                                       
                                       const hasClockedIn = roadmapData.find(i => i.type === 'scan_in')?.status === 'completed';
                                       if (item.type === 'class' && !hasClockedIn) {
-                                        toast.error("You must clock in at the gate first before entering a class.");
+                                        toast.error("Anda harus absen masuk di gerbang terlebih dahulu sebelum memulai kelas.");
                                         return;
                                       }
                                       if (item.type === 'class') {
@@ -1157,13 +1157,13 @@ export default function MobileStudentDashboard({ logs = [] }: MobileStudentDashb
                                       }
                                     }}
                                     className={`text-white text-[10px] font-bold px-3 py-1.5 rounded-full transition-colors ${
-                                      (item.type === 'class' && isTeacherUser && !!item.sessionId && (item as any).validationStatus !== 'invalid') ? 'bg-gray-400 cursor-default' :
+                                      (item.type === 'class' && isTeacherUser && !!(item as any).isOngoing && (item as any).validationStatus !== 'invalid') ? 'bg-green-500 cursor-default' :
                                       (item.type === 'class' && isTeacherUser && !!item.sessionId && (item as any).validationStatus === 'invalid') ? 'bg-orange-500 hover:bg-orange-600' :
                                       'bg-blue-500 hover:bg-blue-600'
                                   }`}>
-                                    {(item.type === 'class' && isTeacherUser && !!item.sessionId && (item as any).validationStatus !== 'invalid') ? 'Running' :
-                                     (item.type === 'class' && isTeacherUser && !!item.sessionId && (item as any).validationStatus === 'invalid') ? 'Re-Validate' :
-                                     'Start Now'}
+                                    {(item.type === 'class' && isTeacherUser && !!(item as any).isOngoing && (item as any).validationStatus !== 'invalid') ? 'Sedang Berlangsung' :
+                                     (item.type === 'class' && isTeacherUser && !!item.sessionId && (item as any).validationStatus === 'invalid') ? 'Validasi Ulang' :
+                                     'Mulai Sekarang'}
                                   </button>
                                 )}
                               </>
