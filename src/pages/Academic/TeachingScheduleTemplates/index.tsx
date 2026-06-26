@@ -1157,7 +1157,7 @@ const TeachingScheduleTemplates: React.FC = () => {
         setTeacherOptions(
           filtered.map((t) => ({
             label: t!.name,
-            value: String(t!.public_id || t!.id),
+            value: String(t!.public_id),
             subLabel: t!.email,
           })),
         );
@@ -1204,7 +1204,7 @@ const TeachingScheduleTemplates: React.FC = () => {
           setTeacherOptions(
             (employees.data || []).map((e) => ({
               label: e.user?.name || "Unknown Teacher",
-              value: e.user?.public_id || String(e.id),
+              value: e.user?.public_id || "",
               subLabel: e.employeeId || e.nip || undefined,
             })),
           );
