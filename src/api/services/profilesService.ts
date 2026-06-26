@@ -24,9 +24,7 @@ export const profilesService = {
             formData.append(key, value instanceof File ? value : String(value));
           }
         });
-        const response = await apiClient.post<StudentProfile>("/profiles/students", formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
+        const response = await apiClient.post<StudentProfile>("/profiles/students", formData);
         return response.data;
     } else {
         const response = await apiClient.post<StudentProfile>("/profiles/students", data);
@@ -44,9 +42,7 @@ export const profilesService = {
             formData.append(key, value instanceof File ? value : String(value));
           }
         });
-        const response = await apiClient.patch<StudentProfile>(`/profiles/students/${userId}`, formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
+        const response = await apiClient.patch<StudentProfile>(`/profiles/students/${userId}`, formData);
         return response.data;
     } else {
         const response = await apiClient.patch<StudentProfile>(`/profiles/students/${userId}`, data);
@@ -87,8 +83,7 @@ export const profilesService = {
     formData.append("file", file);
     const response = await apiClient.post<{ created: number; updated: number; errors: string[] }>(
       "/profiles/students/import",
-      formData,
-      { headers: { "Content-Type": "multipart/form-data" } }
+      formData
     );
     return response.data;
   },
@@ -114,9 +109,7 @@ export const profilesService = {
             formData.append(key, value instanceof File ? value : String(value));
           }
         });
-        const response = await apiClient.post<EmployeeProfile>("/profiles/employees", formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
+        const response = await apiClient.post<EmployeeProfile>("/profiles/employees", formData);
         return response.data;
     } else {
         const response = await apiClient.post<EmployeeProfile>("/profiles/employees", data);
@@ -134,9 +127,7 @@ export const profilesService = {
             formData.append(key, value instanceof File ? value : String(value));
           }
         });
-        const response = await apiClient.patch<EmployeeProfile>(`/profiles/employees/${userId}`, formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
+        const response = await apiClient.patch<EmployeeProfile>(`/profiles/employees/${userId}`, formData);
         return response.data;
     } else {
         const response = await apiClient.patch<EmployeeProfile>(`/profiles/employees/${userId}`, data);
@@ -177,8 +168,7 @@ export const profilesService = {
     formData.append("file", file);
     const response = await apiClient.post<{ created: number; updated: number; errors: string[] }>(
       "/profiles/employees/import",
-      formData,
-      { headers: { "Content-Type": "multipart/form-data" } }
+      formData
     );
     return response.data;
   },
@@ -201,9 +191,7 @@ export const profilesService = {
         formData.append(key, value instanceof File ? value : String(value));
       }
     });
-    const response = await apiClient.post<ParentProfile>("/parent-profiles", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    const response = await apiClient.post<ParentProfile>("/parent-profiles", formData);
     return response.data;
   },
 
@@ -214,9 +202,7 @@ export const profilesService = {
         formData.append(key, value instanceof File ? value : String(value));
       }
     });
-    const response = await apiClient.patch<ParentProfile>(`/parent-profiles/${userId}`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    const response = await apiClient.patch<ParentProfile>(`/parent-profiles/${userId}`, formData);
     return response.data;
   },
 
@@ -253,8 +239,7 @@ export const profilesService = {
     formData.append("file", file);
     const response = await apiClient.post<{ created: number; updated: number; errors: string[] }>(
       "/parent-profiles/import",
-      formData,
-      { headers: { "Content-Type": "multipart/form-data" } }
+      formData
     );
     return response.data;
   },

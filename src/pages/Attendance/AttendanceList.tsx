@@ -242,6 +242,7 @@ const AttendanceList: React.FC = () => {
     eventId: eventId || undefined,
     userId: selectedUserIds.length > 0 ? selectedUserIds.join(",") : undefined,
     lateMinutes: lateMinutes || undefined,
+    search: searchTerm || undefined,
     sortBy: undefined,
     sortOrder: undefined,
   };
