@@ -70,15 +70,7 @@ const EventScanner = () => {
 
   const { data: globalRulesResponse } = useAttendanceRules();
 
-  const requireQrCode = useMemo(() => {
-    const userRule = userPolicy?.rules?.find((r: any) => r.ruleType === "REQUIRE_QR_CODE");
-    if (userRule) {
-      return userRule.ruleValue === "true" || userRule.ruleValue === "1" || userRule.ruleValue === true;
-    }
-    return globalRulesResponse?.data?.some(
-      (r) => r.ruleType === "REQUIRE_QR_CODE" && (r.ruleValue === "true" || r.ruleValue === "1" || r.ruleValue === true)
-    ) ?? false;
-  }, [userPolicy?.rules, globalRulesResponse?.data]);
+  const requireQrCode = true;
 
   const requirePhotoEvidence = useMemo(() => {
     const userRule = userPolicy?.rules?.find((r: any) => r.ruleType === "REQUIRE_PHOTO_EVIDENCE");
@@ -403,8 +395,6 @@ const EventScanner = () => {
   // -- Camera Scanner Setup --
   useEffect(() => {
     
-
-    if (!requireQrCode && !requireSelfie) return;
 
     isMountedRef.current = true;
     let scanner: Html5Qrcode | null = null;
