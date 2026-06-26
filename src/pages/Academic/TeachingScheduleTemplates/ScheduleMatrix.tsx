@@ -531,55 +531,42 @@ const ScheduleMatrix: React.FC<ScheduleMatrixProps> = ({
     >
         <div className="min-w-full flex flex-col bg-gray-50/50 dark:bg-[#0B0B0F]">
             {/* Scrollable Content Area */}
-            <div className="flex-1">
-                {/* Sticky Header Row - Dynamic Columns */}
-                <div className="grid divide-x divide-gray-200 border-b border-gray-200 dark:divide-white/5 dark:border-white/5 bg-white dark:bg-[#0B0B0F] z-30 sticky top-0 relative pointer-events-none min-w-max"
-                     style={{ gridTemplateColumns: `repeat(${visibleDays.length}, minmax(280px, 1fr))` }}
-                >
-                     {/* Note: pointer-events-none allows drag through header, but might block clicks. If header has interaction, remove it. */}
-                     {/* Wait, header is just text?  */}
-                    {visibleDays.map((day) => {
-                        const rule = effectiveRules ? (effectiveRules[day.value] || effectiveRules[day.label] || effectiveRules[day.value.toUpperCase()]) : undefined;
-                        return (
-                        <DayHeader 
-                            key={`header-${day.value}`} 
-                            day={day} 
-                            isToday={day.value === currentDayValue}
-                            rule={rule}
-                        />
-                    )})}
-                </div>
-
+            <div className="flex-1 relative">
                 <div className="grid min-h-[500px] divide-x divide-gray-200 dark:divide-white/5 min-w-max"
                      style={{ gridTemplateColumns: `repeat(${visibleDays.length}, minmax(280px, 1fr))` }}
                 >
-                    {/* Note: Identify if using inline style for grid-template-columns causes hydration mismatch if screen size changes? 
-                        Ideally use dynamic class or just style. For desktop we want equal columns.
-                        Tailwind grid-cols-N only goes up to 12 by default. unique number of days might be variable.
-                        Using inline style for columns count is safer for dynamic length.
-                     */}
                     {visibleDays.map((day) => {
                         const rule = effectiveRules ? (effectiveRules[day.value] || effectiveRules[day.label] || effectiveRules[day.value.toUpperCase()]) : undefined;
                         const isDayActive = rule ? rule.isActive : true;
                         
                         return (
-                        <DayColumn 
-                            key={day.value}
-                            day={day}
-                            isToday={day.value === currentDayValue}
-                            templates={getTemplatesForDay(day.value)}
-                            viewMode={viewMode}
-                            rule={rule}
-                            onAdd={onAddSession}
-                            onEdit={onEditSession}
-                            onDelete={onDeleteSession}
-                            onMoveSession={onMoveSession}
-                            onDropSubject={onDropSubject}
-                            isActive={isDayActive}
-                            isGlobalDragging={isGlobalDragging}
-                            readOnly={readOnly}
-                            minutesPerUnit={minutesPerUnit}
-                        />
+                        <div key={day.value} className="flex flex-col relative">
+                            {/* Sticky Header Row */}
+                            <div className="sticky top-0 z-30 pointer-events-none bg-white dark:bg-[#0B0B0F] border-b border-gray-200 dark:border-white/5">
+                                <DayHeader 
+                                    day={day} 
+                                    isToday={day.value === currentDayValue}
+                                    rule={rule}
+                                />
+                            </div>
+
+                            <DayColumn 
+                                day={day}
+                                isToday={day.value === currentDayValue}
+                                templates={getTemplatesForDay(day.value)}
+                                viewMode={viewMode}
+                                rule={rule}
+                                onAdd={onAddSession}
+                                onEdit={onEditSession}
+                                onDelete={onDeleteSession}
+                                onMoveSession={onMoveSession}
+                                onDropSubject={onDropSubject}
+                                isActive={isDayActive}
+                                isGlobalDragging={isGlobalDragging}
+                                readOnly={readOnly}
+                                minutesPerUnit={minutesPerUnit}
+                            />
+                        </div>
                     )})}
                 </div>
             </div>
