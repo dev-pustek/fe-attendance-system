@@ -280,7 +280,7 @@ export const attendanceService = {
     return response.data;
   },
 
-  generateTeachingSessions: async (data: { classSubjectId?: number; teacherId?: string; startDate: string; endDate: string; dryRun?: boolean; excludedSessions?: { sessionDate: string; startTime: string; classSubjectId: number }[] }): Promise<{ message: string; generatedCount: number; subjectsProcessed?: number; period: string; dryRun?: boolean; details?: { sessionDate: string; startTime: string; endTime: string; classSubjectId: number; subjectName?: string; className?: string }[] }> => {
+  generateTeachingSessions: async (data: { classSubjectId?: number; teacherId?: string; startDate: string; endDate: string; dryRun?: boolean; excludedSessions?: { sessionDate: string; startTime: string; classSubjectId: number }[] }): Promise<{ message: string; generatedCount: number; subjectsProcessed?: number; period: string; dryRun?: boolean; details?: { sessionDate: string; startTime: string; endTime: string; classSubjectId: number; teacherId?: string; subjectName?: string; className?: string }[] }> => {
     const response = await apiClient.post("/attendance/schedules/generate", data);
     return response.data;
   },

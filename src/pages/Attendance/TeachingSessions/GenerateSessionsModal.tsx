@@ -124,7 +124,7 @@ export default function GenerateSessionsModal({ isOpen, onClose }: Props) {
                 classSubjectId: t.classSubject?.id,
                 subjectName: t.classSubject?.subject?.name,
                 className: t.classSubject?.class?.name,
-                teacherId: t.teacher?.id,
+                teacherId: t.defaultTeacherId,
                 classId: t.classSubject?.class?.id,
                 teachingUnits: t.plannedUnits
               });
