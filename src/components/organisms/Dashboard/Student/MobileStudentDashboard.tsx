@@ -873,23 +873,23 @@ export default function MobileStudentDashboard({ logs = [] }: MobileStudentDashb
                             
                             {/* Event Action Button for Scanning/Selfie */}
                             {isActive && invStatus !== 'declined' && invStatus !== 'pending' && invStatus !== 'invited' && (
-                              <div className="mt-3 pt-3 border-t border-white/20 flex flex-wrap justify-end gap-2 relative z-10">
+                              <div className="mt-3 pt-3 border-t border-white/20 flex gap-2 relative z-10 w-full">
                                 {(!item.attendanceTime) && (
                                   <button
                                     onClick={() => setShowEventQrModal(true)}
-                                    className="flex items-center justify-center gap-1.5 bg-brand-500 hover:bg-brand-600 text-white text-[10px] font-bold px-4 py-2 rounded-full transition-all shadow-[0_4px_12px_rgba(236,72,153,0.5)] active:scale-95 hover:shadow-[0_6px_16px_rgba(236,72,153,0.6)]"
+                                    className="flex-1 flex items-center justify-center gap-1.5 bg-brand-500 hover:bg-brand-600 text-white text-[10px] font-bold px-2 py-2 rounded-xl transition-all shadow-[0_4px_12px_rgba(236,72,153,0.5)] active:scale-95 hover:shadow-[0_6px_16px_rgba(236,72,153,0.6)]"
                                   >
                                     <QrCodeIcon className="w-3.5 h-3.5" />
-                                    Tampilkan QR Code
+                                    <span className="truncate">Tampilkan QR</span>
                                   </button>
                                 )}
                                 {(item as any).isScanner && (
                                   <button
                                     onClick={() => navigate(`/events/scan?eventId=${item.sessionId}`)}
-                                    className="flex items-center justify-center gap-1.5 bg-white text-brand-600 hover:bg-gray-50 text-[10px] font-bold px-4 py-2 rounded-full transition-all shadow-lg active:scale-95"
+                                    className="flex-1 flex items-center justify-center gap-1.5 bg-white text-brand-600 hover:bg-gray-50 text-[10px] font-bold px-2 py-2 rounded-xl transition-all shadow-lg active:scale-95"
                                   >
                                     <CameraIcon className="w-3.5 h-3.5" />
-                                    Scan Kehadiran
+                                    <span className="truncate">Scan QR</span>
                                   </button>
                                 )}
                               </div>
