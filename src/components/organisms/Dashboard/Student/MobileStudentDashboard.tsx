@@ -837,8 +837,19 @@ export default function MobileStudentDashboard({ logs = [] }: MobileStudentDashb
                             
                             {item.attendanceTime && (
                               <div className="mt-3 pt-3 border-t flex items-center justify-between text-[11px] font-medium relative z-10 border-white/20 text-white/80">
-                                <span>Recorded at:</span>
-                                <span className="font-bold">{new Date(item.attendanceTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
+                                <div className="flex flex-col">
+                                  <span>Recorded at:</span>
+                                  <span className="font-bold">{new Date(item.attendanceTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
+                                </div>
+                                { (item as any).recordDetail && (
+                                   <button
+                                     onClick={() => setSelectedDetail((item as any).recordDetail)}
+                                     className="flex items-center justify-center gap-1.5 bg-white/10 hover:bg-white/20 text-white text-[10px] font-bold px-3 py-1.5 rounded-full transition-all active:scale-95 border border-white/20"
+                                   >
+                                     <EyeIcon className="w-3 h-3" />
+                                     Lihat Detail
+                                   </button>
+                                )}
                               </div>
                             )}
 

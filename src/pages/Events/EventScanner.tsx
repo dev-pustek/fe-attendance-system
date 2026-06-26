@@ -118,12 +118,7 @@ const EventScanner = () => {
         lastScannedDataRef.current = code;
         lastScanTimeRef.current = now;
 
-        if (requirePhotoEvidence) {
-            setPendingScanCode(code);
-            setRequireSelfie(true);
-            setIsProcessing(false);
-            return; // Wait for user to take selfie
-        }
+        // Event scanning bypasses selfie requirement directly
 
         await submitScan(code, undefined);
       } catch (error: unknown) {
