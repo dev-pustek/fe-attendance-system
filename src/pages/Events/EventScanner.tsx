@@ -2,21 +2,21 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 import { useNavigate, useSearchParams } from "react-router";
-import { attendanceService } from "../../../api/services/attendanceService";
-import { settingsService } from "../../../api/services/settingsService";
-import { UserPolicyResponse } from "../../../api/types/attendance";
+import { attendanceService } from "../../api/services/attendanceService";
+import { settingsService } from "../../api/services/settingsService";
+import { UserPolicyResponse } from "../../api/types/attendance";
 import {
   ChevronLeftIcon,
   LockIcon,
-} from "../../../components/atoms/Icons";
+} from "../../components/atoms/Icons";
 import { AnimatePresence, motion } from "framer-motion";
 import toast from "react-hot-toast";
-import { useAuthStore } from "../../../store/authStore";
-import { useAttendanceRules } from "../../../api/hooks/useRules";
+import { useAuthStore } from "../../store/authStore";
+import { useAttendanceRules } from "../../api/hooks/useRules";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createPortal } from "react-dom";
-import { Modal } from "../../../components/molecules/Modal";
-import Button from "../../../components/atoms/Button";
+import { Modal } from "../../components/molecules/Modal";
+import Button from "../../components/atoms/Button";
 
 const EventScanner = () => {
   const navigate = useNavigate();
