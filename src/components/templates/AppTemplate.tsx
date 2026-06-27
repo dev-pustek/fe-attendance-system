@@ -27,7 +27,7 @@ const LayoutContent: React.FC = () => {
 
       {/* Scrollable content column — this is the scroll root so sticky works inside it */}
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <div className={`${isHome ? "hidden lg:block" : "block"} sticky top-0 z-[99]`}>
+        <div className={`${isHome ? "hidden lg:block" : "block"} sticky top-0 z-30`}>
           <AppHeader />
         </div>
         <div className={`flex-1 mx-auto w-full max-w-(--breakpoint-2xl) ${noPaddingOnMobile ? "p-0 lg:p-6" : "p-4 md:p-6"}`}>
