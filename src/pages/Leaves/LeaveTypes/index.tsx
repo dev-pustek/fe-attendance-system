@@ -23,7 +23,7 @@ import { useIsMobile } from "../../../hooks/useIsMobile";
 
 const LeaveTypes: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState("");
-    const debouncedSearch = useDebounce(searchQuery, 500);
+    const [searchTerm, setSearchTerm] = useState("");
     const { confirm, confirmState } = useConfirm();
     const queryClient = useQueryClient();
     const isMobile = useIsMobile();
@@ -74,13 +74,13 @@ const LeaveTypes: React.FC = () => {
         // Handle both simple array and paginated response structures if needed
         const types = Array.isArray(leaveTypesResponse) ? leaveTypesResponse : (leaveTypesResponse.data || []);
         
-        if (!debouncedSearch) return types;
+        if (!searchTerm) return types;
         
         return types.filter((t: LeaveType) => 
-            (t.displayName?.toLowerCase() || "").includes(debouncedSearch.toLowerCase()) || 
-            t.code.toLowerCase().includes(debouncedSearch.toLowerCase())
+            (t.displayName?.toLowerCase() || "").includes(searchTerm.toLowerCase()) || 
+            t.code.toLowerCase().includes(searchTerm.toLowerCase())
         );
-    }, [leaveTypesResponse, debouncedSearch]);
+    }, [leaveTypesResponse, searchTerm]);
 
     const handleOpenFormModal = (type?: LeaveType) => {
         if (type) {
@@ -309,14 +309,23 @@ const LeaveTypes: React.FC = () => {
                                                 type="text"
                                                 value={searchQuery}
                                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                                placeholder="Search by Code, Name..."
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        setSearchTerm(searchQuery);
+                                                    }
+                                                }}
+                                                placeholder="Cari berdasarkan kode atau nama..."
                                                 className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-4 text-sm text-gray-900 transition-colors focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-white/[0.08] dark:bg-white/[0.02] dark:text-white"
                                             />
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3 md:col-span-1">
-                                        <button onClick={() => setSearchQuery("")} className="flex h-11 flex-1 items-center justify-center rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 dark:border-white/[0.08] dark:bg-transparent dark:text-gray-300">
+                                        <button onClick={() => { setSearchQuery(""); setSearchTerm(""); }} className="flex h-11 flex-1 items-center justify-center rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 dark:border-white/[0.08] dark:bg-transparent dark:text-gray-300">
                                             Reset
+                                        </button>
+                                        <button onClick={() => setSearchTerm(searchQuery)} className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 text-sm font-semibold text-white transition-all hover:bg-brand-600">
+                                            <SearchIcon className="size-4" />
+                                            Cari
                                         </button>
                                     </div>
                                 </div>
@@ -337,8 +346,8 @@ const LeaveTypes: React.FC = () => {
                         <div className="size-20 rounded-full bg-gray-50 dark:bg-white/5 flex items-center justify-center mb-6">
                             <DocsIcon className="size-10 text-gray-300 dark:text-gray-600" />
                         </div>
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">No leave types found</h3>
-                        <p className="text-gray-500 max-w-xs mt-2">Start by creating your first leave type like "Annual Leave" or "Sick Leave".</p>
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">Tidak ada tipe cuti ditemukan</h3>
+                        <p className="text-gray-500 max-w-xs mt-2">Mulai dengan membuat tipe cuti pertama Anda seperti "Cuti Tahunan" atau "Cuti Sakit".</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
