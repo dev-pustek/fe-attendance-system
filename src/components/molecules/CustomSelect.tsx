@@ -66,9 +66,9 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
          if (dropdownRef.current && dropdownRef.current.contains(e.target as Node)) {
              return;
          }
-         // Recalculate coords on scroll to keep attached
-         calculateCoords();
-       }; 
+         // Close the dropdown on outer scroll to prevent overlapping fixed navbars
+         setIsOpen(false);
+       };
       window.addEventListener("scroll", handleScroll, true);
       window.addEventListener("resize", handleScroll);
       return () => {

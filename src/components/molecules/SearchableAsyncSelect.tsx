@@ -95,8 +95,9 @@ export const SearchableAsyncSelect: React.FC<SearchableAsyncSelectProps> = ({
          if (dropdownRef.current && dropdownRef.current.contains(e.target as Node)) {
            return;
          }
-         calculateCoords();
-       }; 
+         // Close dropdown on outer scroll to prevent overlapping fixed navbars
+         setIsOpen(false);
+       };
       window.addEventListener("scroll", handleScroll, true);
       window.addEventListener("resize", handleScroll);
       return () => {
