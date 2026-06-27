@@ -48,7 +48,7 @@ export const ruleService = {
   },
 
   getEffectiveScheduleRules: async (params: { classId: number | string }) => {
-    const response = await apiClient.get<BaseResponse<Record<string, ScheduleRule>>>("/schedule-rules/effective", { params });
+    const response = await apiClient.get<BaseResponse<ScheduleRule[]>>("/schedule-rules/effective", { params });
     return response.data;
   },
 

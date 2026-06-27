@@ -66,6 +66,14 @@ export const useScheduleRules = (params?: ScheduleRuleParams, options?: { disabl
   return { ...query, createMutation, updateMutation, deleteMutation };
 };
 
+export const useEffectiveScheduleRules = (params?: { classId?: number | string }) => {
+  return useQuery({
+    queryKey: ["rules", "effective-schedule-rules", params],
+    queryFn: () => params?.classId ? ruleService.getEffectiveScheduleRules({ classId: params.classId }) : Promise.resolve(null),
+    enabled: !!params?.classId,
+  });
+};
+
 export const useAttendanceRules = (params?: AttendanceRuleParams) => {
   const queryClient = useQueryClient();
 

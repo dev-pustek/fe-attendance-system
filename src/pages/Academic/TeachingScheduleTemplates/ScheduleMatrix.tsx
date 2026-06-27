@@ -26,12 +26,12 @@ interface ScheduleMatrixProps {
 }
 
 const DAYS = [
-  { label: "Monday", value: "MONDAY" },
-  { label: "Tuesday", value: "TUESDAY" },
-  { label: "Wednesday", value: "WEDNESDAY" },
-  { label: "Thursday", value: "THURSDAY" },
-  { label: "Friday", value: "FRIDAY" },
-  { label: "Saturday", value: "SATURDAY" },
+  { label: "Senin", value: "MONDAY" },
+  { label: "Selasa", value: "TUESDAY" },
+  { label: "Rabu", value: "WEDNESDAY" },
+  { label: "Kamis", value: "THURSDAY" },
+  { label: "Jumat", value: "FRIDAY" },
+  { label: "Sabtu", value: "SATURDAY" },
 ];
 
 const SessionCard: React.FC<{
@@ -54,7 +54,7 @@ const SessionCard: React.FC<{
   }), [readOnly, template]);
 
   // Resolve Subject Name: Try classSubject first, then teacherSubject
-  const subjectName = template.classSubject?.subject?.name || (template as any).teacherSubject?.subject?.name || "Unknown Subject";
+  const subjectName = template.classSubject?.subject?.name || (template as any).teacherSubject?.subject?.name || "Mata Pelajaran Tidak Diketahui";
   
   // Resolve Class Name
   const className = template.classSubject?.class?.name || (template.classSubject ? "Assigned Class" : null);
@@ -62,7 +62,7 @@ const SessionCard: React.FC<{
   // Resolve Teacher Name
   const teacherName = template.defaultTeacher?.name || "No Teacher";
 
-  // Generate dynamic colors
+  // Buat dynamic colors
   const bgColor = stringToPastelColor(subjectName);
   const borderColor = stringToDarkerColor(subjectName);
   const textColor = stringToDarkerColor(subjectName);
@@ -156,7 +156,7 @@ const SessionCard: React.FC<{
 
       {hasConflict && (
            <div className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm flex items-center gap-0.5 z-20">
-               <span>⚠️</span> {isOverlapping ? "Overlap" : "Restriction"}
+               <span>⚠️</span> {isOverlapping ? "Overlap" : "Istirahatriction"}
            </div>
       )}
     </div>
@@ -176,7 +176,7 @@ const BreakCard: React.FC<{
           {breakItem.name || 'Break'}
         </span>
         <div className="rounded bg-white/50 px-1 py-0.5 text-[9px] font-medium text-gray-500 dark:bg-white/5">
-          Rest
+          Istirahat
         </div>
       </div>
       <div className="flex items-center gap-1.5 text-[10px] font-medium text-gray-400 dark:text-gray-500">

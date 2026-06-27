@@ -38,7 +38,7 @@ const ScheduleGeneratorModal: React.FC<ScheduleGeneratorModalProps> = ({
     },
   });
 
-  const handleGenerate = () => {
+  const handleBuat = () => {
     if (!startDate || !endDate) {
       showError("Please select both start and end dates.");
       return;
@@ -55,7 +55,7 @@ const ScheduleGeneratorModal: React.FC<ScheduleGeneratorModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Generate Schedule"
+      title="Buat Jadwal"
       description="Create teaching sessions based on your weekly template."
       className="max-w-md"
       footer={
@@ -64,10 +64,10 @@ const ScheduleGeneratorModal: React.FC<ScheduleGeneratorModalProps> = ({
                 onClick={onClose} 
                 className="rounded-xl px-4 py-2 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.05]"
             >
-                Cancel
+                Batal
             </button>
             <button 
-                onClick={handleGenerate} 
+                onClick={handleBuat} 
                 disabled={generateMutation.isPending}
                 className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-brand-500 to-indigo-600 px-6 py-2 text-sm font-medium text-white shadow-lg shadow-brand-500/20 transition-all hover:from-brand-600 hover:to-indigo-700 disabled:opacity-70 disabled:cursor-not-allowed"
             >
@@ -76,7 +76,7 @@ const ScheduleGeneratorModal: React.FC<ScheduleGeneratorModalProps> = ({
                 ) : (
                     <>
                         <ShootingStarIcon className="size-4" />
-                        Generate Now
+                        Buat Now
                     </>
                 )}
             </button>

@@ -87,7 +87,7 @@ const WorkloadContracts = () => {
   const academicYears = useMemo(() => academicYearsResponse?.data || [], [academicYearsResponse]);
   const policies = useMemo(() => policiesResponse?.data || [], [policiesResponse]);
 
-  const getHours = (units: number, academicYearId: number | string) => {
+  const getJam = (units: number, academicYearId: number | string) => {
       const policy = policies.find(p => String(p.academicYearId) === String(academicYearId));
       const minutes = policy?.minutesPerUnit || 45; // Default to 45 if no policy
       return ((units * minutes) / 60).toFixed(1);
@@ -152,7 +152,7 @@ const WorkloadContracts = () => {
         })
       );
     } catch (error) {
-      console.error("Failed to search teachers", error);
+      console.error("Gagal mencari guru", error);
     } finally {
       setIsSearchingTeachers(false);
     }
@@ -209,7 +209,7 @@ const WorkloadContracts = () => {
     const confirmed = await confirm({
       variant: selectedContract ? 'update' : 'create',
       title: selectedContract ? 'Update Contract' : 'Create Contract',
-      message: `Are you sure you want to ${selectedContract ? 'update' : 'create'} this workload contract?`,
+      message: `Apakah Anda yakin ingin ${selectedContract ? 'memperbarui' : 'membuat'} kontrak beban kerja ini?`,
     });
 
     if (!confirmed) return;
@@ -220,30 +220,30 @@ const WorkloadContracts = () => {
           id: selectedContract.id,
           data: formData as UpdateWorkloadContractDto,
         });
-        showSuccess("Contract updated successfully");
+        showSuccess("Kontrak berhasil diperbarui");
       } else {
         await createMutation.mutateAsync(formData);
-        showSuccess("Contract created successfully");
+        showSuccess("Kontrak berhasil dibuat");
       }
       setIsModalOpen(false);
     } catch (err: unknown) {
-      showError(err, "Failed to save contract");
+      showError(err, "Gagal menyimpan kontrak");
     }
   };
 
   const handleDelete = async (contract: WorkloadContract) => {
     const confirmed = await confirm({
       variant: 'delete',
-      title: 'Delete Workload Contract',
-      message: `Are you sure you want to delete the workload contract for ${contract.teacher?.name}? This action cannot be undone.`,
+      title: 'Hapus Kontrak Beban Kerja',
+      message: `Apakah Anda yakin ingin menghapus kontrak beban kerja untuk ${contract.teacher?.name}? Tindakan ini tidak dapat dibatalkan.`,
     });
 
     if (confirmed) {
       try {
         await deleteMutation.mutateAsync(contract.id);
-        showSuccess("Contract deleted successfully");
+        showSuccess("Kontrak berhasil dihapus");
       } catch (err: unknown) {
-        showError(err, "Failed to delete contract");
+        showError(err, "Gagal menghapus kontrak");
       }
     }
   };
@@ -254,16 +254,16 @@ const WorkloadContracts = () => {
         id: contract.id,
         data: { isActive: !contract.isActive },
       });
-      toast.success(`Contract ${!contract.isActive ? 'activated' : 'deactivated'}`);
+      toast.success(`Kontrak ${!contract.isActive ? 'diaktifkan' : 'dinonaktifkan'}`);
     } catch {
-      toast.error("Failed to update status");
+      toast.error("Gagal memperbarui status");
     }
   };
 
   const salaryBasisOptions = [
     { label: "Per JP", value: "per_jp" },
-    { label: "Fixed Salary", value: "fixed" },
-    { label: "Hybrid", value: "hybrid" },
+    { label: "Gaji Tetap", value: "fixed" },
+    { label: "Campuran", value: "hybrid" },
   ];
 
   // Sorting
@@ -295,8 +295,8 @@ const WorkloadContracts = () => {
 
   return (
     <>
-      <PageMeta title="Workload Contracts | Academic" description="Manage teacher workload targets and monitor utilization." />
-      <PageBreadcrumb pageTitle="Workload Contracts" />
+      <PageMeta title="Kontrak Beban Kerja | Akademik" description="Kelola target beban kerja guru dan pantau utilisasi." />
+      <PageBreadcrumb pageTitle="Kontrak Beban Kerja" />
 
       <div className="space-y-6">
           {/* Metrics */}
@@ -360,7 +360,7 @@ const WorkloadContracts = () => {
                           </div>
                           <input
                               type="text"
-                              placeholder="Name or email..."
+                              placeholder="Nama atau email..."
                               value={searchTerm}
                               onChange={(e) => setSearchTerm(e.target.value)}
                               className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none transition-all focus:border-brand-500 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-white"
@@ -370,7 +370,7 @@ const WorkloadContracts = () => {
                   <div className="w-full sm:w-48 space-y-1.5">
                         <label className="text-xs font-normal text-gray-500 dark:text-gray-400 uppercase tracking-wider">Level</label>
                         <CustomSelect
-                          options={[{ label: "All Levels", value: "" }, ...educationLevels.map(el => ({ label: el.name, value: String(el.id) }))]}
+                          options={[{ label: "Semua Tingkat", value: "" }, ...educationLevels.map(el => ({ label: el.name, value: String(el.id) }))]}
                           value={educationLevelId || ""}
                           onChange={(v) => {
                               updateFilter("educationLevelId", String(v));
@@ -386,7 +386,7 @@ const WorkloadContracts = () => {
                         <div className="w-full sm:w-40 space-y-1.5">
                                 <label className="text-xs font-normal text-gray-500 dark:text-gray-400 uppercase tracking-wider">Grade</label>
                                 <CustomSelect
-                                options={[{ label: "All Grades", value: "" }, ...grades.map(g => ({ label: g.name, value: String(g.id) }))]}
+                                options={[{ label: "Semua Kelas", value: "" }, ...grades.map(g => ({ label: g.name, value: String(g.id) }))]}
                                 value={gradeId}
                                 onChange={(v) => updateFilter("gradeId", String(v))}
                                 />
@@ -394,7 +394,7 @@ const WorkloadContracts = () => {
                          <div className="w-full sm:w-40 space-y-1.5">
                                 <label className="text-xs font-normal text-gray-500 dark:text-gray-400 uppercase tracking-wider">Program</label>
                                 <CustomSelect
-                                options={[{ label: "All Programs", value: "" }, ...programStudies.map(p => ({ label: p.name, value: String(p.id) }))]}
+                                options={[{ label: "Semua Program Studi", value: "" }, ...programStudies.map(p => ({ label: p.name, value: String(p.id) }))]}
                                 value={programStudyId}
                                 onChange={(v) => {
                                     updateFilter("programStudyId", String(v));
@@ -405,7 +405,7 @@ const WorkloadContracts = () => {
                         <div className="w-full sm:w-40 space-y-1.5">
                                 <label className="text-xs font-normal text-gray-500 dark:text-gray-400 uppercase tracking-wider">Major</label>
                                 <CustomSelect
-                                options={[{ label: "All Majors", value: "" }, ...majors.map(m => ({ label: m.name, value: String(m.id) }))]}
+                                options={[{ label: "Semua Jurusan", value: "" }, ...majors.map(m => ({ label: m.name, value: String(m.id) }))]}
                                 value={majorId}
                                 onChange={(v) => updateFilter("majorId", String(v))}
                                 disabled={!programStudyId}
@@ -417,7 +417,7 @@ const WorkloadContracts = () => {
                   <div className="w-full sm:w-48 space-y-1.5">
                         <label className="text-xs font-normal text-gray-500 dark:text-gray-400 uppercase tracking-wider">Academic Year</label>
                         <CustomSelect
-                          options={[{ label: "All Years", value: "" }, ...academicYears.map(ay => ({ label: ay.name, value: ay.id }))]}
+                          options={[{ label: "Semua Tahun", value: "" }, ...academicYears.map(ay => ({ label: ay.name, value: ay.id }))]}
                           value={academicYearFilter ? (isNaN(Number(academicYearFilter)) ? academicYearFilter : Number(academicYearFilter)) : ""}
                           onChange={(v) => updateFilter("academicYearId", String(v))}
                       />
@@ -426,9 +426,9 @@ const WorkloadContracts = () => {
                         <label className="text-xs font-normal text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</label>
                         <CustomSelect
                           options={[
-                              { label: "All Status", value: "all" },
-                              { label: "Active", value: "active" },
-                              { label: "Inactive", value: "inactive" },
+                              { label: "Semua Status", value: "all" },
+                              { label: "Aktif", value: "active" },
+                              { label: "Tidak Aktif", value: "inactive" },
                           ]}
                           value={isActiveFilter}
                           onChange={(v) => updateFilter("isActive", String(v))}
@@ -441,7 +441,7 @@ const WorkloadContracts = () => {
               >
                   <PlusIcon className="fill-white text-xl text-white" />
                   <span className="hidden sm:inline">Add Contract</span>
-                  <span className="sm:hidden">Add</span>
+                  <span className="sm:hidden">Tambah</span>
               </button>
           </div>
 
@@ -496,7 +496,7 @@ const WorkloadContracts = () => {
                                       <div className="flex flex-col gap-1 min-w-0 flex-1">
                                           <div className="flex items-center gap-2 flex-wrap">
                                               <span className="text-[10px] font-semibold text-brand-600 dark:text-brand-400 uppercase tracking-widest leading-none mt-0.5">
-                                                  {contract.teacher?.profile?.employeeId || "TEACHER"}
+                                                  {contract.teacher?.profile?.employeeId || "GURU"}
                                               </span>
                                           </div>
                                           <h3 className="text-base font-bold text-gray-900 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors line-clamp-2 leading-tight">
@@ -514,13 +514,13 @@ const WorkloadContracts = () => {
                                   {/* Bar */}
                                   <div className="space-y-1.5">
                                       <div className="flex justify-between items-end text-xs">
-                                          <span className="text-gray-500 dark:text-gray-400 font-medium">Utilization</span>
+                                          <span className="text-gray-500 dark:text-gray-400 font-medium">Utilisasi</span>
                                           <div className="text-right">
                                               <span className="font-mono font-bold text-gray-900 dark:text-white block leading-none">
                                                   {Number((contract.actualUnits || 0).toFixed(1))} <span className="text-gray-400 font-normal">/ {Number((contract.targetUnitsPerWeek || 0).toFixed(1))} JP</span>
                                               </span>
                                               <span className="text-[10px] text-gray-400 font-medium mt-0.5 block">
-                                                  ≈ {getHours(contract.actualUnits || 0, contract.academicYearId)} Hours
+                                                  ≈ {getJam(contract.actualUnits || 0, contract.academicYearId)} Jam
                                               </span>
                                           </div>
                                       </div>
@@ -580,8 +580,8 @@ const WorkloadContracts = () => {
           {total > 0 && (
             <div className="flex flex-col gap-4 px-2 sm:flex-row sm:items-center sm:justify-between pt-2">
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Showing <span className="font-medium text-gray-700 dark:text-white">{(page - 1) * limit + 1}</span> to{" "}
-                <span className="font-medium text-gray-700 dark:text-white">{Math.min(page * limit, total)}</span> of{" "}
+                Menampilkan <span className="font-medium text-gray-700 dark:text-white">{(page - 1) * limit + 1}</span> ke{" "}
+                <span className="font-medium text-gray-700 dark:text-white">{Math.min(page * limit, total)}</span> dari{" "}
                 <span className="font-medium text-gray-700 dark:text-white">{total}</span>
               </p>
               <div className="flex items-center gap-2">
@@ -599,7 +599,7 @@ const WorkloadContracts = () => {
                   disabled={page === totalPages}
                   className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400 dark:hover:bg-white/[0.05]"
                 >
-                  Next
+                  Selanjutnya
                   <AngleRightIcon className="size-4" />
                 </button>
               </div>
@@ -611,8 +611,8 @@ const WorkloadContracts = () => {
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={selectedContract ? "Update Contract" : "Create New Contract"}
-        description="Configure teacher workload targets and salary bases for the academic year."
+        title={selectedContract ? "Perbarui Kontrak" : "Buat Kontrak Baru"}
+        description="Konfigurasikan target beban kerja guru dan basis gaji untuk tahun ajaran."
         className="max-w-lg"
         footer={
           <div className="flex justify-end gap-3 w-full">
@@ -628,16 +628,16 @@ const WorkloadContracts = () => {
                form="contract-form"
                className="rounded-xl bg-brand-500 px-6 py-2 text-sm font-medium text-white hover:bg-brand-600 shadow-lg shadow-brand-500/20"
              >
-               {selectedContract ? "Update Contract" : "Save Contract"}
+               {selectedContract ? "Perbarui Kontrak" : "Simpan Kontrak"}
              </button>
           </div>
         }
       >
         <form id="contract-form" onSubmit={handleSubmit} className="space-y-5 mt-4">
           <div className="space-y-2">
-            <Label>Teacher</Label>
+            <Label>Guru</Label>
             <SearchableAsyncSelect
-              placeholder="Search teacher..."
+              placeholder="Cari guru..."
               onSearch={searchTeachers}
               options={teacherOptions}
               value={formData.teacherId}
@@ -646,7 +646,7 @@ const WorkloadContracts = () => {
             />
             {educationLevelId && (
                 <p className="text-[10px] text-gray-400">
-                    * Showing teachers filtered by {educationLevels.find(e => String(e.id) === educationLevelId)?.name}
+                    * Menampilkan teachers filtered sebesar {educationLevels.find(e => String(e.id) === educationLevelId)?.name}
                 </p>
             )}
           </div>
@@ -679,7 +679,7 @@ const WorkloadContracts = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Max JP</Label>
+                <Label>Maks JP</Label>
                 <NumberInput
                   value={formData.maxUnitsPerWeek || 0}
                   onChange={(val) => setFormData({ ...formData, maxUnitsPerWeek: Number(val) })}
@@ -689,7 +689,7 @@ const WorkloadContracts = () => {
           </div>
 
           <div className="space-y-2">
-            <Label>Salary Basis</Label>
+            <Label>Basis Gaji</Label>
             <CustomSelect
               options={salaryBasisOptions}
               value={formData.salaryBasis}
@@ -698,11 +698,11 @@ const WorkloadContracts = () => {
           </div>
 
           <div className="space-y-2">
-            <Label>Notes</Label>
+            <Label>Catatan</Label>
             <textarea
               className="w-full rounded-xl border border-gray-300 bg-transparent p-3 text-sm outline-none focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 shadow-sm"
               rows={3}
-              placeholder="Internal notes..."
+              placeholder="Catatan internal..."
               value={formData.notes || ""}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
             />
@@ -714,7 +714,7 @@ const WorkloadContracts = () => {
       <Modal
         isOpen={isDetailModalOpen}
         onClose={() => setIsDetailModalOpen(false)}
-        title="Contract Details"
+        title="Detail Kontrak"
         description={`Detailed view of workload contract for ${selectedContract?.teacher?.name || 'Teacher'}`}
         className="max-w-2xl"
         footer={
@@ -759,7 +759,7 @@ const WorkloadContracts = () => {
                   
                   <div className="flex flex-wrap gap-2">
                     <Badge color={selectedContract.isActive ? "success" : "light"} className="capitalize">
-                      {selectedContract.isActive ? "Active Status" : "Inactive"}
+                      {selectedContract.isActive ? "Status Aktif" : "Tidak Aktif"}
                     </Badge>
                     <Badge color="info">{selectedContract.academicYear?.name}</Badge>
                     <Badge color="primary" className="uppercase font-mono text-[10px]">
@@ -774,7 +774,7 @@ const WorkloadContracts = () => {
                       </div>
                       <div className="w-px h-8 bg-gray-200 dark:bg-white/10 mx-2" />
                       <div className="flex flex-col">
-                          <span className="text-[10px] uppercase font-bold text-gray-400">Start Date</span>
+                          <span className="text-[10px] uppercase font-bold text-gray-400">Tanggal Mulai</span>
                           <span className="font-medium text-gray-700 dark:text-gray-300">{new Date(selectedContract.academicYear?.startDate || "").toLocaleDateString()}</span>
                       </div>
                   </div>
@@ -792,13 +792,13 @@ const WorkloadContracts = () => {
                            <div className="space-y-2">
                                <div className="flex justify-between items-end">
                                    <span className="text-3xl font-bold text-gray-900 dark:text-white">{Number((selectedContract.actualUnits || 0).toFixed(1))}<span className="text-base text-gray-400 font-normal ml-1">/ {Number((selectedContract.targetUnitsPerWeek || 0).toFixed(1))}</span></span>
-                                   <span className="text-xs font-medium text-gray-500">JP Allocated</span>
+                                   <span className="text-xs font-medium text-gray-500">Alokasi JP</span>
                                </div>
                                <WorkloadBar target={selectedContract.targetUnitsPerWeek} actual={selectedContract.actualUnits || 0} showLabels={false} className="h-3" />
                            </div>
                            
                            <div className="p-3 rounded-xl bg-gray-50 dark:bg-white/5 text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
-                               This teacher is currently <strong>{selectedContract.status}</strong> by <span className={selectedContract.balance && selectedContract.balance > 0 ? "text-error-500 font-bold" : "text-gray-700 font-bold"}>{Number(Math.abs(selectedContract.balance || 0).toFixed(1))} JP</span> relative to their target.
+                               Guru ini saat ini <strong>{selectedContract.status}</strong> sebesar <span className={selectedContract.balance && selectedContract.balance > 0 ? "text-error-500 font-bold" : "text-gray-700 font-bold"}>{Number(Math.abs(selectedContract.balance || 0).toFixed(1))} JP</span> dibandingkan dengan target mereka.
                            </div>
                        </div>
                    </div>
@@ -808,15 +808,15 @@ const WorkloadContracts = () => {
                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Limits & Configuration</p>
                            <div className="space-y-4">
                                 <div className="flex justify-between items-center p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
-                                    <span className="text-sm text-gray-500">Minimum Load</span>
+                                    <span className="text-sm text-gray-500">Beban Minimum</span>
                                     <span className="text-sm font-mono font-bold">{selectedContract.minUnitsPerWeek || 0} JP</span>
                                 </div>
                                 <div className="flex justify-between items-center p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
-                                    <span className="text-sm text-gray-500">Maximum Load</span>
+                                    <span className="text-sm text-gray-500">Beban Maksimum</span>
                                     <span className="text-sm font-mono font-bold">{selectedContract.maxUnitsPerWeek || 0} JP</span>
                                 </div>
                                 <div className="flex justify-between items-center p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
-                                    <span className="text-sm text-gray-500">Salary Model</span>
+                                    <span className="text-sm text-gray-500">Model Gaji</span>
                                     <span className="text-sm font-medium text-brand-600 capitalize">{selectedContract.salaryBasis.replace('_', ' ')}</span>
                                 </div>
                            </div>

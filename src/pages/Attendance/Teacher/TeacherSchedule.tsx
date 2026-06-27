@@ -31,7 +31,7 @@ const TeacherSchedule: React.FC = () => {
   const { createMutation: createSubjectAttendance } = useSubjectAttendances();
   const { mutateAsync: validateSession } = useValidateSession();
 
-  const handleRestartSession = async (item: TodayScheduleItem) => {
+  const handleIstirahatartSession = async (item: TodayScheduleItem) => {
       if (!item.session || !user?.public_id) return;
       try {
           await attendanceService.bulkCreateSubjectAttendance({
@@ -187,8 +187,8 @@ const TeacherSchedule: React.FC = () => {
       // Strict Check: Only allow starting if status is 'now'
       const status = getClassStatus(item);
       if (status !== 'now') {
-          if (status === 'upcoming') showError("Class has not started yet.");
-          else if (status === 'passed') showError("Class scheduled time has passed.");
+          if (status === 'upcoming') showError("Kelas belum dimulai.");
+          else if (status === 'passed') showError("Waktu jadwal kelas telah berlalu.");
           return;
       }
 
@@ -206,11 +206,11 @@ const TeacherSchedule: React.FC = () => {
           };
 
           await attendanceService.createTeachingSession(payload);
-          showSuccess("Class started successfully!");
+          showSuccess("Kelas berhasil dimulai!");
           refetch();
 
       } catch (error) {
-          showError(error, "Failed to start class");
+          showError(error, "Gagal memulai kelas");
       }
   };
 
@@ -236,12 +236,12 @@ const TeacherSchedule: React.FC = () => {
               });
               setStudents(res.data);
           } else {
-              showError("Could not determine Class ID or Academic Year for this session.");
+              showError("Tidak dapat menentukan ID Kelas atau Tahun Ajaran untuk sesi ini.");
           }
 
       } catch (e) {
           console.error(e);
-          showError("Failed to load students");
+          showError("Gagal memuat siswa");
       } finally {
           setIsLoadingStudents(false);
       }
@@ -275,7 +275,7 @@ const TeacherSchedule: React.FC = () => {
       }
   };
   
-  // Generate QR Value
+  // Buat QR Value
   const getQRValue = () => {
       if (!selectedSessionItem) return "";
       const data = {
@@ -736,12 +736,12 @@ const TeacherSchedule: React.FC = () => {
 
   return (
     <>
-      <PageMeta title="My Schedule | SIAPUS" description="View today's teaching schedule and record attendance." />
-      <PageBreadcrumb pageTitle="My Schedule" />
+      <PageMeta title="Jadwal Saya | SIAPUS" description="Lihat jadwal mengajar hari ini dan catat kehadiran." />
+      <PageBreadcrumb pageTitle="Jadwal Saya" />
 
       <div className="space-y-8">
         <div>
-           <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Today's Schedule</h1>
+           <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Jadwal Hari Ini</h1>
            <p className="text-gray-500 dark:text-gray-400 mt-1">
              {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
            </p>
@@ -754,8 +754,8 @@ const TeacherSchedule: React.FC = () => {
                  <div className="mx-auto size-16 rounded-2xl bg-gray-50 dark:bg-white/5 flex items-center justify-center mb-4">
                      <CalenderIcon className="size-8 text-gray-400" />
                  </div>
-                 <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No Classes Today</h3>
-                 <p className="text-gray-500">You don't have any classes scheduled for today. Enjoy your day!</p>
+                 <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Tidak Ada Kelas Hari Ini</h3>
+                 <p className="text-gray-500">Anda tidak memiliki jadwal kelas untuk hari ini. Selamat menikmati hari!</p>
              </div>
         ) : (
              <div className="grid gap-5">
@@ -939,7 +939,7 @@ const TeacherSchedule: React.FC = () => {
                                             <div className="flex flex-col items-end gap-2 w-full sm:w-auto">
                                                 {item.session?.validationStatus === 'invalid' ? (
                                                     <button 
-                                                        onClick={() => handleRestartSession(item)}
+                                                        onClick={() => handleIstirahatartSession(item)}
                                                         disabled={createSubjectAttendance.isPending}
                                                         className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold transition-all active:scale-95 shadow-lg w-full sm:w-auto bg-brand-500 hover:bg-brand-600 text-white shadow-brand-500/20"
                                                     >

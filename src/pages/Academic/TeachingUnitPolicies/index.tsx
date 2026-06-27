@@ -27,7 +27,8 @@ import {
   ChevronDownIcon, 
   CalenderIcon,
   TimeIcon,
-  FilterIcon
+  FilterIcon,
+  SearchIcon
 } from "../../../components/atoms/Icons";
 import Badge from "../../../components/atoms/Badge";
 import Checkbox from "../../../components/atoms/Checkbox";
@@ -50,7 +51,7 @@ const TeachingUnitPolicies: React.FC = () => {
   const [limit] = useState(10);
   const [statusFilter, setStatusFilter] = useState("");
   const [academicYearIdFilter, setAcademicYearIdFilter] = useState("");
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(true);
   
   const { confirm, confirmState } = useConfirm();
   const isMobile = useIsMobile();
@@ -90,7 +91,7 @@ const TeachingUnitPolicies: React.FC = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPolicy, setSelectedPolicy] = useState<TeachingUnitPolicy | null>(null);
-  const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>({ key: "academicYear", direction: "desc" });
   const [formData, setFormData] = useState<CreateTeachingUnitPolicyDto>({
     academicYearId: "",
     minutesPerUnit: 45,
@@ -187,14 +188,14 @@ const TeachingUnitPolicies: React.FC = () => {
     e.preventDefault();
 
     if (!formData.academicYearId || !formData.minutesPerUnit) {
-        showError("Please select academic year and minutes per unit");
+        showError("Harap pilih tahun ajaran dan menit per satuan");
         return;
     }
 
     const confirmed = await confirm({
       variant: selectedPolicy ? 'update' : 'create',
-      title: selectedPolicy ? 'Update Policy' : 'Create Policy',
-      message: `Are you sure you want to ${selectedPolicy ? 'update' : 'create'} this teaching unit policy?`,
+      title: selectedPolicy ? 'Perbarui Kebijakan' : 'Buat Kebijakan',
+      message: `Apakah Anda yakin ingin ${selectedPolicy ? 'memperbarui' : 'membuat'} kebijakan JP ini?`,
     });
 
     if (!confirmed) return;
@@ -212,28 +213,28 @@ const TeachingUnitPolicies: React.FC = () => {
       }
       setIsModalOpen(false);
     } catch (error) {
-      showError(error, "Failed to save policy");
+      showError(error, "Gagal menyimpan kebijakan");
     }
   };
 
   const handleDelete = async (id: number | string) => {
     const confirmed = await confirm({
       variant: 'delete',
-      title: 'Delete Policy',
-      message: 'Are you sure you want to remove this teaching unit policy? This action cannot be undone.',
+      title: 'Hapus Kebijakan',
+      message: 'Apakah Anda yakin ingin menghapus kebijakan JP ini? Tindakan ini tidak dapat dibatalkan.',
     });
 
     if (confirmed) {
       try {
         await deleteMutation.mutateAsync(id);
-        showSuccess("Policy deleted successfully!");
+        showSuccess("Kebijakan berhasil dihapus!");
         setSelectedIds(prev => {
             const next = new Set(prev);
             next.delete(id);
             return next;
         });
       } catch (error) {
-        showError(error, "Failed to delete policy");
+        showError(error, "Gagal menghapus kebijakan");
       }
     }
   };
@@ -243,18 +244,18 @@ const TeachingUnitPolicies: React.FC = () => {
 
     const confirmed = await confirm({
         variant: 'delete',
-        title: 'Delete Selected Policies',
-        message: `Are you sure you want to delete ${selectedIds.size} selected policies? This action cannot be undone.`
+        title: 'Hapus Kebijakan Terpilih',
+        message: `Apakah Anda yakin ingin menghapus ${selectedIds.size} kebijakan terpilih? Tindakan ini tidak dapat dibatalkan.`
     });
 
     if (!confirmed) return;
 
     try {
         await Promise.all(Array.from(selectedIds).map(id => deleteMutation.mutateAsync(id)));
-        showSuccess(`Successfully deleted ${selectedIds.size} policies`);
+        showSuccess(`Berhasil menghapus ${selectedIds.size} kebijakan`);
         setSelectedIds(new Set());
     } catch (error) {
-        showError(error, "Failed to delete some policies");
+        showError(error, "Gagal menghapus beberapa kebijakan");
     }
   };
 
@@ -281,7 +282,7 @@ const TeachingUnitPolicies: React.FC = () => {
         link.click();
         window.URL.revokeObjectURL(url);
     } catch (error) {
-        showError(error, "Failed to export data");
+        showError(error, "Gagal mengekspor data");
     } finally {
         setIsExporting(false);
     }
@@ -301,7 +302,7 @@ const TeachingUnitPolicies: React.FC = () => {
         link.click();
         window.URL.revokeObjectURL(url);
     } catch (error) {
-        showError(error, "Failed to export PDF");
+        showError(error, "Gagal mengekspor PDF");
     } finally {
         setIsExporting(false);
     }
@@ -318,7 +319,7 @@ const TeachingUnitPolicies: React.FC = () => {
         link.click();
         window.URL.revokeObjectURL(url);
     } catch (error) {
-        showError(error, "Failed to download template");
+        showError(error, "Gagal mengunduh templat");
     } finally {
         setIsExporting(false);
     }
@@ -335,16 +336,16 @@ const TeachingUnitPolicies: React.FC = () => {
         
         if (result.errors && result.errors.length > 0) {
             showError(
-                new Error(`Imported with ${result.errors.length} errors. First error: ${result.errors[0]}`),
-                `Successfully imported ${result.created || 0} policies, updated ${result.updated || 0}.`
+                new Error(`Diimpor dengan ${result.errors.length} error. Error pertama: ${result.errors[0]}`),
+                `Berhasil mengimpor ${result.created || 0} kebijakan, memperbarui ${result.updated || 0}.`
             );
         } else {
-            showSuccess(`Successfully imported ${result.created || 0} policies and updated ${result.updated || 0}.`);
+            showSuccess(`Berhasil mengimpor ${result.created || 0} kebijakan dan memperbarui ${result.updated || 0}.`);
         }
 
         setIsImportModalOpen(false);
     } catch (error) {
-        showError(error, "Failed to import teaching unit policies");
+        showError(error, "Gagal mengimpor kebijakan JP");
     } finally {
         setIsImporting(false);
     }
@@ -352,16 +353,16 @@ const TeachingUnitPolicies: React.FC = () => {
 
   return (
     <>
-      <PageMeta title="Teaching Unit Policies | SIAPUS" description="Configure the duration of one teaching unit (JP)." />
-      <PageBreadcrumb pageTitle="Teaching Unit Policies" />
+      <PageMeta title="Kebijakan Satuan Waktu Mengajar | SIAPUS" description="Konfigurasi durasi satu satuan waktu mengajar (JP)." />
+      <PageBreadcrumb pageTitle="Kebijakan JP" />
 
       <div className="space-y-6 relative pb-20 sm:pb-0">
         
         {/* Header - Hidden on Mobile */}
         <div className="hidden sm:flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Teaching Unit Policies</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Global configuration for how many minutes one "Teaching Unit" (JP) lasts per academic year.</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Kebijakan Satuan Waktu Mengajar</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Konfigurasi global untuk durasi (dalam menit) satu "Satuan Waktu Mengajar" (JP) per tahun ajaran.</p>
           </div>
           <div className="flex items-center gap-3">
              <DataActionsMenu
@@ -386,7 +387,7 @@ const TeachingUnitPolicies: React.FC = () => {
         {isMobile && (
             <MobileFloatingActions
                 onAdd={() => handleOpenModal()}
-                addAriaLabel="Add Policy"
+                addAriaLabel="Tambah Kebijakan"
                 dataActionsProps={{
                     onExportExcel: handleExportExcel,
                     onExportPdf: handleExportPdf,
@@ -408,7 +409,7 @@ const TeachingUnitPolicies: React.FC = () => {
                     <div className="flex items-center gap-2 mb-1">
                         <FilterIcon className="size-5 text-brand-500" />
                         <h3 className="text-sm font-bold uppercase tracking-wider text-gray-800 dark:text-gray-200">
-                            Search & Filter
+                            Cari & Saring
                         </h3>
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -426,25 +427,49 @@ const TeachingUnitPolicies: React.FC = () => {
                 <div className="overflow-hidden min-h-0">
                     <div className="px-5 pb-5">
                         <hr className="mb-5 border-gray-100 dark:border-white/[0.05]" />
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
-                            <CustomSelect
-                                label="Academic Year"
-                                placeholder="All Years"
-                                value={academicYearIdFilter}
-                                onChange={(val: string | number) => { setAcademicYearIdFilter(String(val)); setPage(1); }}
-                                options={[{ label: "All Years", value: "" }, ...academicYearOptions]}
-                            />
-
-                            <CustomSelect
-                                label="Status"
-                                value={statusFilter}
-                                onChange={(val: string | number) => { setStatusFilter(String(val)); setPage(1); }}
-                                options={[
-                                    { label: "All Status", value: "" },
-                                    { label: "Active", value: "true" },
-                                    { label: "Inactive", value: "false" },
-                                ]}
-                            />
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-5 items-end">
+                            <div className="space-y-1.5 sm:col-span-1 lg:col-span-4">
+                              <CustomSelect
+                                  label="Tahun Ajaran"
+                                  placeholder="Semua Tahun"
+                                  value={academicYearIdFilter}
+                                  onChange={(val: string | number) => { setAcademicYearIdFilter(String(val)); setPage(1); }}
+                                  options={[{ label: "Semua Tahun", value: "" }, ...academicYearOptions]}
+                                  className="w-full [&>button]:w-full [&>button]:h-11 [&>button]:text-sm [&>button]:rounded-xl"
+                              />
+                            </div>
+                            <div className="space-y-1.5 sm:col-span-1 lg:col-span-4">
+                              <CustomSelect
+                                  label="Status"
+                                  value={statusFilter}
+                                  onChange={(val: string | number) => { setStatusFilter(String(val)); setPage(1); }}
+                                  options={[
+                                      { label: "Semua Status", value: "" },
+                                      { label: "Aktif", value: "true" },
+                                      { label: "Tidak Aktif", value: "false" },
+                                  ]}
+                                  className="w-full [&>button]:w-full [&>button]:h-11 [&>button]:text-sm [&>button]:rounded-xl"
+                              />
+                            </div>
+                            <div className="flex items-center gap-3 sm:col-span-2 lg:col-span-4">
+                                <button
+                                    onClick={() => {
+                                        setAcademicYearIdFilter("");
+                                        setStatusFilter("");
+                                        setPage(1);
+                                    }}
+                                    className="flex h-11 flex-1 items-center justify-center rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 dark:border-white/[0.08] dark:bg-transparent dark:text-gray-300 dark:hover:bg-white/[0.05]"
+                                >
+                                    Ulang
+                                </button>
+                                <button
+                                    onClick={() => { setPage(1); }}
+                                    className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 text-sm font-semibold text-white transition-all hover:bg-brand-600"
+                                >
+                                    <SearchIcon className="size-4" />
+                                    Cari
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -471,9 +496,7 @@ const TeachingUnitPolicies: React.FC = () => {
                                     onClick={handleBulkDelete}
                                     className="flex items-center gap-1.5 rounded-lg bg-error-50 px-3 py-1.5 text-xs font-medium text-error-600 transition-colors hover:bg-error-100 dark:bg-error-500/10 dark:text-error-400 dark:hover:bg-error-500/20"
                                 >
-                                    <TrashBinIcon className="size-3.5" />
-                                    Delete
-                                </button>
+                                    <TrashBinIcon className="size-3.5" />Hapus</button>
                             </div>
                         </div>
                     </div>
@@ -487,8 +510,8 @@ const TeachingUnitPolicies: React.FC = () => {
                          <div className="size-16 rounded-full bg-gray-50 dark:bg-white/5 flex items-center justify-center mb-4">
                              <BoxIcon className="size-8 text-gray-300 dark:text-gray-600" />
                          </div>
-                         <h3 className="text-lg font-bold text-gray-900 dark:text-white">No policies found</h3>
-                         <p className="text-sm text-gray-500 mt-1 max-w-[250px]">Adjust your filters or create a new policy to get started.</p>
+                         <h3 className="text-lg font-bold text-gray-900 dark:text-white">Tidak ada kebijakan ditemukan</h3>
+                         <p className="text-sm text-gray-500 mt-1 max-w-[250px]">Sesuaikan filter Anda atau buat kebijakan baru untuk memulai.</p>
                     </div>
                 ) : (
                     <div className="flex flex-col gap-4">
@@ -526,12 +549,12 @@ const TeachingUnitPolicies: React.FC = () => {
                         </TableCell>
                         <TableCell isHeader className="px-5 py-4 text-left">
                         <button onClick={() => handleSort("academicYear")} className="flex items-center gap-2 text-theme-xs font-medium text-gray-500 dark:text-gray-400 hover:text-brand-500 transition-colors uppercase tracking-wider">
-                            Academic Year <SortIcon column={"academicYear"} />
+                            Tahun Ajaran <SortIcon column={"academicYear"} />
                         </button>
                         </TableCell>
-                        <TableCell isHeader className="px-5 py-4 text-center text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Minutes per JP</TableCell>
+                        <TableCell isHeader className="px-5 py-4 text-center text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Menit per JP</TableCell>
                         <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider text-center">Status</TableCell>
-                        <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">Actions</TableCell>
+                        <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">Aksi</TableCell>
                     </TableRow>
                     </TableHeader>
                     <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
@@ -540,7 +563,7 @@ const TeachingUnitPolicies: React.FC = () => {
                         <TableCell colSpan={5} className="py-12 text-center text-gray-400">
                             <div className="flex flex-col items-center gap-3">
                             <div className="size-6 animate-spin rounded-full border-2 border-brand-500 border-t-transparent"></div>
-                            <span className="text-sm">Loading policies...</span>
+                            <span className="text-sm">Memuat kebijakan...</span>
                             </div>
                         </TableCell>
                         </TableRow>
@@ -551,7 +574,7 @@ const TeachingUnitPolicies: React.FC = () => {
                             <div className="size-10 rounded-full bg-gray-50 dark:bg-white/5 flex items-center justify-center mb-1">
                                 <BoxIcon className="size-5 opacity-20" />
                             </div>
-                            <p className="text-sm font-medium">No teaching unit policies found.</p>
+                            <p className="text-sm font-medium">Tidak ada kebijakan JP ditemukan.</p>
                             <button onClick={() => handleOpenModal()} className="flex items-center gap-1.5 text-xs text-brand-500 hover:underline">
                                 <PlusIcon className="size-3" />
                                 Create your first policy
@@ -574,7 +597,7 @@ const TeachingUnitPolicies: React.FC = () => {
                                 <CalenderIcon className="size-4 text-gray-500" />
                                 </div>
                                 <div>
-                                <p className="font-medium text-gray-900 dark:text-white text-theme-sm">{policy.academicYear?.code || "Unknown Year"}</p>
+                                <p className="font-medium text-gray-900 dark:text-white text-theme-sm">{policy.academicYear?.code || "Tahun Tidak Diketahui"}</p>
                                 <p className="text-xs text-gray-500 dark:text-gray-400">{policy.academicYear?.name}</p>
                                 </div>
                             </div>
@@ -585,7 +608,7 @@ const TeachingUnitPolicies: React.FC = () => {
                                     <TimeIcon className="size-3.5 text-brand-500" />
                                     <span className="text-theme-sm">{policy.minutesPerUnit} Minutes</span>
                                 </div>
-                                <span className="text-[10px] text-gray-500 uppercase tracking-tighter self-center">Duration per Unit</span>
+                                <span className="text-[10px] text-gray-500 uppercase tracking-tighter self-center">Durasi per Satuan</span>
                             </div>
                             </TableCell>
                             <TableCell className="px-5 py-4 text-center">
@@ -621,9 +644,9 @@ const TeachingUnitPolicies: React.FC = () => {
         {!isMobile && total > 0 && (
           <div className="flex flex-col gap-4 px-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-gray-500 dark:text-gray-400">
-               Showing <span className="font-medium text-gray-700 dark:text-white">{(page - 1) * limit + 1}</span> to{" "}
-               <span className="font-medium text-gray-700 dark:text-white">{Math.min(page * limit, total)}</span> of{" "}
-               <span className="font-medium text-gray-700 dark:text-white">{total}</span> policies
+               Menampilkan <span className="font-medium text-gray-700 dark:text-white">{(page - 1) * limit + 1}</span> sampai{" "}
+               <span className="font-medium text-gray-700 dark:text-white">{Math.min(page * limit, total)}</span> dari{" "}
+               <span className="font-medium text-gray-700 dark:text-white">{total}</span> kebijakan
             </p>
             <div className="flex items-center gap-2">
               <button
@@ -659,8 +682,8 @@ const TeachingUnitPolicies: React.FC = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         className="max-w-xl"
-        title={selectedPolicy ? "Update Teaching Unit Policy" : "Create Teaching Unit Policy"}
-        description="Configure how many minutes one teaching unit (JP) lasts for the selected academic year."
+        title={selectedPolicy ? "Perbarui Kebijakan JP" : "Buat Kebijakan JP"}
+        description="Konfigurasikan durasi satu satuan waktu mengajar (JP) dalam menit untuk tahun ajaran terpilih."
         footer={
           <div className="flex justify-end gap-3">
             <button
@@ -682,16 +705,16 @@ const TeachingUnitPolicies: React.FC = () => {
       >
           <form id="teaching-unit-policy-form" onSubmit={handleSubmit} className="space-y-4">
             <CustomSelect
-                label="Academic Year"
-                placeholder="Select year..."
+                label="Tahun Ajaran"
+                placeholder="Pilih tahun..."
                 value={formData.academicYearId}
                 onChange={(val) => setFormData({ ...formData, academicYearId: val })}
                 options={academicYearOptions}
             />
 
             <NumberInput
-                label="Minutes per Unit (JP)"
-                placeholder="Enter duration (e.g. 45)"
+                label="Menit per Satuan (JP)"
+                placeholder="Masukkan durasi (mis. 45)"
                 value={formData.minutesPerUnit}
                 onChange={(val) => setFormData({ ...formData, minutesPerUnit: val })}
                 required
@@ -699,8 +722,8 @@ const TeachingUnitPolicies: React.FC = () => {
 
             <div className="flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50/50 p-3 dark:border-white/[0.05] dark:bg-white/[0.02]">
               <div className="space-y-0.5">
-                <Label className="text-sm font-medium text-gray-900 dark:text-white">Active Status</Label>
-                <p className="text-xs text-gray-500">Enable or disable this policy.</p>
+                <Label className="text-sm font-medium text-gray-900 dark:text-white">Status Aktif</Label>
+                <p className="text-xs text-gray-500">Aktifkan atau nonaktifkan kebijakan ini.</p>
               </div>
               <Switch
                 checked={formData.isActive || false}
@@ -715,9 +738,9 @@ const TeachingUnitPolicies: React.FC = () => {
         onClose={() => setIsImportModalOpen(false)}
         onImport={handleImportSubmit}
         isImporting={isImporting}
-        title="Import Teaching Unit Policies"
-        description="Upload an Excel file containing teaching unit policies data."
-        downloadTemplateText="Download Policy Template"
+        title="Impor Kebijakan JP"
+        description="Unggah file Excel yang berisi data kebijakan satuan waktu mengajar (JP)."
+        downloadTemplateText="Unduh Templat Kebijakan"
         onDownloadTemplate={handleDownloadTemplate}
       />
 

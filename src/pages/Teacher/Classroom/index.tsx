@@ -153,13 +153,13 @@ const ClassroomCommand: React.FC = () => {
   return (
     <div className="max-w-full mx-auto space-y-6 sm:space-y-8 pb-32">
       <PageMeta
-        title="Classroom Command | Teacher"
-        description="Manage your live classroom session."
+        title="Perintah Kelas | Guru"
+        description="Kelola sesi kelas langsung Anda."
       />
 
       {/* Header */}
       <div className="flex flex-col gap-1">
-        <PageBreadcrumb pageTitle="Classroom Command" />
+        <PageBreadcrumb pageTitle="Perintah Kelas" />
         <p className="text-gray-500 dark:text-gray-400 text-sm">
           {format(currentTime, "EEEE, dd MMM yyyy")} · {format(currentTime, "HH:mm")}
         </p>
@@ -239,7 +239,7 @@ const ClassroomCommand: React.FC = () => {
                 Student Attendance
               </h3>
               <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 ml-3.5">
-                Tap to cycle: Present → Late → Absent
+                Ketuk untuk mengubah: Hadir → Terlambat → Tidak Hadir
               </p>
             </div>
             <Badge
@@ -247,7 +247,7 @@ const ClassroomCommand: React.FC = () => {
               variant="light"
               className="font-bold text-xs px-2.5 py-1 rounded-lg"
             >
-              {activeSession.classSubject?.class?.name || "No Class"}
+              {activeSession.classSubject?.class?.name || "Tidak Ada Kelas"}
             </Badge>
           </div>
 
@@ -259,7 +259,7 @@ const ClassroomCommand: React.FC = () => {
                 ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950/30 dark:border-emerald-900/50 dark:text-emerald-300'
                 : 'bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-950/30 dark:border-amber-900/50 dark:text-amber-300'
             }`}>
-              <p className="font-semibold mb-0.5 text-xs uppercase tracking-wider opacity-80">Validation Note</p>
+              <p className="font-semibold mb-0.5 text-xs uppercase tracking-wider opacity-80">Catatan Validasi</p>
               <p>{activeSession.validationNotes}</p>
             </div>
           )}
@@ -272,22 +272,22 @@ const ClassroomCommand: React.FC = () => {
       <Modal
         isOpen={isValidateModalOpen}
         onClose={() => setIsValidateModalOpen(false)}
-        title="Validate Physical Presence"
+        title="Validasi Kehadiran Fisik"
         className="max-w-md w-full mx-auto"
       >
         <div className="space-y-4">
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            You are physically validating that <strong>{sessionToValidate?.actualTeacher?.name || sessionToValidate?.classSubject?.teacher?.name}</strong> is present in class <strong>{sessionToValidate?.classSubject?.class?.name}</strong>.
+            Anda secara fisik memvalidasi bahwa <strong>{sessionToValidate?.actualTeacher?.name || sessionToValidate?.classSubject?.teacher?.name}</strong> hadir di kelas <strong>{sessionToValidate?.classSubject?.class?.name}</strong>.
           </p>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Notes (Optional)
+              Catatan (Opsional)
             </label>
             <textarea
               className="w-full rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-3 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all resize-none"
               rows={3}
-              placeholder="e.g. Teacher went to restroom, substitute taking over..."
+              placeholder="mis. Guru ke toilet, guru pengganti mengambil alih..."
               value={validationNotes}
               onChange={(e) => setValidationNotes(e.target.value)}
             />
@@ -313,24 +313,22 @@ const ClassroomCommand: React.FC = () => {
                         {
                           studentId: sessionToValidate.actualTeacherId.toString(),
                           status: 'absent',
-                          remarks: 'Piket marked as invalid (Teacher Missing)',
+                          remarks: 'Piket marked as invalid (Guru Tidak Ada)',
                           method: 'manual'
                         }
                       ]
                     }).catch(() => {});
                   }
 
-                  showSuccess("Session marked as INVALID");
+                  showSuccess("Sesi ditandai sebagai TIDAK VALID");
                   setIsValidateModalOpen(false);
                   setValidationNotes("");
                 } catch (err: any) {
-                  showError(err.message || "Failed to validate");
+                  showError(err.message || "Gagal memvalidasi");
                 }
               }}
               className="!text-red-500 !ring-red-500 hover:!bg-red-50 dark:hover:!bg-red-500/10"
-            >
-              Teacher Missing
-            </Button>
+            >Guru Tidak Ada</Button>
             <Button
               variant="primary"
               disabled={isValidating}
@@ -357,16 +355,14 @@ const ClassroomCommand: React.FC = () => {
                     }).catch(() => {});
                   }
 
-                  showSuccess("Session Validated");
+                  showSuccess("Sesi Divalidasi");
                   setIsValidateModalOpen(false);
                   setValidationNotes("");
                 } catch (err: any) {
-                  showError(err.message || "Failed to validate");
+                  showError(err.message || "Gagal memvalidasi");
                 }
               }}
-            >
-              Validate (Valid)
-            </Button>
+            >Validasi (Hadir)</Button>
           </div>
         </div>
       </Modal>
@@ -396,7 +392,7 @@ const NowCard = ({
 
       const diff = endTime.getTime() - now.getTime();
       if (diff <= 0) {
-        setTimeLeft("Ended");
+        setTimeLeft("Berakhir");
       } else {
         const mins = Math.floor(diff / 1000 / 60);
         const secs = Math.floor((diff / 1000) % 60);
@@ -418,7 +414,7 @@ const NowCard = ({
       <div className="p-8 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 text-center">
         <ClockIcon className="size-8 mx-auto text-gray-300 mb-3" />
         <p className="text-gray-500 font-semibold text-sm">
-          Select a session to start command
+          Pilih sesi untuk memulai perintah
         </p>
       </div>
     );
@@ -465,13 +461,13 @@ const NowCard = ({
 
               {session.validationStatus === 'valid' && (
                 <Badge className="bg-white/10 text-white/80 border border-white/20 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider">
-                  ✓ Validated
+                  ✓ Tervalidasi
                 </Badge>
               )}
 
               {session.validationStatus === 'invalid' && (
                 <Badge className="bg-white/10 text-white/80 border border-white/20 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider">
-                  ✕ Invalid
+                  ✕ Tidak Valid
                 </Badge>
               )}
             </div>
@@ -487,10 +483,10 @@ const NowCard = ({
           {/* Subject + Class */}
           <div>
             <p className={`text-[10px] font-bold uppercase tracking-[0.15em] ${validationColor.accent} mb-1`}>
-              {session.classSubject?.subject?.name || "Subject"}
+              {session.classSubject?.subject?.name || "Mata Pelajaran"}
             </p>
             <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight leading-tight">
-              {session.classSubject?.class?.name || "Class"}
+              {session.classSubject?.class?.name || "Kelas"}
             </h2>
           </div>
 
@@ -506,10 +502,10 @@ const NowCard = ({
               </div>
               <div>
                 <p className="text-sm font-semibold text-white leading-tight">
-                  {session.actualTeacher?.name || "Unknown Teacher"}
+                  {session.actualTeacher?.name || "Guru Tidak Diketahui"}
                 </p>
                 <p className="text-[10px] text-white/50">
-                  {session.isSubstitution ? "Substitute" : "Assigned"} · {session.teachingUnits} units
+                  {session.isSubstitution ? "Pengganti" : "Ditugaskan"} · {session.teachingUnits} units
                 </p>
               </div>
             </div>
@@ -522,7 +518,7 @@ const NowCard = ({
           {/* Footer: Time range */}
           <div className="flex items-center justify-between pt-3 border-t border-white/10">
             <div className="flex items-center gap-3 text-white/40 text-xs font-medium">
-              <span>Code: {session.classSubject?.subject?.code}</span>
+              <span>Kode: {session.classSubject?.subject?.code}</span>
             </div>
             <div className="text-right">
               <span className="text-2xl sm:text-3xl font-mono font-bold text-white/90 tracking-tight">
@@ -577,8 +573,8 @@ const SessionCardList = ({
 
   const getStatusDot = (v: string | undefined) => {
     if (v === 'valid') return { dot: 'bg-emerald-500', text: 'text-emerald-600 dark:text-emerald-400', label: 'Valid' };
-    if (v === 'invalid') return { dot: 'bg-rose-500', text: 'text-rose-600 dark:text-rose-400', label: 'Invalid' };
-    return { dot: 'bg-amber-400', text: 'text-amber-600 dark:text-amber-400', label: 'Pending' };
+    if (v === 'invalid') return { dot: 'bg-rose-500', text: 'text-rose-600 dark:text-rose-400', label: 'Tidak Valid' };
+    return { dot: 'bg-amber-400', text: 'text-amber-600 dark:text-amber-400', label: 'Tertunda' };
   };
 
   return (
@@ -603,10 +599,10 @@ const SessionCardList = ({
 
               {/* Subject */}
               <h4 className="font-bold text-base text-gray-900 dark:text-white tracking-tight leading-tight mb-0.5">
-                {s.classSubject?.subject?.code || "CODE"}
+                {s.classSubject?.subject?.code || "KODE"}
               </h4>
               <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate mb-3">
-                {s.classSubject?.class?.name || "Class"}
+                {s.classSubject?.class?.name || "Kelas"}
               </p>
 
               {/* Teacher */}
@@ -619,7 +615,7 @@ const SessionCardList = ({
                   )}
                 </div>
                 <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400 truncate">
-                  {s.actualTeacher?.name || "No Teacher"}
+                  {s.actualTeacher?.name || "Tidak Ada Guru"}
                 </p>
               </div>
 
@@ -639,7 +635,7 @@ const SessionCardList = ({
                     <div onClick={(e) => e.stopPropagation()} className="shrink-0">
                       {isAdmin ? (
                         <button
-                          title={s.validationStatus === 'valid' || s.validationStatus === 'invalid' ? 'Update Validation' : 'Validate Session'}
+                          title={s.validationStatus === 'valid' || s.validationStatus === 'invalid' ? 'Perbarui Validasi' : 'Validasi Sesi'}
                           onClick={() => onValidateClick?.(s)}
                           className={`flex items-center justify-center size-7 rounded-full transition-colors ${
                             s.validationStatus === 'valid' || s.validationStatus === 'invalid'
@@ -652,7 +648,7 @@ const SessionCardList = ({
                       ) : (
                         s.status === 'scheduled' ? (
                           <button
-                            title="Start Session"
+                            title="Mulai Sesi"
                             onClick={() => onStartSessionClick?.(s)}
                             disabled={isStarting}
                             className={`flex items-center justify-center size-7 rounded-full transition-colors bg-brand-500 hover:bg-brand-600 text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed`}
@@ -665,7 +661,7 @@ const SessionCardList = ({
                           </button>
                         ) : s.status === 'in_progress' ? (
                           <button
-                            title="Complete Session"
+                            title="Akhiri Sesi"
                             onClick={() => onCompleteSessionClick?.(s)}
                             disabled={isCompleting}
                             className={`flex items-center justify-center size-7 rounded-full transition-colors bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed`}
@@ -768,10 +764,10 @@ const BubbleBoard = ({
         })),
       };
       await submitBulk(payload);
-      showSuccess("Attendance synced successfully!");
+      showSuccess("Kehadiran berhasil disinkronkan!");
     } catch (err: unknown) {
       showError(
-        err instanceof Error ? err.message : "Failed to sync attendance"
+        err instanceof Error ? err.message : "Gagal menyinkronkan kehadiran"
       );
     }
   };
@@ -815,7 +811,7 @@ const BubbleBoard = ({
               icon: <CheckLineIcon className="size-3" />,
               iconBg: "bg-emerald-500 text-white",
               nameColor: "text-gray-900 dark:text-white",
-              label: "Present",
+              label: "Hadir",
               labelColor: "text-emerald-600 dark:text-emerald-400",
             },
             late: {
@@ -825,7 +821,7 @@ const BubbleBoard = ({
               icon: <TimeIcon className="size-3" />,
               iconBg: "bg-amber-500 text-white",
               nameColor: "text-gray-800 dark:text-gray-200",
-              label: "Late",
+              label: "Terlambat",
               labelColor: "text-amber-600 dark:text-amber-400",
             },
             absent: {
@@ -835,7 +831,7 @@ const BubbleBoard = ({
               icon: <CloseLineIcon className="size-3" />,
               iconBg: "bg-red-500 text-white",
               nameColor: "text-gray-500 dark:text-gray-400",
-              label: "Absent",
+              label: "Tidak Hadir",
               labelColor: "text-red-500 dark:text-red-400",
             },
             excused: {
@@ -845,7 +841,7 @@ const BubbleBoard = ({
               icon: <CheckLineIcon className="size-3" />,
               iconBg: "bg-gray-400 text-white",
               nameColor: "text-gray-500 dark:text-gray-400",
-              label: "Excused",
+              label: "Izin",
               labelColor: "text-gray-500",
             },
           };
@@ -880,7 +876,7 @@ const BubbleBoard = ({
 
               {/* Name */}
               <p className={`text-xs font-semibold truncate w-full text-center ${cfg.nameColor}`}>
-                {en.user?.name?.split(" ")[0] || "Student"}
+                {en.user?.name?.split(" ")[0] || "Siswa"}
               </p>
               <p className={`text-[10px] font-medium mt-0.5 ${cfg.labelColor}`}>
                 {cfg.label}
@@ -898,27 +894,21 @@ const BubbleBoard = ({
               <span className="text-lg sm:text-xl font-bold text-emerald-600 dark:text-emerald-400 leading-none">
                 {counts.present}
               </span>
-              <span className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider mt-0.5">
-                Present
-              </span>
+              <span className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider mt-0.5">Hadir</span>
             </div>
             <div className="w-px bg-gray-100 dark:bg-white/10"></div>
             <div className="flex flex-col items-center">
               <span className="text-lg sm:text-xl font-bold text-amber-500 leading-none">
                 {counts.late}
               </span>
-              <span className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider mt-0.5">
-                Late
-              </span>
+              <span className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider mt-0.5">Terlambat</span>
             </div>
             <div className="w-px bg-gray-100 dark:bg-white/10"></div>
             <div className="flex flex-col items-center">
               <span className="text-lg sm:text-xl font-bold text-red-500 leading-none">
                 {counts.absent}
               </span>
-              <span className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider mt-0.5">
-                Absent
-              </span>
+              <span className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider mt-0.5">Tidak Hadir</span>
             </div>
           </div>
 
@@ -933,7 +923,7 @@ const BubbleBoard = ({
             ) : (
               <BoltIcon className="size-3.5" />
             )}
-            {isPending ? "..." : "Sync"}
+            {isPending ? "..." : "Sinkronkan"}
           </Button>
         </div>
       </div>

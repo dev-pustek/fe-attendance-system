@@ -45,7 +45,7 @@ const AcademicYearCard: React.FC<AcademicYearCardProps> = ({
             {year.code}
           </span>
           <Badge color={year.isActive ? "success" : "light"}>
-            {year.isActive ? "Active" : "Inactive"}
+            {year.isActive ? "Aktif" : "Tidak Aktif"}
           </Badge>
         </div>
         <Checkbox checked={isSelected} onChange={onToggle} />
@@ -77,14 +77,13 @@ const AcademicYearCard: React.FC<AcademicYearCardProps> = ({
           onClick={(e) => { e.stopPropagation(); onEdit(); }}
           className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/[0.04]"
         >
-          <PencilIcon className="size-3.5" /> Edit
-        </button>
+          <PencilIcon className="size-3.5" />Edit</button>
         <div className="h-4 w-px bg-gray-200 dark:bg-white/[0.06] mx-1" />
         <button
           onClick={(e) => { e.stopPropagation(); onDelete(); }}
           className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/10"
         >
-          <TrashBinIcon className="size-3.5" /> Delete
+          <TrashBinIcon className="size-3.5" /> Hapus
         </button>
       </div>
     </div>

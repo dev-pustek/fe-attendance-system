@@ -29,7 +29,7 @@ const TeachingUnitPolicyCard: React.FC<TeachingUnitPolicyCardProps> = ({
             <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50/80 px-4 py-3 sm:px-5 dark:border-white/[0.05] dark:bg-white/[0.02]">
                 <div className="flex items-center gap-2">
                     <span className="inline-flex items-center rounded-lg bg-white px-2.5 py-1 text-xs font-bold tracking-wide text-gray-700 shadow-sm border border-gray-200 dark:border-white/[0.06] dark:bg-white/[0.05] dark:text-gray-200 uppercase">
-                        {policy.academicYear?.code || "Unknown Year"}
+                        {policy.academicYear?.code || "Tahun Tidak Diketahui"}
                     </span>
                     <Badge color={policy.isActive ? 'success' : 'error'}>
                         {policy.isActive ? 'Active' : 'Inactive'}
@@ -73,17 +73,13 @@ const TeachingUnitPolicyCard: React.FC<TeachingUnitPolicyCardProps> = ({
                     onClick={(e) => { e.stopPropagation(); onEdit(policy); }}
                     className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/[0.04]"
                 >
-                    <PencilIcon className="size-3.5" />
-                    Edit
-                </button>
+                    <PencilIcon className="size-3.5" />Edit</button>
                 <div className="h-4 w-px bg-gray-200 dark:bg-white/[0.06] mx-1" />
                 <button
                     onClick={(e) => { e.stopPropagation(); onDelete(policy); }}
                     className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/10"
                 >
-                    <TrashBinIcon className="size-3.5" />
-                    Delete
-                </button>
+                    <TrashBinIcon className="size-3.5" />Hapus</button>
             </div>
         </div>
     );
