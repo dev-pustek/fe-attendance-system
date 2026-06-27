@@ -156,9 +156,9 @@ const LeaveTypes: React.FC = () => {
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
-            showSuccess("Exported to Excel successfully!");
+            showSuccess("Berhasil diekspor ke Excel!");
         } catch (error) {
-            showError(error, "Failed to export Excel");
+            showError(error, "Gagal mengekspor Excel");
         } finally {
             setIsExporting(false);
         }
@@ -175,9 +175,9 @@ const LeaveTypes: React.FC = () => {
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
-            showSuccess("Exported to PDF successfully!");
+            showSuccess("Berhasil diekspor ke PDF!");
         } catch (error) {
-            showError(error, "Failed to export PDF");
+            showError(error, "Gagal mengekspor PDF");
         } finally {
             setIsExporting(false);
         }
@@ -194,7 +194,7 @@ const LeaveTypes: React.FC = () => {
             a.click();
             window.URL.revokeObjectURL(url);
         } catch (error) {
-            showError(error, "Failed to download template");
+            showError(error, "Gagal mengunduh template");
         }
     };
 
@@ -206,17 +206,17 @@ const LeaveTypes: React.FC = () => {
         setIsImporting(true);
         try {
             const res = await leaveService.importTypes(file);
-            showSuccess(`Successfully imported! Created: ${res.data?.created || 0}, Errors: ${res.data?.errors?.length || 0}`);
+            showSuccess(`Berhasil diimpor! Dibuat: ${res.data?.created || 0}, Error: ${res.data?.errors?.length || 0}`);
             
             if (res.data?.errors?.length) {
                 console.warn("Import errors:", res.data.errors);
-                alert(`Some rows failed to import:\n${res.data.errors.slice(0, 5).join('\n')}${res.data.errors.length > 5 ? '\n...' : ''}`);
+                alert(`Beberapa baris gagal diimpor:\n${res.data.errors.slice(0, 5).join('\n')}${res.data.errors.length > 5 ? '\n...' : ''}`);
             }
 
             queryClient.invalidateQueries({ queryKey: ['leave-types'] });
             setIsImportModalOpen(false);
         } catch (error) {
-            showError(error, "Failed to import leave types");
+            showError(error, "Gagal mengimpor tipe cuti");
         } finally {
             setIsImporting(false);
         }
@@ -224,15 +224,15 @@ const LeaveTypes: React.FC = () => {
 
     return (
         <>
-            <PageMeta title="Leave Types | SIAPUS" description="Manage leave categories and policies." />
-            <PageBreadcrumb pageTitle="Leave Types" />
+            <PageMeta title="Tipe Cuti | SIAPUS" description="Kelola kategori dan kebijakan cuti." />
+            <PageBreadcrumb pageTitle="Tipe Cuti" />
 
             <div className="space-y-6">
                 {/* Header - Hidden on Mobile */}
                 <div className="hidden sm:flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Leave Types</h1>
-                        <p className="text-gray-500 dark:text-gray-400 mt-1">Configure the types of leave available to your employees.</p>
+                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Tipe Cuti</h1>
+                        <p className="text-gray-500 dark:text-gray-400 mt-1">Konfigurasi tipe cuti yang tersedia untuk pegawai Anda.</p>
                     </div>
                     <div className="flex items-center gap-3">
                         <Button
@@ -242,7 +242,7 @@ const LeaveTypes: React.FC = () => {
                             onClick={() => handleOpenFormModal()}
                         >
                             <PlusIcon className="size-5" />
-                            Create New Type
+                            Buat Tipe Baru
                         </Button>
                         <DataActionsMenu
                             onExportExcel={handleExportExcel}
