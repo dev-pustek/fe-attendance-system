@@ -432,27 +432,18 @@ export default function EventTab() {
                 </div>
              </div>
              
-             <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-3 p-5 rounded-2xl bg-brand-50/30 border border-brand-100 dark:bg-brand-500/5 dark:border-brand-500/10">
-                    <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-brand-700 dark:text-brand-400 uppercase tracking-widest">Waktu Acara</span>
-                    </div>
-                    <p className="text-xl font-bold text-gray-900 dark:text-white">
+             <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1 p-4 rounded-xl bg-brand-50/50 border border-brand-100 dark:bg-brand-500/5 dark:border-brand-500/10">
+                    <p className="text-[10px] font-bold text-brand-700 dark:text-brand-400 uppercase tracking-widest">Waktu Acara</p>
+                    <p className="text-lg font-bold text-gray-900 dark:text-white">
                         {selectedDetailRecord.event?.startTime ? format(parseISO(selectedDetailRecord.event.startTime), 'HH:mm') : "--:--"} - {selectedDetailRecord.event?.endTime ? format(parseISO(selectedDetailRecord.event.endTime), 'HH:mm') : "--:--"}
                     </p>
                 </div>
-                <div className="space-y-3 p-5 rounded-2xl bg-green-50/80 border border-green-100 dark:bg-green-500/5 dark:border-green-500/10">
-                    <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-green-700 dark:text-green-400 uppercase tracking-widest">Waktu Hadir</span>
-                    </div>
-                    <div className="flex justify-between items-end">
-                       <div>
-                          <p className="text-xs text-green-600 dark:text-green-500">Masuk</p>
-                          <p className="text-lg font-bold text-gray-900 dark:text-white">
-                              {selectedDetailRecord.attendanceStatus?.clockIn ? format(parseISO(selectedDetailRecord.attendanceStatus.clockIn), "HH:mm") : "--:--"}
-                          </p>
-                       </div>
-                    </div>
+                <div className="space-y-1 p-4 rounded-xl bg-green-50/80 border border-green-100 dark:bg-green-500/5 dark:border-green-500/10 text-right">
+                    <p className="text-[10px] font-bold text-green-700 dark:text-green-400 uppercase tracking-widest">Waktu Masuk</p>
+                    <p className="text-lg font-bold text-gray-900 dark:text-white">
+                        {selectedDetailRecord.attendanceStatus?.clockIn ? format(parseISO(selectedDetailRecord.attendanceStatus.clockIn), "HH:mm") : "--:--"}
+                    </p>
                 </div>
              </div>
              

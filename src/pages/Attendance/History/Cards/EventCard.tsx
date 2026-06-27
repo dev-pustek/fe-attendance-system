@@ -55,22 +55,20 @@ export default function EventCard({ record, isSelected, onToggle, onDelete, onVi
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-y-2 pt-2 border-t border-gray-50 dark:border-white/[0.02]">
-            <div className="col-span-2">
-               <p className="text-xs text-gray-500 mb-0.5">Jadwal</p>
+        <div className="flex justify-between items-end pt-3 border-t border-gray-50 dark:border-white/[0.02]">
+            <div>
+               <p className="text-[10px] text-gray-500 mb-0.5 uppercase font-bold tracking-wider">Jadwal</p>
                <p className="font-medium text-gray-900 dark:text-white text-sm">
                  {record.event?.startTime ? format(parseISO(record.event.startTime), 'dd MMM yy HH:mm') : '-'}
-                 {' hingga '}
+                 <span className="text-gray-400 mx-1">-</span>
                  {record.event?.endTime ? format(parseISO(record.event.endTime), 'HH:mm') : '-'}
                </p>
             </div>
-            <div className="flex gap-4 col-span-2 mt-1 bg-gray-50 dark:bg-white/5 p-2 rounded-lg">
-               <div className="flex-1">
-                  <p className="text-[10px] text-green-600 dark:text-green-400 font-bold uppercase">Masuk</p>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                     {record.attendanceStatus?.clockIn ? format(parseISO(record.attendanceStatus.clockIn), 'HH:mm') : '--:--'}
-                  </p>
-               </div>
+            <div className="text-right">
+               <p className="text-[10px] text-green-600 dark:text-green-400 font-bold uppercase tracking-wider">Masuk</p>
+               <p className="text-sm font-bold text-gray-900 dark:text-white">
+                  {record.attendanceStatus?.clockIn ? format(parseISO(record.attendanceStatus.clockIn), 'HH:mm') : '--:--'}
+               </p>
             </div>
         </div>
       </div>
