@@ -30,7 +30,7 @@ const LeaveTypes: React.FC = () => {
     const [isExporting, setIsExporting] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [isFilterOpen, setIsFilterOpen] = useState(true);
 
     // Data Hooks
     const { data: leaveTypesResponse, isLoading } = useLeaveTypes();
@@ -282,11 +282,11 @@ const LeaveTypes: React.FC = () => {
                             <div className="flex items-center gap-2 mb-1">
                                 <FilterIcon className="size-5 text-brand-500" />
                                 <h3 className="text-sm font-bold uppercase tracking-wider text-gray-800 dark:text-gray-200">
-                                    Search & Filter
+                                    Cari & Filter
                                 </h3>
                             </div>
                             <p className="text-xs text-gray-500 dark:text-gray-400">
-                                Find leave types quickly
+                                Temukan tipe cuti dengan cepat
                             </p>
                         </div>
                         <div className="shrink-0 ml-4">
