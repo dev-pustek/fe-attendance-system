@@ -295,7 +295,6 @@ export default function EventTab() {
                 <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Nama Acara</TableCell>
                 <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Lokasi & Jadwal</TableCell>
                 <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Masuk</TableCell>
-                <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Keluar</TableCell>
                 <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Status Undangan</TableCell>
                 <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Status Kehadiran</TableCell>
                 <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Aksi</TableCell>
@@ -306,7 +305,7 @@ export default function EventTab() {
                 <SkeletonTable columns={8} rows={5} />
               ) : displayItems.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="py-12 text-center text-gray-500 text-sm">
+                  <TableCell colSpan={7} className="py-12 text-center text-gray-500 text-sm">
                     Tidak ada rekaman kehadiran acara ditemukan.
                   </TableCell>
                 </TableRow>
@@ -340,9 +339,6 @@ export default function EventTab() {
                       </TableCell>
                       <TableCell className="px-4 py-4 text-center text-sm font-medium text-gray-900 dark:text-white">
                         {record.attendanceStatus?.clockIn ? format(parseISO(record.attendanceStatus.clockIn), 'HH:mm') : '--:--'}
-                      </TableCell>
-                      <TableCell className="px-4 py-4 text-center text-sm font-medium text-gray-900 dark:text-white">
-                        {record.attendanceStatus?.clockOut ? format(parseISO(record.attendanceStatus.clockOut), 'HH:mm') : '--:--'}
                       </TableCell>
                       <TableCell className="px-4 py-4 text-center">
                         <Badge color="light" size="sm" className="uppercase tracking-wider font-semibold text-[10px]">
@@ -454,12 +450,6 @@ export default function EventTab() {
                           <p className="text-xs text-green-600 dark:text-green-500">Masuk</p>
                           <p className="text-lg font-bold text-gray-900 dark:text-white">
                               {selectedDetailRecord.attendanceStatus?.clockIn ? format(parseISO(selectedDetailRecord.attendanceStatus.clockIn), "HH:mm") : "--:--"}
-                          </p>
-                       </div>
-                       <div className="text-right">
-                          <p className="text-xs text-green-600 dark:text-green-500">Keluar</p>
-                          <p className="text-lg font-bold text-gray-900 dark:text-white">
-                              {selectedDetailRecord.attendanceStatus?.clockOut ? format(parseISO(selectedDetailRecord.attendanceStatus.clockOut), "HH:mm") : "--:--"}
                           </p>
                        </div>
                     </div>

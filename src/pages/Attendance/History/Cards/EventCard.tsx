@@ -71,13 +71,6 @@ export default function EventCard({ record, isSelected, onToggle, onDelete, onVi
                      {record.attendanceStatus?.clockIn ? format(parseISO(record.attendanceStatus.clockIn), 'HH:mm') : '--:--'}
                   </p>
                </div>
-               <div className="w-px bg-gray-200 dark:bg-white/10"></div>
-               <div className="flex-1 text-right">
-                  <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase">Keluar</p>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                     {record.attendanceStatus?.clockOut ? format(parseISO(record.attendanceStatus.clockOut), 'HH:mm') : '--:--'}
-                  </p>
-               </div>
             </div>
         </div>
       </div>
