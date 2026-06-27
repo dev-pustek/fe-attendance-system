@@ -36,7 +36,7 @@ const AppHeader: React.FC = () => {
   }, []);
 
   return (
-    <header className="sticky top-0 flex w-full z-[99] 
+    <header className="flex w-full 
       bg-gradient-to-br from-brand-500 via-purple-600 to-indigo-800 dark:from-brand-800 dark:via-purple-900 dark:to-indigo-950 
       lg:bg-none lg:bg-white lg:border-b lg:border-gray-200 lg:dark:border-gray-800 lg:dark:bg-gray-900 overflow-hidden lg:overflow-visible">
       
