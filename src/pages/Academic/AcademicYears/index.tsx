@@ -103,7 +103,7 @@ const RowActionMenu = ({ onEdit, onDelete }: { onEdit: () => void; onDelete: () 
           }}
           className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/10"
         >
-          <TrashBinIcon className="size-3.5" /> Delete
+          <TrashBinIcon className="size-3.5" /> Hapus
         </DropdownItem>
       </Dropdown>
     </div>
@@ -111,13 +111,13 @@ const RowActionMenu = ({ onEdit, onDelete }: { onEdit: () => void; onDelete: () 
 };
 
 const academicYearSchema = z.object({
-  code: z.string().min(1, "Year code is required"),
-  name: z.string().min(1, "Display name is required"),
-  startDate: z.string().min(1, "Start date is required"),
-  endDate: z.string().min(1, "End date is required"),
+  code: z.string().min(1, "Kode tahun wajib diisi"),
+  name: z.string().min(1, "Nama tampilan wajib diisi"),
+  startDate: z.string().min(1, "Tanggal mulai wajib diisi"),
+  endDate: z.string().min(1, "Tanggal akhir wajib diisi"),
   isActive: z.boolean().default(false),
 }).refine((data) => new Date(data.endDate) > new Date(data.startDate), {
-  message: "End date must be after start date",
+  message: "Tanggal akhir harus setelah tanggal mulai",
   path: ["endDate"],
 });
 type AcademicYearFormValues = z.infer<typeof academicYearSchema>;
@@ -259,37 +259,37 @@ const AcademicYears: React.FC = () => {
   const onSubmitForm = async (data: AcademicYearFormValues) => {
     const confirmed = await confirm({
       variant: selectedYear ? "update" : "create",
-      title: selectedYear ? "Update Academic Year" : "Create Academic Year",
-      message: `Are you sure you want to ${selectedYear ? "update" : "create"} the academic year "${data.name}"?`,
+      title: selectedYear ? "Perbarui Tahun Ajaran" : "Buat Tahun Ajaran",
+      message: `Apakah Anda yakin ingin ${selectedYear ? "memperbarui" : "membuat"} tahun ajaran "${data.name}"?`,
     });
     if (!confirmed) return;
     try {
       if (selectedYear) {
         await updateMutation.mutateAsync({ id: selectedYear.id, data });
-        showSuccess(`Academic year "${data.name}" updated successfully!`);
+        showSuccess(`Tahun ajaran "${data.name}" berhasil diperbarui!`);
       } else {
         await createMutation.mutateAsync(data);
-        showSuccess(`Academic year "${data.name}" created successfully!`);
+        showSuccess(`Tahun ajaran "${data.name}" berhasil dibuat!`);
       }
       setIsModalOpen(false);
     } catch (error) {
-      showError(error, "Failed to save academic year");
+      showError(error, "Gagal menyimpan tahun ajaran");
     }
   };
 
   const handleDelete = async (id: number | string) => {
     const confirmed = await confirm({
       variant: "delete",
-      title: "Delete Academic Year",
-      message: "Are you sure you want to delete this academic year? This action cannot be undone.",
+      title: "Hapus Tahun Ajaran",
+      message: "Apakah Anda yakin ingin menghapus tahun ajaran ini? Tindakan ini tidak dapat dibatalkan.",
     });
     if (confirmed) {
       try {
         await deleteMutation.mutateAsync(id);
         setSelectedIds(prev => { const n = new Set(prev); n.delete(id); return n; });
-        showSuccess("Academic year deleted successfully!");
+        showSuccess("Tahun ajaran berhasil dihapus!");
       } catch (error) {
-        showError(error, "Failed to delete academic year");
+        showError(error, "Gagal menghapus tahun ajaran");
       }
     }
   };
@@ -297,15 +297,15 @@ const AcademicYears: React.FC = () => {
   const handleBulkDelete = async () => {
     const confirmed = await confirm({
       variant: "delete",
-      title: "Delete Selected",
-      message: `Delete ${selectedIds.size} academic year(s)? This cannot be undone.`,
+      title: "Hapus Pilihan",
+      message: `Hapus ${selectedIds.size} tahun ajaran? Tindakan ini tidak dapat dibatalkan.`,
     });
     if (!confirmed) return;
     for (const id of selectedIds) {
       try { await deleteMutation.mutateAsync(id); } catch { /* skip */ }
     }
     setSelectedIds(new Set());
-    showSuccess("Selected academic years deleted.");
+    showSuccess("Tahun ajaran yang dipilih berhasil dihapus.");
   };
 
   // ── Export/Import handlers ────────────────────────────────────────────────
@@ -317,9 +317,9 @@ const AcademicYears: React.FC = () => {
         : { search: searchTerm || undefined, isActive: statusFilter === "" ? undefined : statusFilter === "true" };
       const blob = await academicService.exportAcademicYearsExcel(params);
       downloadBlob(blob, "academic-years.xlsx");
-      showSuccess("Excel exported successfully!");
+      showSuccess("Excel berhasil diekspor!");
     } catch (err) {
-      showError(err, "Export failed");
+      showError(err, "Ekspor gagal");
     } finally {
       setIsExporting(false);
     }
@@ -333,9 +333,9 @@ const AcademicYears: React.FC = () => {
         : { search: searchTerm || undefined, isActive: statusFilter === "" ? undefined : statusFilter === "true" };
       const blob = await academicService.exportAcademicYearsPdf(params);
       downloadBlob(blob, "academic-years.pdf");
-      showSuccess("PDF exported successfully!");
+      showSuccess("PDF berhasil diekspor!");
     } catch (err) {
-      showError(err, "Export failed");
+      showError(err, "Ekspor gagal");
     } finally {
       setIsExporting(false);
     }
@@ -345,9 +345,9 @@ const AcademicYears: React.FC = () => {
     try {
       const blob = await academicService.downloadAcademicYearsTemplate(withData);
       downloadBlob(blob, "academic-years-template.xlsx");
-      showSuccess("Template downloaded!");
+      showSuccess("Templat berhasil diunduh!");
     } catch (err) {
-      showError(err, "Download failed");
+      showError(err, "Unduhan gagal");
     }
   }, []);
 
@@ -355,20 +355,20 @@ const AcademicYears: React.FC = () => {
     try {
       const result = await importMutation.mutateAsync(file);
       if (result.errors && result.errors.length > 0) {
-        showError(null, `Import done with ${result.errors.length} errors. Created: ${result.created}, Updated: ${result.updated}`);
+        showError(null, `Impor selesai dengan ${result.errors.length} error. Dibuat: ${result.created}, Diperbarui: ${result.updated}`);
       } else {
-        showSuccess(`Import complete! Created: ${result.created}, Updated: ${result.updated}`);
+        showSuccess(`Impor selesai! Dibuat: ${result.created}, Diperbarui: ${result.updated}`);
       }
       setIsImportModalOpen(false);
     } catch (err) {
-      showError(err, "Import failed");
+      showError(err, "Impor gagal");
     }
   }, [importMutation]);
 
   return (
     <>
-      <PageMeta title="Academic Years | Management" description="Manage academic years and periods." />
-      <PageBreadcrumb pageTitle="Academic Years" />
+      <PageMeta title="Tahun Ajaran | Manajemen" description="Kelola tahun ajaran dan periode akademik." />
+      <PageBreadcrumb pageTitle="Tahun Ajaran" />
 
       <div className="space-y-5">
         {/* ── Page header ── */}
@@ -378,8 +378,8 @@ const AcademicYears: React.FC = () => {
               <CalenderIcon className="size-5" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">Academic Periods</h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Manage school years and active status.</p>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">Periode Akademik</h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Kelola tahun ajaran dan status aktif.</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -408,7 +408,7 @@ const AcademicYears: React.FC = () => {
         {isMobile && (
           <MobileFloatingActions
             onAdd={() => handleOpenModal()}
-            addAriaLabel="Add New Year"
+            addAriaLabel="Tambah Tahun Baru"
             dataActionsProps={{
               isExporting: isExporting,
               isImporting: importMutation.isPending,
@@ -432,11 +432,11 @@ const AcademicYears: React.FC = () => {
                     <div className="flex items-center gap-2 mb-1">
                         <FilterIcon className="size-5 text-brand-500" />
                         <h3 className="text-sm font-bold uppercase tracking-wider text-gray-800 dark:text-gray-200">
-                            Search & Filter Academic Years
+                            Cari & Saring Tahun Ajaran
                         </h3>
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Use the criteria below to filter periods based on status.
+                        Use the criteria below to filter periode based on status.
                     </p>
                 </div>
                 <div className="shrink-0 ml-4">
@@ -460,15 +460,15 @@ const AcademicYears: React.FC = () => {
                                     value={statusFilter}
                                     onChange={(val) => { setStatusFilter(String(val)); setPage(1); }}
                                     options={[
-                                        { label: "All Status", value: "" },
-                                        { label: "Active", value: "true" },
-                                        { label: "Inactive", value: "false" },
+                                        { label: "Semua Status", value: "" },
+                                        { label: "Aktif", value: "true" },
+                                        { label: "Tidak Aktif", value: "false" },
                                     ]}
                                     className="w-full [&>button]:w-full [&>button]:h-11 [&>button]:text-sm [&>button]:rounded-xl"
                                 />
                             </div>
                             <div className="space-y-1.5 sm:col-span-1 lg:col-span-6">
-                                <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Search</Label>
+                                <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Cari</Label>
                                 <div className="relative">
                                     <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
                                     <input
@@ -481,7 +481,7 @@ const AcademicYears: React.FC = () => {
                                                 setPage(1);
                                             }
                                         }}
-                                        placeholder="Search by code or name..."
+                                        placeholder="Cari berdasarkan kode atau nama..."
                                         className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-4 text-sm text-gray-900 transition-colors focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-white/[0.08] dark:bg-white/[0.02] dark:text-white dark:focus:border-brand-400 dark:focus:ring-brand-400"
                                     />
                                 </div>
@@ -520,7 +520,7 @@ const AcademicYears: React.FC = () => {
           selectedCount={selectedIds.size}
           bulkActions={[
             {
-              label: "Delete Selected",
+              label: "Hapus Pilihan",
               icon: <TrashBinIcon className="size-3.5" />,
               onClick: handleBulkDelete,
               variant: "danger",
@@ -537,7 +537,7 @@ const AcademicYears: React.FC = () => {
               <div className="flex items-center gap-3 px-1">
                 <Checkbox checked={allSelected} onChange={toggleAll} />
                 <span className="text-xs text-gray-500 dark:text-gray-400">
-                  {selectedIds.size > 0 ? `${selectedIds.size} selected` : "Select all"}
+                  {selectedIds.size > 0 ? `${selectedIds.size} terpilih` : "Pilih Semua"}
                 </span>
               </div>
             )}
@@ -561,7 +561,7 @@ const AcademicYears: React.FC = () => {
                 <div className="flex size-14 items-center justify-center rounded-2xl bg-gray-50 dark:bg-white/[0.03]">
                   <CalenderIcon className="size-7 opacity-30" />
                 </div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-300">No academic years found</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Tidak ada tahun ajaran ditemukan</p>
                 <button
                   onClick={() => handleOpenModal()}
                   className="flex items-center gap-1.5 rounded-lg bg-brand-50 px-3 py-1.5 text-xs font-medium text-brand-600 hover:bg-brand-100 dark:bg-brand-500/10 dark:text-brand-400"
@@ -590,7 +590,7 @@ const AcademicYears: React.FC = () => {
                 <div className="size-5 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
               )}
               {!infiniteQuery.hasNextPage && infiniteYears.length > 0 && (
-                <p className="text-xs text-gray-400">All records loaded</p>
+                <p className="text-xs text-gray-400">Semua data dimuat</p>
               )}
             </div>
           </div>
@@ -606,21 +606,21 @@ const AcademicYears: React.FC = () => {
                     </TableCell>
                     <TableCell isHeader className="px-4 py-3.5">
                       <button onClick={() => handleSort("code")} className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-brand-500 uppercase tracking-wider transition-colors">
-                        Code <SortIcon column="code" />
+                        Kode <SortIcon column="code" />
                       </button>
                     </TableCell>
                     <TableCell isHeader className="px-4 py-3.5">
                       <button onClick={() => handleSort("name")} className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-brand-500 uppercase tracking-wider transition-colors">
-                        Name <SortIcon column="name" />
+                        Nama <SortIcon column="name" />
                       </button>
                     </TableCell>
                     <TableCell isHeader className="px-4 py-3.5">
                       <button onClick={() => handleSort("startDate")} className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-brand-500 uppercase tracking-wider transition-colors">
-                        Duration <SortIcon column="startDate" />
+                        Durasi <SortIcon column="startDate" />
                       </button>
                     </TableCell>
                     <TableCell isHeader className="px-4 py-3.5 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</TableCell>
-                    <TableCell isHeader className="px-4 py-3.5 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</TableCell>
+                    <TableCell isHeader className="px-4 py-3.5 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Aksi</TableCell>
                   </TableRow>
                 </TableHeader>
 
@@ -635,8 +635,8 @@ const AcademicYears: React.FC = () => {
                             <CalenderIcon className="size-7 opacity-30" />
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-gray-600 dark:text-gray-300">No academic years found</p>
-                            <p className="mt-0.5 text-xs text-gray-400">Try adjusting your search or add a new year.</p>
+                            <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Tidak ada tahun ajaran ditemukan</p>
+                            <p className="mt-0.5 text-xs text-gray-400">Coba sesuaikan pencarian Anda atau tambahkan tahun baru.</p>
                           </div>
                           <button onClick={() => handleOpenModal()} className="flex items-center gap-1.5 rounded-lg bg-brand-50 px-3 py-1.5 text-xs font-medium text-brand-600 hover:bg-brand-100 dark:bg-brand-500/10 dark:text-brand-400">
                             <PlusIcon className="size-3 fill-current" /> Add First Year
@@ -673,7 +673,7 @@ const AcademicYears: React.FC = () => {
                           </TableCell>
                           <TableCell className="px-4 py-4 text-center">
                             <Badge color={year.isActive ? "success" : "light"}>
-                              {year.isActive ? "Active" : "Inactive"}
+                              {year.isActive ? "Aktif" : "Tidak Aktif"}
                             </Badge>
                           </TableCell>
                           <TableCell className="px-4 py-4 text-center">
@@ -690,15 +690,15 @@ const AcademicYears: React.FC = () => {
               {total > 0 && (
                 <div className="flex flex-col gap-4 border-t border-gray-100 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between dark:border-white/[0.05]">
                   <p className="text-xs text-gray-400 dark:text-gray-500">
-                    Showing{" "}
+                    Menampilkan{" "}
                     <span className="font-semibold text-gray-600 dark:text-gray-300">
                       {(page - 1) * limit + 1}–{Math.min(page * limit, total)}
                     </span>{" "}
-                    of <span className="font-semibold text-gray-600 dark:text-gray-300">{total}</span> periods
+                    dari <span className="font-semibold text-gray-600 dark:text-gray-300">{total}</span> periode
                   </p>
                   <div className="flex items-center gap-1.5">
                     <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50 disabled:pointer-events-none disabled:opacity-40 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400">
-                      <ChevronLeftIcon className="size-3.5" /> Prev
+                      <ChevronLeftIcon className="size-3.5" /> Sebelumnya
                     </button>
                     {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
                       const p = i + 1;
@@ -710,7 +710,7 @@ const AcademicYears: React.FC = () => {
                     })}
                     {totalPages > 5 && <span className="px-1 text-xs text-gray-400">…</span>}
                     <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages || totalPages === 0} className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50 disabled:pointer-events-none disabled:opacity-40 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400">
-                      Next <AngleRightIcon className="size-3.5" />
+                      Selanjutnya <AngleRightIcon className="size-3.5" />
                     </button>
                   </div>
                 </div>
@@ -725,8 +725,8 @@ const AcademicYears: React.FC = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         className="max-w-md"
-        title={selectedYear ? "Update Academic Year" : "Add New Academic Year"}
-        description={selectedYear ? "Edit the details of this academic period." : "Fill in the details for the new academic period."}
+        title={selectedYear ? "Perbarui Tahun Ajaran" : "Tambah Tahun Ajaran Baru"}
+        description={selectedYear ? "Edit the details dari this academic period." : "Isi detail untuk periode akademik baru."}
         footer={
           <div className="flex justify-end gap-3">
             <button type="button" onClick={() => setIsModalOpen(false)} className="rounded-xl px-4 py-2 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-100 dark:hover:bg-white/[0.05]">
@@ -749,12 +749,12 @@ const AcademicYears: React.FC = () => {
         <form id="academic-year-form" onSubmit={handleSubmit(onSubmitForm)} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5 col-span-2 sm:col-span-1">
-              <Label>Year Code</Label>
-              <Input type="text" placeholder="e.g. 2024/2025" {...register("code")} error={errors.code?.message} />
+              <Label>Kode Tahun</Label>
+              <Input type="text" placeholder="mis. 2024/2025" {...register("code")} error={errors.code?.message} />
             </div>
             <div className="space-y-1.5 col-span-2 sm:col-span-1">
-              <Label>Display Name</Label>
-              <Input type="text" placeholder="e.g. Academic Year 2024/2025" {...register("name")} error={errors.name?.message} />
+              <Label>Nama Tampilan</Label>
+              <Input type="text" placeholder="mis. Tahun Ajaran 2024/2025" {...register("name")} error={errors.name?.message} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -763,7 +763,7 @@ const AcademicYears: React.FC = () => {
               control={control}
               render={({ field }) => (
                 <div className="space-y-1.5">
-                  <DatePicker label="Start Date" value={field.value} onChange={field.onChange} />
+                  <DatePicker label="Tanggal Mulai" value={field.value} onChange={field.onChange} />
                   {errors.startDate && <p className="text-xs text-error-500">{errors.startDate.message}</p>}
                 </div>
               )}
@@ -773,7 +773,7 @@ const AcademicYears: React.FC = () => {
               control={control}
               render={({ field }) => (
                 <div className="space-y-1.5">
-                  <DatePicker label="End Date" value={field.value} onChange={field.onChange} />
+                  <DatePicker label="Tanggal Akhir" value={field.value} onChange={field.onChange} />
                   {errors.endDate && <p className="text-xs text-error-500">{errors.endDate.message}</p>}
                 </div>
               )}
@@ -784,10 +784,10 @@ const AcademicYears: React.FC = () => {
               name="isActive"
               control={control}
               render={({ field }) => (
-                <Checkbox label="Set as Primary / Active Academic Year" checked={field.value} onChange={field.onChange} />
+                <Checkbox label="Atur sebagai Tahun Ajaran Utama / Aktif" checked={field.value} onChange={field.onChange} />
               )}
             />
-            <p className="mt-1.5 pl-8 text-xs text-gray-400 dark:text-gray-500">Only one academic year can be active at a time.</p>
+            <p className="mt-1.5 pl-8 text-xs text-gray-400 dark:text-gray-500">Hanya satu tahun ajaran yang dapat aktif pada satu waktu.</p>
           </div>
         </form>
       </Modal>
@@ -799,7 +799,7 @@ const AcademicYears: React.FC = () => {
         onClose={() => !importMutation.isPending && setIsImportModalOpen(false)}
         onImport={handleImport}
         onDownloadTemplate={handleDownloadTemplate}
-        title="Import Academic Years"
+        title="Impor Tahun Ajaran"
         isImporting={importMutation.isPending}
       />
     </>
