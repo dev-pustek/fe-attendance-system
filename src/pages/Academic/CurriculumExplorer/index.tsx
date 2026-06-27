@@ -243,7 +243,7 @@ const CurriculumExplorer: React.FC = () => {
 
         {/* Sidebar Drawer Container - Fixed Right Overlay */}
         <div 
-            className={`fixed top-[72px] bottom-0 right-0 z-[999] transition-transform duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] flex flex-col ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full'}`}
+            className={`fixed top-[72px] bottom-0 right-0 z-20 transition-transform duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] flex flex-col ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full'}`}
         >
             <aside className="w-80 h-full bg-white dark:bg-zinc-900 border-l border-gray-200 dark:border-white/10 shadow-2xl flex flex-col">
                  {/* Sidebar Header */}

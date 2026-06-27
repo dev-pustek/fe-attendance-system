@@ -71,7 +71,7 @@ const TeacherAssignmentDrawer: React.FC<TeacherAssignmentDrawerProps> = ({
         
         {/* Drawer */}
         <div 
-            className={`fixed top-[72px] bottom-0 right-0 z-[61] w-96 bg-white dark:bg-[#18181b] shadow-2xl border-l border-gray-200 dark:border-white/10 flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] ${
+            className={`fixed top-[72px] bottom-0 right-0 z-20 w-96 bg-white dark:bg-[#18181b] shadow-2xl border-l border-gray-200 dark:border-white/10 flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] ${
                 isOpen ? "translate-x-0" : "translate-x-full"
             }`}
         >

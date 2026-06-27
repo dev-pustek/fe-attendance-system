@@ -99,7 +99,7 @@ const DraggableSubject: React.FC<
     : null;
 
   // Dynamic Colors
-  const subjectName = subject?.name || "Unknown Subject";
+  const subjectName = subject?.name || "Mata Pelajaran Tidak Diketahui";
   const bgColor = stringToPastelColor(subjectName);
   const borderColor = stringToDarkerColor(subjectName);
   const textColor = stringToDarkerColor(subjectName);
@@ -177,7 +177,7 @@ const DraggableSubject: React.FC<
             ) : (
               <div className="col-span-2 flex items-center gap-1.5 opacity-60">
                 <UserIcon className="size-3 shrink-0" />
-                <span className="text-[10px] italic">No Teacher Assigned</span>
+                <span className="text-[10px] italic">Belum Ada Guru</span>
               </div>
             )}
           </div>
@@ -223,7 +223,7 @@ const DraggableSubject: React.FC<
                 className="text-[10px] italic opacity-60 px-1"
                 style={{ color: textColor }}
               >
-                Any Class
+                Semua Kelas
               </span>
             )}
         </div>
@@ -265,8 +265,8 @@ const AvailabilityTimeline: React.FC<{
     return (
       <div className="mb-6 rounded-xl border border-dashed border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-white/[0.02] px-4 py-3 text-center">
         <p className="text-xs text-gray-400 dark:text-gray-500 font-medium">
-          No active schedule rule for this day. Configure it in{" "}
-          <span className="font-semibold text-brand-500">Attendance Policies → Weekly Schedule</span>.
+          Tidak ada aturan jadwal aktif untuk hari ini. Konfigurasikan di{" "}
+          <span className="font-semibold text-brand-500">Kebijakan Kehadiran → Jadwal Mingguan</span>.
         </p>
       </div>
     );
@@ -414,7 +414,7 @@ const AvailabilityTimeline: React.FC<{
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500"></span>
                 </span>
-                {hasBreakConflict ? "Rest Period Conflict" : "Session Overlap"}
+                {hasBreakConflict ? "Konflik Jam Istirahat" : "Sesi Bertabrakan"}
               </div>
             ) : (
               <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-green-500/10 text-green-600 dark:text-green-400 text-[9px] font-bold uppercase">
@@ -453,7 +453,7 @@ const AvailabilityTimeline: React.FC<{
               >
                 {endPos - startPos > 2 && (
                   <span className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest select-none">
-                    Rest
+                    Istirahat
                   </span>
                 )}
               </div>
@@ -490,7 +490,7 @@ const AvailabilityTimeline: React.FC<{
           <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400">
             <PlusIcon className="size-3" />
             <span>
-              Smart Suggestions (Found {availableSlots.length} available slots)
+              Saran Pintar (Ditemukan {availableSlots.length} slot tersedia)
             </span>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -523,20 +523,20 @@ const AvailabilityTimeline: React.FC<{
   );
 };
 
-// ... (Rest of component)
+// ... (Istirahat of component)
 
 // Update keys and state in component:
 // Rename teacherAssignments -> teacherSubjects
 // Update useQuery
 
 const dayOptions = [
-  { label: "Monday", value: "MONDAY" },
-  { label: "Tuesday", value: "TUESDAY" },
-  { label: "Wednesday", value: "WEDNESDAY" },
-  { label: "Thursday", value: "THURSDAY" },
-  { label: "Friday", value: "FRIDAY" },
-  { label: "Saturday", value: "SATURDAY" },
-  { label: "Sunday", value: "SUNDAY" },
+  { label: "Senin", value: "MONDAY" },
+  { label: "Selasa", value: "TUESDAY" },
+  { label: "Rabu", value: "WEDNESDAY" },
+  { label: "Kamis", value: "THURSDAY" },
+  { label: "Jumat", value: "FRIDAY" },
+  { label: "Sabtu", value: "SATURDAY" },
+  { label: "Minggu", value: "SUNDAY" },
 ];
 
 const TeachingScheduleTemplates: React.FC = () => {
@@ -555,7 +555,7 @@ const TeachingScheduleTemplates: React.FC = () => {
     subLabel?: string;
   } | null>(null);
 
-  // Academic Year Filter
+  // Tahun Ajaran Filter
   const { data: activeYearRes } = useAcademicYears({ isActive: true });
   const [selectedAcademicYear, setSelectedAcademicYear] = useState<{
     label: string;
@@ -662,8 +662,8 @@ const TeachingScheduleTemplates: React.FC = () => {
 
   const tabs = useMemo(
     () => [
-      { id: "subject", label: "Class Schedule" },
-      { id: "teacher", label: "Teacher Schedule" },
+      { id: "subject", label: "Jadwal Kelas" },
+      { id: "teacher", label: "Jadwal Guru" },
     ],
     [],
   );
@@ -1305,7 +1305,7 @@ const TeachingScheduleTemplates: React.FC = () => {
             plannedUnits: calculatedUnits,
           },
         });
-        showSuccess("Session updated successfully");
+        showSuccess("Sesi berhasil diperbarui");
       } else {
         await createMutation.mutateAsync({
           ...formData,
@@ -1314,7 +1314,7 @@ const TeachingScheduleTemplates: React.FC = () => {
           endTime: formData.endTime.slice(0, 5),
           plannedUnits: calculatedUnits,
         });
-        showSuccess("Session created successfully");
+        showSuccess("Sesi berhasil dibuat");
       }
       setIsModalOpen(false);
       if (viewMode === "teacher") {
@@ -1322,14 +1322,14 @@ const TeachingScheduleTemplates: React.FC = () => {
       }
     } catch (error) {
       console.error(error);
-      showError("Failed to save schedule");
+      showError("Gagal menyimpan jadwal");
     }
   };
 
   const handleDelete = async (id: number | string) => {
     const confirmed = await confirm({
-      title: "Delete Schedule",
-      message: "Are you sure you want to delete this schedule template?",
+      title: "Hapus Jadwal",
+      message: "Apakah Anda yakin ingin menghapus template jadwal ini?",
       confirmText: "Delete",
       variant: "delete",
     });
@@ -1337,10 +1337,10 @@ const TeachingScheduleTemplates: React.FC = () => {
     if (confirmed) {
       try {
         await deleteMutation.mutateAsync(id);
-        showSuccess("Schedule deleted successfully");
+        showSuccess("Jadwal berhasil dihapus");
       } catch (error) {
         console.error(error);
-        showError("Failed to delete schedule");
+        showError("Gagal menghapus jadwal");
       }
     }
   };
@@ -1360,37 +1360,37 @@ const TeachingScheduleTemplates: React.FC = () => {
           endTime: newEndTime.slice(0, 5),
         },
       });
-      showSuccess("Session moved successfully");
+      showSuccess("Sesi berhasil dipindahkan");
     } catch (error) {
       console.error(error);
-      showError("Failed to move session");
+      showError("Gagal memindahkan sesi");
     }
   };
 
   return (
     <DndProvider backend={HTML5Backend}>
       <PageMeta
-        title="Teaching Schedule Templates | Sistem Akademik"
-        description="Manage weekly class schedules and teacher assignments."
+        title="Template Jadwal Mengajar | Sistem Akademik"
+        description="Kelola jadwal pelajaran mingguan dan penugasan guru."
       />
-      <PageBreadcrumb pageTitle="Teaching Schedule" />
+      <PageBreadcrumb pageTitle="Jadwal Mengajar" />
 
       <div className="relative flex flex-col h-[calc(100vh-220px)] min-h-[600px]">
         {/* Sidebar Drawer - Fixed Right Overlay */}
         <div
-          className={`fixed top-[72px] bottom-0 right-0 z-[999] transition-transform duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] flex flex-col ${isSidebarOpen ? "translate-x-0" : "translate-x-full"}`}
+          className={`fixed top-[72px] bottom-0 right-0 z-20 transition-transform duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] flex flex-col ${isSidebarOpen ? "translate-x-0" : "translate-x-full"}`}
         >
           <aside className="w-80 h-full bg-white dark:bg-zinc-900 border-l border-gray-200 dark:border-white/10 shadow-2xl flex flex-col">
             {/* Keep existing sidebar header/content */}
             <div className="p-4 pt-6 pb-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between bg-gray-50/50 dark:bg-zinc-800/50">
               <h2 className="font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2 text-sm uppercase tracking-wider">
                 <ListIcon className="size-4 text-brand-500" />
-                Draggable Subjects
+                Mata Pelajaran
               </h2>
               <button
                 onClick={() => setIsSidebarOpen(false)}
                 className="p-1.5 hover:bg-gray-200 dark:hover:bg-white/10 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-                title="Close Sidebar"
+                title="Tutup Sidebar"
               >
                 <CloseIcon className="size-4" />
               </button>
@@ -1402,10 +1402,10 @@ const TeachingScheduleTemplates: React.FC = () => {
                 {viewMode === "teacher" && (
                   <div className="mb-3">
                     <CustomSelect
-                      label="Filter by Class"
-                      placeholder="All Classes"
+                      label="Filter Kelas"
+                      placeholder="Semua Kelas"
                       options={[
-                        { label: "All Classes", value: "" },
+                        { label: "Semua Kelas", value: "" },
                         ...classOptions,
                       ]}
                       value={selectedSidebarClassFilter}
@@ -1458,10 +1458,10 @@ const TeachingScheduleTemplates: React.FC = () => {
                             <DocsIcon className="size-6" />
                           </div>
                           <p className="text-sm text-gray-500 font-medium">
-                            No subjects found
+                            Mata pelajaran tidak ditemukan
                           </p>
                           <p className="text-xs text-gray-400 mt-1">
-                            Try selecting a class first or check your search.
+                            Coba pilih kelas terlebih dahulu atau periksa pencarian Anda.
                           </p>
                         </div>
                       )
@@ -1502,7 +1502,7 @@ const TeachingScheduleTemplates: React.FC = () => {
                     ) : (
                       <div className="flex flex-col items-center justify-center py-10 text-center px-4">
                         <p className="text-sm text-gray-500">
-                          No allowed subjects found for this teacher.
+                          Mata pelajaran yang diizinkan tidak ditemukan untuk guru ini.
                         </p>
                       </div>
                     )}
@@ -1526,7 +1526,7 @@ const TeachingScheduleTemplates: React.FC = () => {
             >
               <ListIcon className="size-6 shrink-0 min-w-6" />
               <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-75 whitespace-nowrap ml-3 text-sm font-semibold pointer-events-none">
-                Open Sidebar
+                Buka Sidebar
               </span>
             </button>
           )}
@@ -1540,10 +1540,10 @@ const TeachingScheduleTemplates: React.FC = () => {
                   <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                     <div>
                       <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                        Teaching Schedule Templates
+                        Template Jadwal Mengajar
                       </h1>
                       <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        Manage weekly class schedules and teacher assignments.
+                        Kelola jadwal pelajaran mingguan dan penugasan guru.
                       </p>
                     </div>
                   </div>
@@ -1587,10 +1587,10 @@ const TeachingScheduleTemplates: React.FC = () => {
                     {/* Context Selector */}
                     <div className="flex flex-col md:flex-row md:items-end gap-6 mb-6">
                       <div className="w-full md:w-48 space-y-1">
-                        <Label>Academic Year</Label>
+                        <Label>Tahun Ajaran</Label>
                         <div className="relative z-[60]">
                           <SearchableAsyncSelect
-                            placeholder="Select Academic Year..."
+                            placeholder="Select Tahun Ajaran..."
                             onSearch={searchAcademicYears}
                             options={yearOptions}
                             isLoading={isSearchingYears}
@@ -1616,7 +1616,7 @@ const TeachingScheduleTemplates: React.FC = () => {
                             <div className="relative z-50">
                               <SearchableAsyncSelect
                                 key="class-select"
-                                placeholder="Select Class..."
+                                placeholder="Pilih Kelas..."
                                 onSearch={searchClasses}
                                 options={filteredClassOptions}
                                 value={selectedViewClass}
@@ -1634,7 +1634,7 @@ const TeachingScheduleTemplates: React.FC = () => {
                             <div className="relative z-50">
                               <SearchableAsyncSelect
                                 key="teacher-select"
-                                placeholder="Select Teacher..."
+                                placeholder="Pilih Guru..."
                                 onSearch={searchTeachers}
                                 options={teacherOptions}
                                 isLoading={isSearchingTeachers}
@@ -1820,7 +1820,7 @@ const TeachingScheduleTemplates: React.FC = () => {
                                 </div>
                                 <div>
                                   <h3 className="font-bold text-gray-900 dark:text-white">
-                                    Class Schedule Summary
+                                    Jadwal Kelas Summary
                                   </h3>
                                   <p className="text-xs text-gray-500">
                                     Total Progress for all Subjects
@@ -2266,7 +2266,7 @@ const TeachingScheduleTemplates: React.FC = () => {
               }}
               className="rounded-xl px-4 py-2 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.05]"
             >
-              Cancel
+              Batal
             </button>
             <button
               type="submit"
@@ -2349,7 +2349,7 @@ const TeachingScheduleTemplates: React.FC = () => {
               </div>
             )}
             
-            {/* Restricted Day Warning */}
+            {/* Istirahatricted Day Warning */}
             {(() => {
               const rule = effectiveRules?.[formData.dayOfWeek] || effectiveRules?.[formData.dayOfWeek.toUpperCase()];
               if (rule && !rule.isActive) {
@@ -2357,7 +2357,7 @@ const TeachingScheduleTemplates: React.FC = () => {
                   <div className="mt-4 px-4 py-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl flex items-start gap-2.5 relative z-10 animate-fade-in">
                     <span className="text-lg leading-none">⚠️</span>
                     <div>
-                      <h5 className="text-[11px] font-bold text-red-700 dark:text-red-400 uppercase tracking-wider">Policy Restriction</h5>
+                      <h5 className="text-[11px] font-bold text-red-700 dark:text-red-400 uppercase tracking-wider">Policy Istirahatriction</h5>
                       <p className="text-[11px] text-red-600 dark:text-red-400/90 mt-0.5 leading-snug">
                         <strong>{formData.dayOfWeek}</strong> is marked as a <strong>Day Off</strong> in the schedule policy for this class. You cannot schedule sessions on this day.
                       </p>
@@ -2386,7 +2386,7 @@ const TeachingScheduleTemplates: React.FC = () => {
               </div>
             </div>
 
-            {/* Locked Teacher Badge (Teacher Mode) OR Restricted Teacher Select (Subject Mode) */}
+            {/* Locked Teacher Badge (Teacher Mode) OR Istirahatricted Teacher Select (Subject Mode) */}
             {viewMode === "teacher" ? (
               <div className="space-y-1.5">
                 <Label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-gray-500">
@@ -2500,7 +2500,7 @@ const TeachingScheduleTemplates: React.FC = () => {
           isOpen={isGeneratorOpen}
           onClose={() => setIsGeneratorOpen(false)}
           classSubjectId={selectedClassSubject.id}
-          subjectName={selectedClassSubject.subject?.name || "Unknown Subject"}
+          subjectName={selectedClassSubject.subject?.name || "Mata Pelajaran Tidak Diketahui"}
           className={selectedClassSubject.class?.name || "Unknown Class"}
         />
       )}
