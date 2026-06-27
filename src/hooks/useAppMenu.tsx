@@ -23,9 +23,9 @@ import {
   ClockIcon, 
   ComputerDesktopIcon, 
   ClipboardDocumentCheckIcon, 
-  UserGroupIcon, 
   AcademicCapIcon 
 } from "@heroicons/react/24/solid";
+import { UserGroupIcon } from "@heroicons/react/24/outline";
 
 export type SubItem = {
   name: string;
