@@ -7,6 +7,7 @@ import * as z from "zod";
 // ─── API Layer ───
 import { useTeachingSessions, useTeachingSessionsInfinite } from "../../../api/hooks/useAttendance";
 import { useClassSubjects, useAcademicYears, useClasses, useTeachingScheduleTemplates } from "../../../api/hooks/useAcademic";
+import { useEffectiveScheduleRules } from "../../../api/hooks/useRules";
 import { TeachingSession, CreateTeachingSessionDto, UpdateTeachingSessionDto } from "../../../api/types/attendance";
 import { profilesService } from "../../../api/services/profilesService";
 import { attendanceService } from "../../../api/services/attendanceService";
@@ -164,7 +165,7 @@ const TeachingSessions: React.FC = () => {
   const [teacherIdFilter, setTeacherIdFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(true);
   
   const [selectedIds, setSelectedIds] = useState<Set<number | string>>(new Set());
   const [isExporting, setIsExporting] = useState(false);
@@ -270,6 +271,7 @@ const TeachingSessions: React.FC = () => {
 
   const watchIsSubstitution = watch("isSubstitution");
   const watchActualTeacherId = watch("actualTeacherId");
+  const watchSessionDate = watch("sessionDate");
 
   const { data: scheduleTemplatesRes, isLoading: isTemplatesLoading } = useTeachingScheduleTemplates({
     teacherId: watchActualTeacherId || undefined,
@@ -301,6 +303,51 @@ const TeachingSessions: React.FC = () => {
       }));
   }, [scheduleTemplates]);
 
+  const { data: effectiveRulesRes } = useEffectiveScheduleRules({
+    classId: modalClassId || undefined
+  });
+  
+  const effectiveClassRules = useMemo(() => {
+    if (!effectiveRulesRes?.data) return [];
+    
+    const dayMap: Record<string, string> = {
+      MONDAY: "Senin", TUESDAY: "Selasa", WEDNESDAY: "Rabu", 
+      THURSDAY: "Kamis", FRIDAY: "Jumat", SATURDAY: "Sabtu", SUNDAY: "Minggu"
+    };
+    const daysOrder = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
+
+    const rulesArr = (effectiveRulesRes.data as any[]) || [];
+    
+    return rulesArr
+      .sort((a, b) => daysOrder.indexOf(a.dayOfWeek) - daysOrder.indexOf(b.dayOfWeek))
+      .map(rule => ({
+        dayKey: rule.dayOfWeek,
+        dayName: dayMap[rule.dayOfWeek] || rule.dayOfWeek,
+        rule
+      }));
+  }, [effectiveRulesRes]);
+
+  // Auto-fill schedule based on effective rules when class or date changes
+  useEffect(() => {
+    if (!modalClassId || !watchSessionDate || !effectiveRulesRes?.data || selectedEntity) return;
+
+    const [year, month, day] = watchSessionDate.split('-');
+    if (!year || !month || !day) return;
+    const dateObj = new Date(Number(year), Number(month) - 1, Number(day));
+    if (isNaN(dateObj.getTime())) return;
+
+    const daysArr = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
+    const currentDay = daysArr[dateObj.getDay()];
+
+    const rulesArr = (effectiveRulesRes.data as any[]) || [];
+    const ruleForDay = rulesArr.find(r => r.dayOfWeek === currentDay);
+
+    if (ruleForDay) {
+      if (ruleForDay.startTime) setValue("startTime", ruleForDay.startTime.slice(0, 5));
+      if (ruleForDay.endTime) setValue("endTime", ruleForDay.endTime.slice(0, 5));
+    }
+  }, [modalClassId, watchSessionDate, effectiveRulesRes, setValue, selectedEntity]);
+
   const handleOpenModal = (entity?: TeachingSession) => {
     if (entity) {
       setSelectedEntity(entity);
@@ -330,7 +377,7 @@ const TeachingSessions: React.FC = () => {
     } else {
       setSelectedEntity(null);
       setModalClassId("");
-      reset({ classSubjectId: 0, actualTeacherId: "", sessionDate: "", startTime: "", endTime: "", periodInfo: "", isSubstitution: false, substituteForTeacherId: null, isCancelled: false, notes: "" });
+      reset({ classSubjectId: 0, actualTeacherId: "", sessionDate: format(new Date(), "yyyy-MM-dd"), startTime: "", endTime: "", periodInfo: "", isSubstitution: false, substituteForTeacherId: null, isCancelled: false, notes: "" });
     }
     setIsModalOpen(true);
   };
@@ -1004,6 +1051,32 @@ const TeachingSessions: React.FC = () => {
                           </div>
                         </div>
                       ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {modalClassId && effectiveClassRules.length > 0 && (
+            <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-4 dark:border-blue-500/20 dark:bg-blue-500/5">
+              <h4 className="mb-3 flex items-center gap-2 text-xs font-semibold text-blue-700 dark:text-blue-400">
+                <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Jadwal Efektif Kelas (Hirarki)
+              </h4>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {effectiveClassRules.map(item => (
+                  <div key={item.dayKey} className="flex flex-col justify-center rounded-lg border border-blue-200/60 bg-white p-2.5 shadow-sm dark:border-white/[0.05] dark:bg-gray-900/50">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                      {item.dayName}
+                    </p>
+                    <div className="mt-1 flex items-center justify-between">
+                      <p className="text-[11px] font-medium text-gray-500 dark:text-gray-400">{item.rule.startTime.slice(0, 5)} - {item.rule.endTime.slice(0, 5)} WIB</p>
+                      <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-700 dark:bg-blue-500/20 dark:text-blue-300">
+                        {item.rule.context?.contextType}
+                      </span>
                     </div>
                   </div>
                 ))}

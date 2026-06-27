@@ -118,7 +118,7 @@ const ProgramStudies: React.FC = () => {
   const debouncedSearch = useDebounce(searchTerm, 500);
   const { confirm, confirmState } = useConfirm();
 
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(true);
 
   // ── Modal State ──
   const [isModalOpen, setIsModalOpen] = useState(false);

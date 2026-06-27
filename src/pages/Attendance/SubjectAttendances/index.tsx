@@ -232,7 +232,7 @@ const SubjectAttendances: React.FC = () => {
   const [studentIdFilter, setStudentIdFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(true);
   const [academicYearIdFilter, setAcademicYearIdFilter] = useState("");
   const [classIdFilter, setClassIdFilter] = useState("");
   const [subjectIdFilter, setSubjectIdFilter] = useState("");

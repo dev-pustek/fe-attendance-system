@@ -120,7 +120,7 @@ const Majors: React.FC = () => {
   const debouncedSearch = useDebounce(searchQuery, 500);
   const { confirm, confirmState } = useConfirm();
 
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [selectedMajor, setSelectedMajor] = useState<Major | null>(null);

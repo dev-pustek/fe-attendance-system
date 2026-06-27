@@ -118,7 +118,7 @@ const Classes: React.FC = () => {
   const [majorFilter, setMajorFilter] = useState(searchParams.get("major") || "all");
   
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const [isDownloadingTemplate, setIsDownloadingTemplate] = useState(false);
 

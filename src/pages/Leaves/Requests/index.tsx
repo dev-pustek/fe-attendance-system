@@ -84,7 +84,7 @@ const LeaveRequests: React.FC = () => {
     const [typeFilter, setTypeFilter] = useState<string>("ALL");
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [isExporting, setIsExporting] = useState(false);
-    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [isFilterOpen, setIsFilterOpen] = useState(true);
 
     const debouncedSearch = useDebounce(searchQuery, 500);
 

@@ -106,7 +106,7 @@ type OverrideFormValues = z.infer<typeof overrideSchema>;
 const ClassOverrides: React.FC = () => {
   const isMobile = useIsMobile();
 
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(true);
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [classFilter, setClassFilter] = useState("");

@@ -70,7 +70,7 @@ export default function Subjects() {
   const isMobile = useIsMobile();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(true);
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");

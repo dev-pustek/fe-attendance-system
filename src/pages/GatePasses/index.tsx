@@ -45,7 +45,7 @@ const GatePasses: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(true);
 
   const debouncedSearch = useDebounce(searchQuery, 500);
 

@@ -62,7 +62,7 @@ export default function EventTab() {
   const isMobile = useIsMobile();
 
   // ── Pagination & Filters ──
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(true);
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [eventStatus, setEventStatus] = useState("");

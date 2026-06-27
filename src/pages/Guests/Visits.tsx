@@ -130,7 +130,7 @@ const GuestVisits: React.FC = () => {
     const [startDate, setStartDate] = useState(searchParams.get("startDate") || "");
     const [endDate, setEndDate] = useState(searchParams.get("endDate") || "");
     const [sortConfig, setSortConfig] = useState<{ key: keyof GuestVisit | string; direction: "asc" | "desc" } | null>(null);
-    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [isFilterOpen, setIsFilterOpen] = useState(true);
     const [isExporting, setIsExporting] = useState(false);
 
     // Modal State
