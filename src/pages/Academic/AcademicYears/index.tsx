@@ -132,6 +132,7 @@ const AcademicYears: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [pendingStatusFilter, setPendingStatusFilter] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<number | string>>(new Set());
   const [isExporting, setIsExporting] = useState(false);
   const { confirm, confirmState } = useConfirm();
@@ -457,8 +458,8 @@ const AcademicYears: React.FC = () => {
                             <div className="space-y-1.5 sm:col-span-1 lg:col-span-3">
                                 <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Status</Label>
                                 <CustomSelect
-                                    value={statusFilter}
-                                    onChange={(val) => { setStatusFilter(String(val)); setPage(1); }}
+                                    value={pendingStatusFilter}
+                                    onChange={(val) => { setPendingStatusFilter(String(val)); }}
                                     options={[
                                         { label: "Semua Status", value: "" },
                                         { label: "Aktif", value: "true" },
@@ -478,6 +479,7 @@ const AcademicYears: React.FC = () => {
                                         onKeyDown={(e) => {
                                             if (e.key === 'Enter') {
                                                 setSearchTerm(searchQuery);
+                                                setStatusFilter(pendingStatusFilter);
                                                 setPage(1);
                                             }
                                         }}
@@ -491,6 +493,7 @@ const AcademicYears: React.FC = () => {
                                     onClick={() => {
                                         setSearchQuery("");
                                         setSearchTerm("");
+                                        setPendingStatusFilter("");
                                         setStatusFilter("");
                                         setPage(1);
                                     }}
@@ -501,6 +504,7 @@ const AcademicYears: React.FC = () => {
                                 <button
                                     onClick={() => {
                                         setSearchTerm(searchQuery);
+                                        setStatusFilter(pendingStatusFilter);
                                         setPage(1);
                                     }}
                                     className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 text-sm font-semibold text-white transition-all hover:bg-brand-600"
