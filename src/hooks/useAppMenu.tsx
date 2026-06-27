@@ -294,23 +294,14 @@ export const useAppMenu = () => {
     // ═══════════════════════════════════════════
     const adminItems: NavItem[] = [];
 
-    // Student management: academic admins see all, teachers see their class students only (RLS)
-    if (isAcademicAdmin) {
+    // Student management: only super admin
+    if (isSuperAdmin) {
       adminItems.push({
         icon: <UserIcon />,
         name: "Manajemen Siswa",
         subItems: [
           { name: "Siswa", path: "/academic/students" },
           { name: "Orang Tua", path: "/academic/parents" },
-        ],
-      });
-    } else if (isGuru) {
-      // Teachers only see students (filtered by RLS), not parents
-      adminItems.push({
-        icon: <UserIcon />,
-        name: "Manajemen Siswa",
-        subItems: [
-          { name: "Siswa", path: "/academic/students" },
         ],
       });
     }

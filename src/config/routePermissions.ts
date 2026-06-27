@@ -59,8 +59,8 @@ export const routePermissions: RoutePermission[] = [
   { path: '/academic/teaching-unit-policies', allowedRoles: ['admin'] },
   { path: '/academic/workload-contracts', allowedRoles: ['admin', 'staff'] },
   { path: '/academic/teaching-schedule-templates', allowedRoles: ['admin', 'staff'] },
-  { path: '/academic/students', allowedRoles: ['admin', 'teacher', 'staff'] },
-  { path: '/academic/parents', allowedRoles: ['admin', 'staff'] },
+  { path: '/academic/students', allowedRoles: ['super admin', 'superadmin'] },
+  { path: '/academic/parents', allowedRoles: ['super admin', 'superadmin'] },
 
   // HR & Employees
   { path: '/hr/employees', allowedRoles: ['admin', 'staff'] },
