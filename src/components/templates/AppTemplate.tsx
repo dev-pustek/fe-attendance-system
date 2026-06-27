@@ -14,8 +14,8 @@ const LayoutContent: React.FC = () => {
   const noPaddingOnMobile = isHome || isMenu;
 
   return (
-    <div className="flex h-screen pb-16 lg:pb-0">
-      {/* Sidebar placeholder – sidebar itself is position:fixed inside AppSidebar */}
+    <div className="min-h-screen flex pb-16 lg:pb-0">
+      {/* Sidebar placeholder – actual sidebar is position:fixed inside AppSidebar */}
       <div
         className={`hidden lg:block shrink-0 transition-[width] duration-300 ease-in-out ${
           isExpanded || isHovered ? "w-[290px]" : "w-[90px]"
@@ -25,8 +25,8 @@ const LayoutContent: React.FC = () => {
         <Backdrop />
       </div>
 
-      {/* Scrollable content column — this is the scroll root so sticky works inside it */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+      {/* Content column — scrolls with the page body (no overflow here to avoid stacking context) */}
+      <div className="flex-1 flex flex-col min-w-0">
         <div className={`${isHome ? "hidden lg:block" : "block"} sticky top-0 z-30`}>
           <AppHeader />
         </div>
