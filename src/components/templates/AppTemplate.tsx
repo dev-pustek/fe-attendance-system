@@ -14,25 +14,27 @@ const LayoutContent: React.FC = () => {
   const noPaddingOnMobile = isHome || isMenu;
 
   return (
-    <div className="min-h-screen xl:flex pb-16 lg:pb-0">
-      <div className="hidden lg:block">
+    <div className="flex h-screen pb-16 lg:pb-0 overflow-hidden">
+      {/* Sidebar placeholder – sidebar itself is position:fixed inside AppSidebar */}
+      <div
+        className={`hidden lg:block shrink-0 transition-[width] duration-300 ease-in-out ${
+          isExpanded || isHovered ? "w-[290px]" : "w-[90px]"
+        }`}
+      >
         <AppSidebar />
         <Backdrop />
       </div>
-      <div
-        className={`flex-1 transition-[margin-left] duration-300 ease-in-out ${
-          isExpanded || isHovered ? "lg:ml-[290px]" : "lg:ml-[90px]"
-        }`}
-      >
+
+      {/* Scrollable content column */}
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
         <div className={isHome ? "hidden lg:block" : "block"}>
           <AppHeader />
         </div>
-        {/* Spacer to push content below fixed header on desktop */}
-        <div className={`hidden lg:block ${isHome ? "hidden" : "h-[72px]"}`} />
-        <div className={`mx-auto max-w-(--breakpoint-2xl) ${noPaddingOnMobile ? "p-0 lg:p-6" : "p-4 md:p-6"}`}>
+        <div className={`flex-1 mx-auto w-full max-w-(--breakpoint-2xl) ${noPaddingOnMobile ? "p-0 lg:p-6" : "p-4 md:p-6"}`}>
           <Outlet />
         </div>
       </div>
+
       <BottomNavigationBar />
     </div>
   );
