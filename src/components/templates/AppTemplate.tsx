@@ -27,6 +27,8 @@ const LayoutContent: React.FC = () => {
         <div className={isHome ? "hidden lg:block" : "block"}>
           <AppHeader />
         </div>
+        {/* Spacer to push content below fixed header on desktop */}
+        <div className={`hidden lg:block ${isHome ? "hidden" : "h-[72px]"}`} />
         <div className={`mx-auto max-w-(--breakpoint-2xl) ${noPaddingOnMobile ? "p-0 lg:p-6" : "p-4 md:p-6"}`}>
           <Outlet />
         </div>
