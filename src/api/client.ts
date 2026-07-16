@@ -128,12 +128,13 @@ apiClient.interceptors.response.use(
 
       const { refreshToken, logout, setAccessToken } = useAuthStore.getState();
 
-      if (!refreshToken) {
-        logout();
-        return Promise.reject(error);
-      }
-
       try {
+        if (!refreshToken) {
+          logout();
+          processQueue(error, null);
+          return Promise.reject(error);
+        }
+
         // Attempt to refresh token
         const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
           refreshToken,
@@ -142,11 +143,11 @@ apiClient.interceptors.response.use(
         // Handle possible wrapping in refresh response too
         const responseData = response.data.data !== undefined ? response.data.data : response.data;
         const { accessToken: newAccessToken } = responseData;
-        
+
         setAccessToken(newAccessToken);
-        
+
         processQueue(null, newAccessToken);
-        
+
         if (originalRequest.headers) {
           originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         }
