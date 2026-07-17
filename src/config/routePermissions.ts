@@ -45,7 +45,7 @@ export const routePermissions: RoutePermission[] = [
   { path: '/academic/classes/:classId/manage', allowedRoles: ['admin', 'teacher', 'staff'] },
   { path: '/academic/curriculum', allowedRoles: ['admin', 'teacher', 'staff'] },
   { path: '/academic/curriculum-wizard', allowedRoles: ['admin', 'staff'] },
-  { path: '/academic/schedules', allowedRoles: ['admin', 'teacher', 'staff'] },
+  { path: '/academic/schedules', allowedRoles: ['super admin', 'superadmin'] },
   { path: '/academic/schedule-overrides', allowedRoles: ['admin', 'staff'] },
   { path: '/academic/enrollments', allowedRoles: ['admin', 'staff'] },
   { path: '/academic/education-levels', allowedRoles: ['admin', 'staff'] },
@@ -76,8 +76,11 @@ export const routePermissions: RoutePermission[] = [
   { path: '/identity/resolutions', allowedRoles: ['super admin', 'superadmin'] },
   { path: '/identity/capabilities', allowedRoles: ['super admin', 'superadmin'] },
 
-  // Leave Requests - Everyone except parents
-  { path: '/leaves/requests', allowedRoles: ['admin', 'teacher', 'student', 'staff'] },
+  // Leave Requests, Gate Passes, Reimbursements - Super Admin only
+  { path: '/leaves/requests', allowedRoles: ['super admin', 'superadmin'] },
+  { path: '/leaves/types', allowedRoles: ['super admin', 'superadmin'] },
+  { path: '/gate-passes', allowedRoles: ['super admin', 'superadmin'] },
+  { path: '/reimbursements', allowedRoles: ['super admin', 'superadmin'] },
 
   // Events - Most users
   { path: '/events', allowedRoles: ['admin', 'teacher', 'student', 'staff', 'piket', 'security'] },

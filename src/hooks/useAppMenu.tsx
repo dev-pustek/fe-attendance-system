@@ -211,8 +211,10 @@ export const useAppMenu = () => {
         scheduleSubItems.push({ name: "Tugas Mengajar", path: "/academic/teaching-assignments" });
       }
 
-      // Both teachers and academic admins can view class schedules
-      scheduleSubItems.push({ name: "Jadwal Kelas", path: "/academic/schedules" });
+      // Class schedule ("Jadwal Kelas") — super admin only per request
+      if (isSuperAdmin) {
+        scheduleSubItems.push({ name: "Jadwal Kelas", path: "/academic/schedules" });
+      }
 
       // Work schedules (shift calendar) — visible to teachers and academic admins
       scheduleSubItems.push({ name: "Jadwal Kerja", path: "/schedules" });
@@ -258,7 +260,8 @@ export const useAppMenu = () => {
       hrItems.push({ icon: <DocsIcon />, name: "Cuti Siswa", path: "/student/leaves" });
     }
 
-    if (isKaryawan || isGuru || isHR) {
+    // Cuti, Izin Keluar, Klaim Biaya — super admin only per request
+    if (isSuperAdmin) {
       hrItems.push({
         icon: <DocsIcon />,
         name: "Cuti",
@@ -266,10 +269,6 @@ export const useAppMenu = () => {
           { name: "Pengajuan Cuti", path: "/leaves/requests" },
         ],
       });
-    }
-
-    // HR-only features
-    if (isHR) {
       hrItems.push({
         icon: <DocsIcon />,
         name: "Izin Keluar",
@@ -323,8 +322,8 @@ export const useAppMenu = () => {
       adminItems.push({ icon: <CalenderIcon />, name: "Tahun Ajaran", path: "/academic/years" });
     }
 
-    // Leave types: HR only
-    if (isHR) {
+    // Leave types: super admin only per request
+    if (isSuperAdmin) {
       adminItems.push({ icon: <TableIcon />, name: "Tipe Cuti", path: "/leaves/types" });
     }
 
@@ -358,10 +357,10 @@ export const useAppMenu = () => {
         icon: <LockIcon />,
         name: "Akses Pengguna",
         subItems: [
-          /* { name: "Direktori Pengguna", path: "/users/list" }, */
+          { name: "Direktori Pengguna", path: "/users/list" },
           { name: "Peran Akses", path: "/roles" },
           { name: "Tipe Pengguna", path: "/users/user-types" },
-          /* { name: "Kredensial", path: "/identity/credentials" }, */
+          { name: "Kredensial", path: "/identity/credentials" },
         ],
       });
       adminItems.push({
@@ -381,7 +380,7 @@ export const useAppMenu = () => {
         subItems: [
           { name: "Metrik Sistem", path: "/audit/metrics" },
           { name: "Log Audit", path: "/audit/logs" },
-          /* { name: "Log Identitas", path: "/identity/logs" }, */
+          { name: "Log Identitas", path: "/identity/logs" },
           { name: "Cadangan", path: "/settings/backups" },
         ],
       });
