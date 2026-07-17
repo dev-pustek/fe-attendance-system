@@ -33,7 +33,7 @@ const WorkSchedules: React.FC = () => {
 
         return {
             id: assignment.id,
-            title: `${assignment.user?.name || 'User'} - ${template.name}`,
+            title: `${assignment.user?.name || 'Pengguna'} - ${template.name}`,
             startRecur: assignment.effectiveFrom.split('T')[0],
             endRecur: assignment.effectiveTo ? assignment.effectiveTo.split('T')[0] : undefined,
             startTime: template.startTime,
@@ -82,14 +82,14 @@ const WorkSchedules: React.FC = () => {
 
   return (
     <>
-      <PageMeta title="Work Schedules | Attendance" description="Calendar view of shift assignments." />
-      <PageBreadcrumb pageTitle="Work Schedules" />
+      <PageMeta title="Jadwal Kerja | Kehadiran" description="Tampilan kalender penugasan shift." />
+      <PageBreadcrumb pageTitle="Jadwal Kerja" />
 
       <div className="space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
              <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Work Schedules</h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">View and manage shift schedules in a calendar.</p>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Jadwal Kerja</h1>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Lihat dan kelola jadwal shift dalam tampilan kalender.</p>
              </div>
         </div>
 
@@ -104,7 +104,7 @@ const WorkSchedules: React.FC = () => {
                 onEventClick={handleEventClick}
                 customButtons={{
                     addEventButton: {
-                        text: "Assign Shift +",
+                        text: "Tambah Shift +",
                         click: () => {
                             setSelectedAssignment(null);
                             setSelectedDate(undefined);

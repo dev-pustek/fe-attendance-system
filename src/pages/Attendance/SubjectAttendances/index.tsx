@@ -79,31 +79,31 @@ const statusMeta: Record<
   { label: string; color: "success" | "warning" | "error" | "info" | "primary"; bg: string; text: string }
 > = {
   present: {
-    label: "Present",
+    label: "Hadir",
     color: "success",
     bg: "bg-emerald-50 dark:bg-emerald-500/10",
     text: "text-emerald-600 dark:text-emerald-400",
   },
   late: {
-    label: "Late",
+    label: "Terlambat",
     color: "warning",
     bg: "bg-orange-50 dark:bg-orange-500/10",
     text: "text-orange-600 dark:text-orange-400",
   },
   absent: {
-    label: "Absent",
+    label: "Tidak Hadir",
     color: "error",
     bg: "bg-red-50 dark:bg-red-500/10",
     text: "text-red-600 dark:text-red-400",
   },
   excused: {
-    label: "Excused",
+    label: "Izin",
     color: "info",
     bg: "bg-blue-50 dark:bg-blue-500/10",
     text: "text-blue-600 dark:text-blue-400",
   },
   sick: {
-    label: "Sick",
+    label: "Sakit",
     color: "primary",
     bg: "bg-purple-50 dark:bg-purple-500/10",
     text: "text-purple-600 dark:text-purple-400",
@@ -132,7 +132,7 @@ const RowActionMenu = ({ onEdit, onDelete }: { onEdit: () => void; onDelete: () 
                   }}
                   className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/[0.04]"
               >
-                  <PencilIcon className="size-3.5" /> Edit
+                  <PencilIcon className="size-3.5" /> Ubah
               </DropdownItem>
               <DropdownItem
                   onClick={() => {
@@ -141,7 +141,7 @@ const RowActionMenu = ({ onEdit, onDelete }: { onEdit: () => void; onDelete: () 
                   }}
                   className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/10"
               >
-                  <TrashBinIcon className="size-3.5" /> Delete
+                  <TrashBinIcon className="size-3.5" /> Hapus
               </DropdownItem>
           </Dropdown>
       </div>
@@ -185,7 +185,7 @@ const InlineStatusBadge: React.FC<{
     <button
       onClick={onCycle}
       disabled={loading}
-      title="Click to change status"
+      title="Klik untuk mengubah status"
       className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border border-transparent transition-all hover:scale-105 active:scale-95 cursor-pointer select-none ${meta.bg} ${meta.text} ${loading ? "opacity-50 cursor-not-allowed" : "hover:border-current/30"}`}
     >
       {loading ? (
@@ -367,11 +367,11 @@ const SubjectAttendances: React.FC = () => {
     return apiOptions.length > 0
       ? apiOptions
       : [
-          { label: "Present", value: "present" },
-          { label: "Absent", value: "absent" },
-          { label: "Late", value: "late" },
-          { label: "Excused", value: "excused" },
-          { label: "Sick", value: "sick" },
+          { label: "Hadir", value: "present" },
+          { label: "Tidak Hadir", value: "absent" },
+          { label: "Terlambat", value: "late" },
+          { label: "Izin", value: "excused" },
+          { label: "Sakit", value: "sick" },
         ];
   }, [statusesRes]);
 
@@ -426,7 +426,7 @@ const SubjectAttendances: React.FC = () => {
         .then((res) => {
           setReportSubjectOptions(
             res.data.map((cs) => ({
-              label: cs.subject?.name || "Unknown",
+              label: cs.subject?.name || "Tidak Diketahui",
               value: String(cs.subjectId),
             }))
           );
@@ -455,7 +455,7 @@ const SubjectAttendances: React.FC = () => {
       const students = await profilesService.getStudents({ search: term, limit: 10 });
       setStudentOptions(
         students.data.map((s) => ({
-          label: s.user?.name || "Unknown",
+          label: s.user?.name || "Tidak Diketahui",
           value: s.user?.public_id || "",
           subLabel: s.user?.studentProfile?.nis || s.studentId || s.nis || "",
         }))
@@ -583,7 +583,7 @@ const SubjectAttendances: React.FC = () => {
         data: { status: nextStatus } as UpdateSubjectAttendanceDto,
       });
     } catch (e) {
-      showError("Failed to update status");
+      showError("Gagal memperbarui status");
     } finally {
       setCyclingId(null);
     }
@@ -601,7 +601,7 @@ const SubjectAttendances: React.FC = () => {
       });
       if (record.student) {
         setStudentOptions([{
-          label: record.student.name || "Unknown",
+          label: record.student.name || "Tidak Diketahui",
           value: record.student.public_id || "",
           subLabel: record.student.email,
         }]);
@@ -629,41 +629,41 @@ const SubjectAttendances: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.teachingSessionId || !formData.studentId || !formData.status) {
-      showError("Please fill in all required fields");
+      showError("Harap isi semua kolom yang wajib diisi");
       return;
     }
     const confirmed = await confirm({
       variant: selectedAttendance ? "update" : "create",
-      title: selectedAttendance ? "Update Attendance" : "Record Attendance",
-      message: `Are you sure you want to ${selectedAttendance ? "update" : "record"} this attendance?`,
+      title: selectedAttendance ? "Perbarui Kehadiran" : "Catat Kehadiran",
+      message: `Apakah Anda yakin ingin ${selectedAttendance ? "memperbarui" : "mencatat"} kehadiran ini?`,
     });
     if (!confirmed) return;
     try {
       if (selectedAttendance) {
         await updateMutation.mutateAsync({ id: selectedAttendance.id, data: formData as UpdateSubjectAttendanceDto });
-        showSuccess("Attendance updated successfully!");
+        showSuccess("Kehadiran berhasil diperbarui!");
       } else {
         await createMutation.mutateAsync(formData);
-        showSuccess("Attendance recorded successfully!");
+        showSuccess("Kehadiran berhasil dicatat!");
       }
       setIsModalOpen(false);
     } catch (error) {
-      showError(error, "Failed to save attendance");
+      showError(error, "Gagal menyimpan kehadiran");
     }
   };
 
   const handleDelete = async (id: number | string) => {
     const confirmed = await confirm({
       variant: "delete",
-      title: "Delete Attendance",
-      message: "Are you sure you want to delete this attendance record?",
+      title: "Hapus Kehadiran",
+      message: "Apakah Anda yakin ingin menghapus data kehadiran ini?",
     });
     if (confirmed) {
       try {
         await deleteMutation.mutateAsync(id);
-        showSuccess("Attendance deleted successfully!");
+        showSuccess("Kehadiran berhasil dihapus!");
       } catch (error) {
-        showError(error, "Failed to delete attendance");
+        showError(error, "Gagal menghapus kehadiran");
       }
     }
   };
@@ -671,7 +671,7 @@ const SubjectAttendances: React.FC = () => {
   // ─── Bulk modal ────────────────────────────────────────────────────────────
   const handleOpenBulkModal = async () => {
     if (!sessionIdFilter) {
-      showError("Please select a Teaching Session filter first.");
+      showError("Harap pilih filter Sesi Mengajar terlebih dahulu.");
       return;
     }
     setIsBulkModalOpen(true);
@@ -693,7 +693,7 @@ const SubjectAttendances: React.FC = () => {
       );
       setSelectedBulkStudents(allIds);
     } catch (e) {
-      showError("Failed to load students for bulk attendance.");
+      showError("Gagal memuat siswa untuk kehadiran massal.");
     } finally {
       setIsLoadingBulk(false);
     }
@@ -703,8 +703,8 @@ const SubjectAttendances: React.FC = () => {
     if (!sessionIdFilter || selectedBulkStudents.size === 0) return;
     const confirmed = await confirm({
       variant: "create",
-      title: "Confirm Bulk Attendance",
-      message: `Record attendance for ${selectedBulkStudents.size} students?`,
+      title: "Konfirmasi Kehadiran Massal",
+      message: `Catat kehadiran untuk ${selectedBulkStudents.size} siswa?`,
     });
     if (!confirmed) return;
     try {
@@ -714,10 +714,10 @@ const SubjectAttendances: React.FC = () => {
         remarks: bulkRemarks[studentId] || undefined,
       }));
       await bulkMutation.mutateAsync({ teachingSessionId: sessionIdFilter, records });
-      showSuccess(`Recorded attendance for ${selectedBulkStudents.size} students.`);
+      showSuccess(`Kehadiran untuk ${selectedBulkStudents.size} siswa berhasil dicatat.`);
       setIsBulkModalOpen(false);
     } catch (e) {
-      showError("Some records failed to save. Please check.");
+      showError("Beberapa data gagal disimpan. Harap periksa kembali.");
     }
   };
 
@@ -725,7 +725,7 @@ const SubjectAttendances: React.FC = () => {
   const handleDownloadReport = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!reportParams.classId || !reportParams.startDate || !reportParams.endDate) {
-      showError("Please fill in all required fields");
+      showError("Harap isi semua kolom yang wajib diisi");
       return;
     }
     try {
@@ -744,9 +744,9 @@ const SubjectAttendances: React.FC = () => {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
       setIsReportModalOpen(false);
-      showSuccess("Report downloaded successfully");
+      showSuccess("Laporan berhasil diunduh");
     } catch (error) {
-      showError("Failed to download report");
+      showError("Gagal mengunduh laporan");
     }
   };
 
@@ -766,10 +766,10 @@ const SubjectAttendances: React.FC = () => {
   return (
     <>
       <PageMeta
-        title="Subject Attendance | SIAPUS"
-        description="Record and manage student presence for each teaching session."
+        title="Kehadiran Mata Pelajaran | SIAPUS"
+        description="Catat dan kelola kehadiran siswa untuk setiap sesi mengajar."
       />
-      <PageBreadcrumb pageTitle="Subject Attendance" />
+      <PageBreadcrumb pageTitle="Kehadiran Mata Pelajaran" />
 
       <div className="space-y-6">
         {/* ── Header (Desktop Only) ── */}
@@ -780,10 +780,10 @@ const SubjectAttendances: React.FC = () => {
             </div>
             <div>
               <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                Subject Attendance
+                Kehadiran Mata Pelajaran
               </h1>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                Track student attendance for each subject session.
+                Pantau kehadiran siswa untuk setiap sesi mata pelajaran.
               </p>
             </div>
           </div>
@@ -816,14 +816,14 @@ const SubjectAttendances: React.FC = () => {
                 startIcon={<GroupIcon className="size-4" />}
                 onClick={handleOpenBulkModal}
               >
-                Bulk Record
+                Catat Massal
               </Button>
             )}
             <button
               onClick={() => handleOpenModal()}
               className="hidden sm:flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-brand-500/25 transition-all hover:bg-brand-600 active:scale-[.98]"
             >
-              <PlusIcon className="fill-white size-4" /> Record Attendance
+              <PlusIcon className="fill-white size-4" /> Catat Kehadiran
             </button>
           </div>
         </div>
@@ -832,7 +832,7 @@ const SubjectAttendances: React.FC = () => {
         {isMobile && (
           <MobileFloatingActions
             onAdd={() => handleOpenModal()}
-            addAriaLabel="Record Attendance"
+            addAriaLabel="Catat Kehadiran"
             dataActionsProps={{
               onExportPdf: () => {
                 const params: any = {};
@@ -846,7 +846,7 @@ const SubjectAttendances: React.FC = () => {
                 <button
                   onClick={handleOpenBulkModal}
                   className="flex size-12 items-center justify-center rounded-full bg-white text-gray-700 shadow-lg border border-gray-100 transition-transform active:scale-95"
-                  aria-label="Bulk Update Attendance"
+                  aria-label="Perbarui Kehadiran Massal"
                 >
                   <GroupIcon className="size-5" />
                 </button>
@@ -859,28 +859,28 @@ const SubjectAttendances: React.FC = () => {
         {attendances.length > 0 && (
           <div className="flex flex-wrap gap-3">
             <StatPill
-              label="Present"
+              label="Hadir"
               value={stats.present}
               total={stats.total}
               colorClass="text-emerald-600 dark:text-emerald-400"
               bgClass="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20"
             />
             <StatPill
-              label="Late"
+              label="Terlambat"
               value={stats.late}
               total={stats.total}
               colorClass="text-orange-600 dark:text-orange-400"
               bgClass="bg-orange-50 dark:bg-orange-500/10 border border-orange-100 dark:border-orange-500/20"
             />
             <StatPill
-              label="Absent"
+              label="Tidak Hadir"
               value={stats.absent}
               total={stats.total}
               colorClass="text-red-600 dark:text-red-400"
               bgClass="bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20"
             />
             <StatPill
-              label="Excused / Sick"
+              label="Izin / Sakit"
               value={stats.excused}
               total={stats.total}
               colorClass="text-blue-600 dark:text-blue-400"
@@ -890,9 +890,9 @@ const SubjectAttendances: React.FC = () => {
               <div className="text-2xl font-extrabold leading-none tabular-nums text-gray-800 dark:text-white">
                 {stats.total}
               </div>
-              <div className="text-xs font-semibold text-gray-400 mt-1">Total Recorded</div>
+              <div className="text-xs font-semibold text-gray-400 mt-1">Total Tercatat</div>
               <div className="mt-2 text-[10px] font-bold text-gray-400">
-                {total > stats.total ? `of ${total} in DB` : "this page"}
+                {total > stats.total ? `dari ${total} di DB` : "halaman ini"}
               </div>
             </div>
           </div>
@@ -929,35 +929,35 @@ const SubjectAttendances: React.FC = () => {
                       
                       <div className="grid grid-cols-1 gap-5 mb-5 sm:grid-cols-3">
                           <div className="space-y-1.5">
-                            <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Academic Year</Label>
+                            <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Tahun Ajaran</Label>
                             <CustomSelect
                                 value={academicYearIdFilter}
                                 onChange={(val) => { setAcademicYearIdFilter(String(val)); setPage(1); }}
                                 onClear={() => { setAcademicYearIdFilter(""); setPage(1); }}
-                                placeholder="All Academic Years"
-                                options={[{ label: "All Academic Years", value: "" }, ...academicYearOptions]}
+                                placeholder="Semua Tahun Ajaran"
+                                options={[{ label: "Semua Tahun Ajaran", value: "" }, ...academicYearOptions]}
                                 className="w-full [&>button]:w-full [&>button]:h-11 [&>button]:text-sm [&>button]:rounded-xl"
                             />
                           </div>
                           <div className="space-y-1.5">
-                            <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Class</Label>
+                            <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Kelas</Label>
                             <CustomSelect
                                 value={classIdFilter}
                                 onChange={(val) => { setClassIdFilter(String(val)); setPage(1); }}
                                 onClear={() => { setClassIdFilter(""); setPage(1); }}
-                                placeholder="All Classes"
-                                options={[{ label: "All Classes", value: "" }, ...uniqueClasses]}
+                                placeholder="Semua Kelas"
+                                options={[{ label: "Semua Kelas", value: "" }, ...uniqueClasses]}
                                 className="w-full [&>button]:w-full [&>button]:h-11 [&>button]:text-sm [&>button]:rounded-xl"
                             />
                           </div>
                           <div className="space-y-1.5">
-                            <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Subject</Label>
+                            <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Mata Pelajaran</Label>
                             <CustomSelect
                                 value={subjectIdFilter}
                                 onChange={(val) => { setSubjectIdFilter(String(val)); setPage(1); }}
                                 onClear={() => { setSubjectIdFilter(""); setPage(1); }}
-                                placeholder="All Subjects"
-                                options={[{ label: "All Subjects", value: "" }, ...uniqueSubjects]}
+                                placeholder="Semua Mata Pelajaran"
+                                options={[{ label: "Semua Mata Pelajaran", value: "" }, ...uniqueSubjects]}
                                 className="w-full [&>button]:w-full [&>button]:h-11 [&>button]:text-sm [&>button]:rounded-xl"
                             />
                           </div>
@@ -970,52 +970,52 @@ const SubjectAttendances: React.FC = () => {
                                   value={statusFilter === "all" ? "" : statusFilter}
                                   onChange={(val) => { setStatusFilter(val ? String(val) : "all"); setPage(1); }}
                                   onClear={() => { setStatusFilter("all"); setPage(1); }}
-                                  placeholder="All Status"
+                                  placeholder="Semua Status"
                                   options={[
-                                    { label: "Present", value: "present" },
-                                    { label: "Absent", value: "absent" },
-                                    { label: "Late", value: "late" },
-                                    { label: "Excused", value: "excused" },
-                                    { label: "Sick", value: "sick" }
+                                    { label: "Hadir", value: "present" },
+                                    { label: "Tidak Hadir", value: "absent" },
+                                    { label: "Terlambat", value: "late" },
+                                    { label: "Izin", value: "excused" },
+                                    { label: "Sakit", value: "sick" }
                                   ]}
                                   className="w-full [&>button]:w-full [&>button]:h-11 [&>button]:text-sm [&>button]:rounded-xl"
                               />
                           </div>
-                          
+
                           <div className="space-y-1.5">
-                            <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Student</Label>
+                            <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Siswa</Label>
                             <SearchableAsyncSelect
-                              placeholder="Search…"
+                              placeholder="Cari…"
                               value={studentIdFilter}
                               onChange={(val) => { setStudentIdFilter(String(val)); setPage(1); }}
                               onSearch={searchStudents}
-                              options={[{ label: "All Students", value: "" }, ...studentOptions]}
+                              options={[{ label: "Semua Siswa", value: "" }, ...studentOptions]}
                               isLoading={isSearchingStudents}
                             />
                           </div>
 
                           <div className="space-y-1.5">
-                            <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Date From</Label>
+                            <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Dari Tanggal</Label>
                             <VisiaDatePicker
                               value={dateFrom}
                               onChange={(d) => { setDateFrom(d); setPage(1); }}
-                              placeholder="Start date"
+                              placeholder="Tanggal mulai"
                             />
                           </div>
 
                           <div className="space-y-1.5">
-                            <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Date To</Label>
+                            <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Sampai Tanggal</Label>
                             <VisiaDatePicker
                               value={dateTo}
                               onChange={(d) => { setDateTo(d); setPage(1); }}
-                              placeholder="End date"
+                              placeholder="Tanggal selesai"
                             />
                           </div>
                       </div>
-                      
+
                       <div className="grid grid-cols-1 gap-5 items-end md:grid-cols-3">
                           <div className="md:col-span-2 space-y-1.5">
-                              <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Search</Label>
+                              <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Cari</Label>
                               <div className="relative">
                                   <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
                                   <input
@@ -1079,7 +1079,7 @@ const SubjectAttendances: React.FC = () => {
               <div className="flex items-center gap-3 px-1">
                 <Checkbox checked={selectedRowIds.size === attendances.length} onChange={toggleAllRows} />
                 <span className="text-xs text-gray-500 dark:text-gray-400">
-                  {selectedRowIds.size > 0 ? `${selectedRowIds.size} selected` : "Select all"}
+                  {selectedRowIds.size > 0 ? `${selectedRowIds.size} terpilih` : "Pilih semua"}
                 </span>
               </div>
             )}
@@ -1094,9 +1094,9 @@ const SubjectAttendances: React.FC = () => {
                     <CheckCircleIcon className="size-6 opacity-30" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">No records found</p>
+                    <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">Tidak ada catatan ditemukan</p>
                     <p className="text-xs text-gray-400 mt-0.5">
-                      {sessionIdFilter ? "No attendance recorded for this session yet." : "Select a session or adjust filters."}
+                      {sessionIdFilter ? "Belum ada kehadiran tercatat untuk sesi ini." : "Pilih sesi atau sesuaikan filter."}
                     </p>
                   </div>
                   <button
@@ -1104,7 +1104,7 @@ const SubjectAttendances: React.FC = () => {
                     className="mt-1 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600 transition-colors shadow-lg shadow-brand-500/20"
                   >
                     <PlusIcon className="size-3.5" />
-                    Record First Attendance
+                    Catat Kehadiran Pertama
                   </button>
                 </div>
               </div>
@@ -1129,7 +1129,7 @@ const SubjectAttendances: React.FC = () => {
                 <div className="size-5 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
               )}
               {!hasNextPage && (infiniteData?.pages.flatMap(p => p.data).length || 0) > 0 && (
-                <p className="text-xs text-gray-400">All records loaded</p>
+                <p className="text-xs text-gray-400">Semua data telah dimuat</p>
               )}
             </div>
           </div>
@@ -1184,9 +1184,9 @@ const SubjectAttendances: React.FC = () => {
                             <CheckCircleIcon className="size-6 opacity-30" />
                           </div>
                           <div>
-                            <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">No records found</p>
+                            <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">Tidak ada catatan ditemukan</p>
                             <p className="text-xs text-gray-400 mt-0.5">
-                              {sessionIdFilter ? "No attendance recorded for this session yet." : "Select a session or adjust filters."}
+                              {sessionIdFilter ? "Belum ada kehadiran tercatat untuk sesi ini." : "Pilih sesi atau sesuaikan filter."}
                             </p>
                           </div>
                           <button
@@ -1194,7 +1194,7 @@ const SubjectAttendances: React.FC = () => {
                             className="mt-1 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600 transition-colors shadow-lg shadow-brand-500/20"
                           >
                             <PlusIcon className="size-3.5" />
-                            Record First Attendance
+                            Catat Kehadiran Pertama
                           </button>
                         </div>
                       </TableCell>
@@ -1248,7 +1248,7 @@ const SubjectAttendances: React.FC = () => {
                             </div>
                             <div className="min-w-0">
                               <p className="font-semibold text-gray-900 dark:text-white text-theme-sm leading-tight truncate max-w-[150px]">
-                                {record.student?.name || "Unknown"}
+                                {record.student?.name || "Tidak Diketahui"}
                               </p>
                               <p className="text-xs text-gray-400 mt-0.5 truncate max-w-[150px]">
                                 {(() => {
@@ -1358,23 +1358,23 @@ const SubjectAttendances: React.FC = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         className="max-w-xl"
-        title={selectedAttendance ? "Update Attendance" : "Record Attendance"}
-        description="Manually record or update a student's attendance for a session."
+        title={selectedAttendance ? "Perbarui Kehadiran" : "Catat Kehadiran"}
+        description="Catat atau perbarui kehadiran siswa untuk suatu sesi secara manual."
         footer={
           <div className="flex justify-end gap-3">
             <button onClick={() => setIsModalOpen(false)} className="rounded-xl px-4 py-2 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.05]">
-              Cancel
+              Batal
             </button>
             <button type="submit" form="subject-attendance-form" className="rounded-xl bg-brand-500 px-6 py-2 text-sm font-medium text-white transition-all hover:bg-brand-600 shadow-lg shadow-brand-500/20">
-              {selectedAttendance ? "Update Record" : "Save Record"}
+              {selectedAttendance ? "Perbarui Catatan" : "Simpan Catatan"}
             </button>
           </div>
         }
       >
         <form id="subject-attendance-form" onSubmit={handleSubmit} className="space-y-4">
           <SearchableAsyncSelect
-            label="Teaching Session"
-            placeholder="Search by date (YYYY-MM-DD)…"
+            label="Sesi Mengajar"
+            placeholder="Cari berdasarkan tanggal (YYYY-MM-DD)…"
             value={formData.teachingSessionId}
             onChange={(val) => setFormData({ ...formData, teachingSessionId: String(val) })}
             onSearch={useCallback(async (term: string) => {
@@ -1403,8 +1403,8 @@ const SubjectAttendances: React.FC = () => {
           />
 
           <SearchableAsyncSelect
-            label="Student"
-            placeholder="Search student…"
+            label="Siswa"
+            placeholder="Cari siswa…"
             value={formData.studentId}
             onChange={(val) => setFormData({ ...formData, studentId: String(val) })}
             onSearch={searchStudents}
@@ -1437,11 +1437,11 @@ const SubjectAttendances: React.FC = () => {
           </div>
 
           <div className="space-y-1.5">
-            <Label>Remarks</Label>
+            <Label>Catatan</Label>
             <textarea
               value={formData.remarks || ""}
               onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
-              placeholder="Reason, notes, etc…"
+              placeholder="Alasan, catatan, dll…"
               className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none transition-all focus:border-brand-500 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-white resize-none h-20"
             />
           </div>
@@ -1455,44 +1455,44 @@ const SubjectAttendances: React.FC = () => {
         isOpen={isReportModalOpen}
         onClose={() => setIsReportModalOpen(false)}
         className="max-w-md"
-        title="Download Attendance Report"
-        description="Generate and download a subject attendance PDF report."
+        title="Unduh Laporan Kehadiran"
+        description="Buat dan unduh laporan PDF kehadiran mata pelajaran."
         footer={
           <div className="flex justify-end gap-3">
             <button onClick={() => setIsReportModalOpen(false)} className="rounded-xl px-4 py-2 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.05]">
-              Cancel
+              Batal
             </button>
             <button type="submit" form="report-form" className="rounded-xl bg-brand-500 px-6 py-2 text-sm font-medium text-white transition-all hover:bg-brand-600 shadow-lg shadow-brand-500/20">
-              Download PDF
+              Unduh PDF
             </button>
           </div>
         }
       >
         <form id="report-form" onSubmit={handleDownloadReport} className="space-y-4">
           <CustomSelect
-            label="Class"
-            placeholder="Select Class…"
+            label="Kelas"
+            placeholder="Pilih Kelas…"
             value={reportParams.classId}
             onChange={(val) => setReportParams({ ...reportParams, classId: String(val) })}
             options={classOptions}
           />
           <CustomSelect
-            label="Subject"
-            placeholder={reportParams.classId ? "All Subjects" : "Select Class first…"}
+            label="Mata Pelajaran"
+            placeholder={reportParams.classId ? "Semua Mata Pelajaran" : "Pilih Kelas terlebih dahulu…"}
             value={reportParams.subjectId}
             onChange={(val) => setReportParams({ ...reportParams, subjectId: String(val) })}
-            options={[{ label: "All Subjects", value: "" }, ...reportSubjectOptions]}
+            options={[{ label: "Semua Mata Pelajaran", value: "" }, ...reportSubjectOptions]}
             disabled={!reportParams.classId}
           />
           <div className="grid grid-cols-2 gap-4">
             <VisiaDatePicker
-              label="Start Date"
+              label="Tanggal Mulai"
               value={reportParams.startDate}
               onChange={(val: string) => setReportParams({ ...reportParams, startDate: val })}
               required
             />
             <VisiaDatePicker
-              label="End Date"
+              label="Tanggal Selesai"
               value={reportParams.endDate}
               onChange={(val: string) => setReportParams({ ...reportParams, endDate: val })}
               required
@@ -1508,32 +1508,32 @@ const SubjectAttendances: React.FC = () => {
         isOpen={isBulkModalOpen}
         onClose={() => setIsBulkModalOpen(false)}
         className="max-w-4xl"
-        title="Bulk Record Attendance"
-        description="Record attendance for all students in this class at once."
+        title="Catat Kehadiran Massal"
+        description="Catat kehadiran seluruh siswa di kelas ini sekaligus."
         subHeader={
           <div className="flex flex-col gap-3 px-6 py-4 bg-gray-50/50 dark:bg-white/[0.02] border-b border-gray-100 dark:border-white/5">
             {/* Stats row */}
             {bulkStudents.length > 0 && (
               <div className="flex items-center gap-4 text-xs">
                 <span className="font-bold text-gray-600 dark:text-gray-300">
-                  {selectedBulkStudents.size} / {bulkStudents.length} selected
+                  {selectedBulkStudents.size} / {bulkStudents.length} terpilih
                 </span>
                 <span className="text-gray-400">·</span>
                 <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
-                  {Array.from(selectedBulkStudents).filter((id) => (bulkStatuses[id] || defaultBulkStatus) === "present").length} Present
+                  {Array.from(selectedBulkStudents).filter((id) => (bulkStatuses[id] || defaultBulkStatus) === "present").length} Hadir
                 </span>
                 <span className="text-orange-500 font-semibold">
-                  {Array.from(selectedBulkStudents).filter((id) => (bulkStatuses[id] || defaultBulkStatus) === "late").length} Late
+                  {Array.from(selectedBulkStudents).filter((id) => (bulkStatuses[id] || defaultBulkStatus) === "late").length} Terlambat
                 </span>
                 <span className="text-red-500 font-semibold">
-                  {Array.from(selectedBulkStudents).filter((id) => (bulkStatuses[id] || defaultBulkStatus) === "absent").length} Absent
+                  {Array.from(selectedBulkStudents).filter((id) => (bulkStatuses[id] || defaultBulkStatus) === "absent").length} Tidak Hadir
                 </span>
               </div>
             )}
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <Checkbox
-                  label="Select All"
+                  label="Pilih Semua"
                   checked={bulkStudents.length > 0 && selectedBulkStudents.size === bulkStudents.length}
                   onChange={(c) => {
                     if (c) setSelectedBulkStudents(new Set(bulkStudents.map((s) => s.user?.public_id).filter(Boolean) as string[]));
@@ -1547,13 +1547,13 @@ const SubjectAttendances: React.FC = () => {
                   <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-gray-400 pointer-events-none" />
                   <input
                     type="text"
-                    placeholder="Filter students…"
+                    placeholder="Cari siswa…"
                     value={bulkSearch}
                     onChange={(e) => setBulkSearch(e.target.value)}
                     className="h-8 pl-8 pr-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm outline-none focus:border-brand-500 dark:text-white w-40"
                   />
                 </div>
-                <span className="text-xs text-gray-400 whitespace-nowrap">Set all to:</span>
+                <span className="text-xs text-gray-400 whitespace-nowrap">Atur semua ke:</span>
                 <div className="relative">
                   <select
                     value={defaultBulkStatus}
@@ -1578,11 +1578,11 @@ const SubjectAttendances: React.FC = () => {
         footer={
           <div className="flex justify-between items-center">
             <span className="text-xs text-gray-400">
-              {selectedBulkStudents.size} students will be recorded
+              {selectedBulkStudents.size} siswa akan dicatat
             </span>
             <div className="flex gap-3">
               <button onClick={() => setIsBulkModalOpen(false)} className="rounded-xl px-4 py-2 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.05]">
-                Cancel
+                Batal
               </button>
               <button
                 onClick={handleBulkSubmit}
@@ -1590,7 +1590,7 @@ const SubjectAttendances: React.FC = () => {
                 className="rounded-xl bg-brand-500 px-6 py-2 text-sm font-medium text-white transition-all hover:bg-brand-600 shadow-lg shadow-brand-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {bulkMutation.isPending && <span className="size-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
-                Save {selectedBulkStudents.size} Records
+                Simpan {selectedBulkStudents.size} Catatan
               </button>
             </div>
           </div>
@@ -1603,7 +1603,7 @@ const SubjectAttendances: React.FC = () => {
             </div>
           ) : filteredBulkStudents.length === 0 ? (
             <p className="text-center py-12 text-sm text-gray-500">
-              {bulkStudents.length === 0 ? "No students found for this class." : "No students match your search."}
+              {bulkStudents.length === 0 ? "Tidak ada siswa ditemukan untuk kelas ini." : "Tidak ada siswa yang cocok dengan pencarian Anda."}
             </p>
           ) : (
             <div className="rounded-xl border border-gray-100 dark:border-white/5 overflow-hidden">
@@ -1611,9 +1611,9 @@ const SubjectAttendances: React.FC = () => {
                 <thead className="bg-gray-50 dark:bg-white/5 border-b border-gray-100 dark:border-white/5 sticky top-0 z-10">
                   <tr>
                     <th className="p-3 w-10" />
-                    <th className="p-3 font-semibold text-xs text-gray-500 uppercase tracking-wider">Student</th>
+                    <th className="p-3 font-semibold text-xs text-gray-500 uppercase tracking-wider">Siswa</th>
                     <th className="p-3 font-semibold text-xs text-gray-500 uppercase tracking-wider w-36">Status</th>
-                    <th className="p-3 font-semibold text-xs text-gray-500 uppercase tracking-wider hidden md:table-cell">Remarks</th>
+                    <th className="p-3 font-semibold text-xs text-gray-500 uppercase tracking-wider hidden md:table-cell">Catatan</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-white/5">
@@ -1674,7 +1674,7 @@ const SubjectAttendances: React.FC = () => {
                         <td className="p-3 hidden md:table-cell">
                           <input
                             type="text"
-                            placeholder="Optional note…"
+                            placeholder="Catatan opsional…"
                             value={bulkRemarks[sid] || ""}
                             onChange={(e) => setBulkRemarks((prev) => ({ ...prev, [sid]: e.target.value }))}
                             disabled={!isSelected}

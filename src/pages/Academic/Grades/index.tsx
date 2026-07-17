@@ -76,9 +76,9 @@ const RowActionMenu = ({ onEdit, onDelete }: { onEdit: () => void; onDelete: () 
 };
 
 const gradeSchema = z.object({
-  code: z.string().min(1, "Code is required"),
-  name: z.string().min(1, "Name is required"),
-  educationLevelId: z.union([z.string(), z.number()]).refine((val) => val !== "", "Education level is required"),
+  code: z.string().min(1, "Kode tingkat wajib diisi"),
+  name: z.string().min(1, "Nama tingkat wajib diisi"),
+  educationLevelId: z.union([z.string(), z.number()]).refine((val) => val !== "", "Tingkat pendidikan wajib dipilih"),
 });
 
 type GradeFormValues = z.infer<typeof gradeSchema>;
@@ -164,22 +164,22 @@ const Grades: React.FC = () => {
 
       if (selectedGrade) {
         await updateMutation.mutateAsync({ id: selectedGrade.id, data: payload as UpdateGradeDto });
-        showSuccess("Grade updated successfully");
+        showSuccess("Tingkat berhasil diubah!");
       } else {
         await createMutation.mutateAsync(payload as CreateGradeDto);
-        showSuccess("Grade created successfully");
+        showSuccess("Tingkat berhasil dibuat!");
       }
       setIsModalOpen(false);
     } catch (error) {
-      showError(error, "Failed to save grade");
+      showError(error, "Gagal menyimpan tingkat");
     }
   };
 
   const handleDelete = async (id: number | string) => {
     const confirmed = await confirm({
       variant: "delete",
-      title: "Delete Grade",
-      message: "Are you sure you want to delete this grade? This action cannot be undone.",
+      title: "Hapus Tingkat",
+      message: "Apakah Anda yakin ingin menghapus tingkat ini? Tindakan ini tidak dapat dibatalkan.",
     });
     if (confirmed) {
       try {
@@ -189,9 +189,9 @@ const Grades: React.FC = () => {
           next.delete(id);
           return next;
         });
-        showSuccess("Grade deleted successfully");
+        showSuccess("Tingkat berhasil dihapus!");
       } catch (error) {
-        showError(error, "Failed to delete grade");
+        showError(error, "Gagal menghapus tingkat");
       }
     }
   };
@@ -200,17 +200,17 @@ const Grades: React.FC = () => {
     if (selectedIds.size === 0) return;
     const confirmed = await confirm({
       variant: "delete",
-      title: "Delete Selected Grades",
-      message: `Are you sure you want to delete ${selectedIds.size} grades? This action cannot be undone.`,
+      title: "Hapus Tingkat Terpilih",
+      message: `Apakah Anda yakin ingin menghapus ${selectedIds.size} tingkat terpilih? Tindakan ini tidak dapat dibatalkan.`,
     });
 
     if (confirmed) {
       try {
         await Promise.all(Array.from(selectedIds).map((id) => deleteMutation.mutateAsync(id)));
         setSelectedIds(new Set());
-        showSuccess(`${selectedIds.size} grades deleted successfully`);
+        showSuccess(`${selectedIds.size} tingkat berhasil dihapus!`);
       } catch (error) {
-        showError(error, "Failed to delete some grades");
+        showError(error, "Gagal menghapus beberapa tingkat");
       }
     }
   };
@@ -263,8 +263,8 @@ const Grades: React.FC = () => {
 
   return (
     <>
-      <PageMeta title="Grade Management | SIAPUS" description="Manage academic grades." />
-      <PageBreadcrumb pageTitle="Grade Management" />
+      <PageMeta title="Manajemen Tingkat | SIAPUS" description="Kelola tingkat akademik." />
+      <PageBreadcrumb pageTitle="Tingkat" />
 
       <div className="space-y-6">
         {/* Header Section */}
@@ -274,8 +274,8 @@ const Grades: React.FC = () => {
               <GradeIcon className="size-5" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">Grade Management</h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">View and manage academic grades.</p>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">Manajemen Tingkat</h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Lihat dan kelola tingkat akademik.</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -284,7 +284,7 @@ const Grades: React.FC = () => {
               className="hidden sm:flex items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-brand-600 shadow-lg shadow-brand-500/20"
             >
               <PlusIcon className="size-5" />
-              Add New Grade
+              Tambah Tingkat
             </button>
           </div>
         </div>
@@ -295,7 +295,7 @@ const Grades: React.FC = () => {
             <button
               onClick={() => handleOpenModal()}
               className="flex size-14 items-center justify-center rounded-full bg-brand-500 text-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] shadow-brand-500/30 transition-transform active:scale-95"
-              aria-label="Add New Grade"
+              aria-label="Tambah Tingkat"
             >
               <PlusIcon className="size-6 fill-white" />
             </button>
@@ -312,11 +312,11 @@ const Grades: React.FC = () => {
               <div className="flex items-center gap-2 mb-1">
                 <FilterIcon className="size-5 text-brand-500" />
                 <h3 className="text-sm font-bold uppercase tracking-wider text-gray-800 dark:text-gray-200">
-                  Search & Filter Grades
+                  Cari & Filter Tingkat
                 </h3>
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                Use the criteria below to filter grades by education level or code.
+                Gunakan kriteria di bawah ini untuk menyaring tingkat berdasarkan tingkat pendidikan atau kode.
               </p>
             </div>
             <div className="shrink-0 ml-4">
@@ -335,19 +335,19 @@ const Grades: React.FC = () => {
                 
                 <div className="grid grid-cols-1 gap-5 items-end sm:grid-cols-2 lg:grid-cols-12">
                   <div className="space-y-1.5 sm:col-span-1 lg:col-span-3">
-                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Education Level</Label>
+                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Tingkat Pendidikan</Label>
                     <CustomSelect
                       value={levelFilter === "all" ? "" : levelFilter}
                       onChange={(val) => { setLevelFilter(val ? String(val) : "all"); setPage(1); }}
                       onClear={() => { setLevelFilter("all"); setPage(1); }}
-                      placeholder="All Levels"
+                      placeholder="Semua Tingkat"
                       options={educationLevels.map(level => ({ label: level.name, value: String(level.id) }))}
                       className="w-full [&>button]:w-full [&>button]:h-11 [&>button]:text-sm [&>button]:rounded-xl"
                     />
                   </div>
 
                   <div className="space-y-1.5 sm:col-span-1 lg:col-span-6">
-                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Search</Label>
+                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Pencarian</Label>
                     <div className="relative">
                       <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
                       <input
@@ -360,7 +360,7 @@ const Grades: React.FC = () => {
                             setPage(1);
                           }
                         }}
-                        placeholder="Search by Code or Name..."
+                        placeholder="Cari berdasarkan Kode atau Nama..."
                         className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-4 text-sm text-gray-900 transition-colors focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-white/[0.08] dark:bg-white/[0.02] dark:text-white dark:focus:border-brand-400 dark:focus:ring-brand-400"
                       />
                     </div>
@@ -375,7 +375,7 @@ const Grades: React.FC = () => {
                       }}
                       className="flex h-11 flex-1 items-center justify-center rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 dark:border-white/[0.08] dark:bg-transparent dark:text-gray-300 dark:hover:bg-white/[0.05]"
                     >
-                      Reset
+                      Atur Ulang
                     </button>
                     <button
                       onClick={() => {
@@ -385,7 +385,7 @@ const Grades: React.FC = () => {
                       className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 text-sm font-semibold text-white transition-all hover:bg-brand-600"
                     >
                       <SearchIcon className="size-4" />
-                      Search
+                      Cari
                     </button>
                   </div>
                 </div>
@@ -401,7 +401,7 @@ const Grades: React.FC = () => {
             onClearSelection={() => setSelectedIds(new Set())}
             bulkActions={[
               {
-                label: "Delete Selected",
+                label: "Hapus Terpilih",
                 icon: <TrashBinIcon className="size-4" />,
                 onClick: handleBulkDelete,
                 variant: "danger"
@@ -421,7 +421,7 @@ const Grades: React.FC = () => {
                 <div className="mb-2 rounded-full bg-gray-50 p-3 dark:bg-white/5">
                   <GradeIcon className="size-6 opacity-20" />
                 </div>
-                <p>No grades found</p>
+                <p>Tidak ada tingkat yang ditemukan</p>
               </div>
             ) : (
               <>
@@ -431,7 +431,7 @@ const Grades: React.FC = () => {
                     onChange={(e) => handleSelectAll(e.target.checked)} 
                   />
                   <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">
-                    {selectedIds.size > 0 ? `${selectedIds.size} selected` : "Select all"}
+                    {selectedIds.size > 0 ? `${selectedIds.size} terpilih` : "Pilih semua"}
                   </span>
                 </div>
                 {grades.map((grade: Grade) => (
@@ -466,16 +466,16 @@ const Grades: React.FC = () => {
                       />
                     </TableCell>
                     <TableCell isHeader className="px-5 py-4 uppercase tracking-wider text-theme-xs font-medium text-gray-500">
-                      Code
+                      Kode
                     </TableCell>
                     <TableCell isHeader className="px-5 py-4 uppercase tracking-wider text-theme-xs font-medium text-gray-500">
-                      Grade Name
+                      Nama Tingkat
                     </TableCell>
                     <TableCell isHeader className="px-5 py-4 uppercase tracking-wider text-theme-xs font-medium text-gray-500">
-                      Education Level
+                      Tingkat Pendidikan
                     </TableCell>
                     <TableCell isHeader className="w-16 px-5 py-4 text-right uppercase tracking-wider text-theme-xs font-medium text-gray-500">
-                      Actions
+                      Aksi
                     </TableCell>
                   </TableRow>
                 </TableHeader>
@@ -489,7 +489,7 @@ const Grades: React.FC = () => {
                           <div className="mb-1 flex size-10 items-center justify-center rounded-full bg-gray-50 dark:bg-white/5">
                             <GradeIcon className="size-5 opacity-20" />
                           </div>
-                          <p className="text-sm font-medium">No grades found.</p>
+                          <p className="text-sm font-medium">Tidak ada tingkat yang ditemukan.</p>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -541,15 +541,15 @@ const Grades: React.FC = () => {
             {total > 0 && (
               <div className="flex flex-col gap-4 border-t border-gray-100 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between dark:border-white/[0.05]">
                 <p className="text-xs text-gray-400 dark:text-gray-500">
-                  Showing{" "}
+                  Menampilkan{" "}
                   <span className="font-semibold text-gray-600 dark:text-gray-300">
                     {(page - 1) * limit + 1}–{Math.min(page * limit, total)}
                   </span>{" "}
-                  of <span className="font-semibold text-gray-600 dark:text-gray-300">{total}</span>
+                  dari <span className="font-semibold text-gray-600 dark:text-gray-300">{total}</span>
                 </p>
                 <div className="flex items-center gap-1.5">
                   <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50 disabled:pointer-events-none disabled:opacity-40 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400">
-                    <ChevronLeftIcon className="size-3.5" /> Prev
+                    <ChevronLeftIcon className="size-3.5" /> Sebelumnya
                   </button>
                   {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
                     const p = i + 1;
@@ -561,7 +561,7 @@ const Grades: React.FC = () => {
                   })}
                   {totalPages > 5 && <span className="px-1 text-xs text-gray-400">…</span>}
                   <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages || totalPages === 0} className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50 disabled:pointer-events-none disabled:opacity-40 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400">
-                    Next <AngleRightIcon className="size-3.5" />
+                    Selanjutnya <AngleRightIcon className="size-3.5" />
                   </button>
                 </div>
               </div>
@@ -574,8 +574,8 @@ const Grades: React.FC = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         className="max-w-md"
-        title={selectedGrade ? "Update Grade" : "Create New Grade"}
-        description="Enter grade details and associated education level."
+        title={selectedGrade ? "Ubah Tingkat" : "Tambah Tingkat Baru"}
+        description="Masukkan detail tingkat dan tingkat pendidikan terkait."
         footer={
           <div className="flex justify-end gap-3">
             <button
@@ -583,7 +583,7 @@ const Grades: React.FC = () => {
               onClick={() => setIsModalOpen(false)}
               className="rounded-xl px-4 py-2 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.05]"
             >
-              Cancel
+              Batal
             </button>
             <button
               type="submit"
@@ -591,34 +591,34 @@ const Grades: React.FC = () => {
               disabled={isSubmitting}
               className="rounded-xl bg-brand-500 px-6 py-2 text-sm font-medium text-white transition-all hover:bg-brand-600 shadow-lg shadow-brand-500/20 disabled:opacity-70"
             >
-              {isSubmitting ? "Saving..." : selectedGrade ? "Update Grade" : "Save Grade"}
+              {isSubmitting ? "Menyimpan..." : selectedGrade ? "Ubah Tingkat" : "Simpan Tingkat"}
             </button>
           </div>
         }
       >
         <form id="grade-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="code" required>Grade Code</Label>
+            <Label htmlFor="code" required>Kode Tingkat</Label>
             <Input
               id="code"
               {...register("code")}
-              placeholder="e.g. 10 or X"
+              placeholder="cth: 10 atau X"
               error={errors.code?.message}
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="name" required>Grade Name</Label>
+            <Label htmlFor="name" required>Nama Tingkat</Label>
             <Input
               id="name"
               {...register("name")}
-              placeholder="e.g. 10"
+              placeholder="cth: 10"
               error={errors.name?.message}
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label required>Education Level</Label>
+            <Label required>Tingkat Pendidikan</Label>
             <Controller
               name="educationLevelId"
               control={control}
@@ -627,7 +627,7 @@ const Grades: React.FC = () => {
                   options={educationLevels.map(level => ({ label: level.name, value: String(level.id) }))}
                   value={field.value}
                   onChange={field.onChange}
-                  placeholder="Select Education Level"
+                  placeholder="Pilih Tingkat Pendidikan"
                 />
               )}
             />

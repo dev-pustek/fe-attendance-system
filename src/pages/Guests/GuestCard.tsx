@@ -38,7 +38,7 @@ const GuestCard: React.FC<GuestCardProps> = ({
                     </div>
                     <div>
                         <h3 className="text-sm font-bold text-gray-900 line-clamp-1 dark:text-white">{guest.name}</h3>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">{guest.company || "No Company"}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{guest.company || "Tanpa Perusahaan"}</p>
                     </div>
                 </div>
                 <div className="pt-1">
@@ -51,12 +51,12 @@ const GuestCard: React.FC<GuestCardProps> = ({
                 <div className="flex items-center gap-2">
                     <UserIcon className="size-4 text-gray-400 shrink-0" />
                     <span className="text-sm text-gray-600 dark:text-gray-300 truncate">
-                        {guest.email || "No email"}
+                        {guest.email || "Tidak ada email"}
                     </span>
                 </div>
                 <div className="flex items-center gap-2">
                     <span className="text-xs font-medium px-2 py-1 bg-gray-100 text-gray-600 rounded-md dark:bg-white/[0.05] dark:text-gray-300 truncate">
-                        {guest.phone || "No phone"}
+                        {guest.phone || "Tidak ada telepon"}
                     </span>
                 </div>
             </div>
@@ -67,7 +67,7 @@ const GuestCard: React.FC<GuestCardProps> = ({
                     onClick={(e) => { e.stopPropagation(); onCheckIn(); }}
                     className="flex items-center justify-center gap-1.5 rounded-lg border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-600 transition-colors hover:bg-brand-100 dark:border-brand-500/20 dark:bg-brand-500/10 dark:text-brand-400 dark:hover:bg-brand-500/20"
                 >
-                    <CheckCircleIcon className="size-3.5" /> Check In
+                    <CheckCircleIcon className="size-3.5" /> Check-In
                 </button>
                 <div className="flex items-center gap-1">
                     <button

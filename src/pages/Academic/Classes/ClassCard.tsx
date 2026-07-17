@@ -38,7 +38,7 @@ const ClassCard: React.FC<ClassCardProps> = ({
                         {classData.code}
                     </span>
                     <Badge color={classData.isActive ? "success" : "light"}>
-                        {classData.isActive ? "Active" : "Inactive"}
+                        {classData.isActive ? "Aktif" : "Tidak Aktif"}
                     </Badge>
                 </div>
                 <Checkbox checked={isSelected} onChange={onToggle} />
@@ -57,18 +57,18 @@ const ClassCard: React.FC<ClassCardProps> = ({
                     <div className="flex items-center gap-1.5">
                         <UserIcon className="size-3.5 shrink-0 text-gray-400 dark:text-gray-500" />
                         <span className="font-medium truncate max-w-[120px]">
-                            {classData.homeroomTeacher?.name || "No Teacher"}
+                            {classData.homeroomTeacher?.name || "Tanpa Wali Kelas"}
                         </span>
                     </div>
                     {classData.roomNumber && (
                         <div className="flex items-center gap-1.5">
                             <MapPinIcon className="size-3.5 shrink-0 text-gray-400 dark:text-gray-500" />
-                            <span className="font-medium">Room {classData.roomNumber}</span>
+                            <span className="font-medium">Ruang {classData.roomNumber}</span>
                         </div>
                     )}
                     <div className="flex items-center gap-1.5">
                         <GroupIcon className="size-3.5 shrink-0 text-gray-400 dark:text-gray-500" />
-                        <span className="font-medium">{classData.maxCapacity || "-"} Capacity</span>
+                        <span className="font-medium">{classData.maxCapacity || "-"} Kapasitas</span>
                     </div>
                 </div>
                 
@@ -81,7 +81,7 @@ const ClassCard: React.FC<ClassCardProps> = ({
                     )}
                     {classData.grade?.name && (
                         <span className="inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600 dark:bg-white/[0.05] dark:text-gray-300">
-                            Grade {classData.grade.name}
+                            Tingkat {classData.grade.name}
                         </span>
                     )}
                     {classData.major?.name && (
@@ -98,14 +98,14 @@ const ClassCard: React.FC<ClassCardProps> = ({
                     onClick={(e) => { e.stopPropagation(); onEdit(); }}
                     className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/[0.04]"
                 >
-                    <PencilIcon className="size-3.5" /> Edit
+                    <PencilIcon className="size-3.5" /> Ubah
                 </button>
                 <div className="h-4 w-px bg-gray-200 dark:bg-white/[0.06] mx-1" />
-                <button 
+                <button
                     onClick={(e) => { e.stopPropagation(); onDelete(); }}
                     className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/10"
                 >
-                    <TrashBinIcon className="size-3.5" /> Delete
+                    <TrashBinIcon className="size-3.5" /> Hapus
                 </button>
             </div>
         </div>

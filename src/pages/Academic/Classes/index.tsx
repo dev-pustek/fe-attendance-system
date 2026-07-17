@@ -94,7 +94,7 @@ const RowActionMenu = ({ onEdit, onDelete }: { onEdit: () => void; onDelete: () 
                     }}
                     className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/10"
                 >
-                    <TrashBinIcon className="size-3.5" /> Delete
+                    <TrashBinIcon className="size-3.5" /> Hapus
                 </DropdownItem>
             </Dropdown>
         </div>
@@ -222,16 +222,16 @@ const Classes: React.FC = () => {
   const handleDelete = async (cls: Class) => {
     const confirmed = await confirm({
       variant: "delete",
-      title: "Delete Class",
-      message: `Are you sure you want to delete ${cls.name}? This action cannot be undone.`,
+      title: "Hapus Kelas",
+      message: `Apakah Anda yakin ingin menghapus ${cls.name}? Tindakan ini tidak dapat dibatalkan.`,
     });
 
     if (confirmed) {
       try {
         await deleteMutation.mutateAsync(Number(cls.id));
-        showSuccess("Class deleted successfully");
+        showSuccess("Kelas berhasil dihapus");
       } catch (error) {
-        showError(error, "Failed to delete class");
+        showError(error, "Gagal menghapus kelas");
       }
     }
   };
@@ -261,19 +261,19 @@ const Classes: React.FC = () => {
 
     const confirmed = await confirm({
       variant: "delete",
-      title: "Bulk Delete Classes",
-      message: `Are you sure you want to permanently delete ${selectedIds.size} selected classes? This action cannot be undone.`,
-      confirmText: `Delete ${selectedIds.size} Classes`
+      title: "Hapus Kelas Terpilih",
+      message: `Apakah Anda yakin ingin menghapus ${selectedIds.size} kelas terpilih secara permanen? Tindakan ini tidak dapat dibatalkan.`,
+      confirmText: `Hapus ${selectedIds.size} Kelas`
     });
 
     if (confirmed) {
       try {
         const promises = Array.from(selectedIds).map(id => deleteMutation.mutateAsync(Number(id)));
         await Promise.all(promises);
-        showSuccess(`Successfully removed ${selectedIds.size} classes.`);
+        showSuccess(`${selectedIds.size} kelas berhasil dihapus.`);
         setSelectedIds(new Set());
       } catch (error) {
-        showError(error, "Failed to remove some classes");
+        showError(error, "Gagal menghapus beberapa kelas");
       }
     }
   };
@@ -309,9 +309,9 @@ const Classes: React.FC = () => {
           const params = ids && ids.length > 0 ? { ids: ids.join(',') } : queryParams;
           const blob = await academicService.exportClassesExcel(params);
           downloadBlob(blob, "classes_export.xlsx");
-          showSuccess("Exported successfully");
+          showSuccess("Berhasil diekspor");
       } catch (err) {
-          showError(err, "Failed to export to Excel");
+          showError(err, "Gagal mengekspor ke Excel");
       } finally {
           setIsExporting(false);
       }
@@ -324,7 +324,7 @@ const Classes: React.FC = () => {
           const blob = await academicService.exportClassesPdf(params);
           downloadBlob(blob, "classes_export.pdf");
       } catch (err) {
-          showError(err, "Failed to export to PDF");
+          showError(err, "Gagal mengekspor ke PDF");
       } finally {
           setIsExporting(false);
       }
@@ -335,9 +335,9 @@ const Classes: React.FC = () => {
       try {
           const blob = await academicService.downloadClassesTemplate(withData);
           downloadBlob(blob, "classes_template.xlsx");
-          showSuccess("Template downloaded successfully!");
+          showSuccess("Template berhasil diunduh!");
       } catch (err) {
-          showError(err, "Failed to download template");
+          showError(err, "Gagal mengunduh template");
       } finally {
           setIsDownloadingTemplate(false);
       }
@@ -346,17 +346,17 @@ const Classes: React.FC = () => {
   const handleImportSubmit = async (file: File) => {
       try {
           const result = await importMutation.mutateAsync(file);
-          showSuccess(`Successfully imported ${result.created} new classes, updated ${result.updated}.`);
+          showSuccess(`Berhasil mengimpor ${result.created} kelas baru, memperbarui ${result.updated}.`);
           setIsImportModalOpen(false);
       } catch (err) {
-          showError(err, "Failed to import classes");
+          showError(err, "Gagal mengimpor kelas");
       }
   };
 
   return (
     <>
-      <PageMeta title="Class Registry | Visia" description="Manage system classes." />
-      <PageBreadcrumb pageTitle="Class Registry" />
+      <PageMeta title="Registri Kelas | Visia" description="Kelola kelas dalam sistem." />
+      <PageBreadcrumb pageTitle="Registri Kelas" />
 
       <div className="space-y-6">
         {/* Header - Hidden on Mobile */}
@@ -366,8 +366,8 @@ const Classes: React.FC = () => {
                   <GridIcon className="size-5" />
               </div>
               <div>
-                  <h1 className="text-xl font-bold text-gray-900 dark:text-white">Class Registry</h1>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">View and manage classes.</p>
+                  <h1 className="text-xl font-bold text-gray-900 dark:text-white">Registri Kelas</h1>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Lihat dan kelola kelas.</p>
               </div>
           </div>
           <div className="flex items-center gap-3">
@@ -385,7 +385,7 @@ const Classes: React.FC = () => {
                 onClick={() => handleOpenFormModal()}
                 className="hidden sm:flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-brand-500/25 transition-all hover:bg-brand-600 active:scale-[.98]"
             >
-                <PlusIcon className="fill-white size-4" /> Add New Class
+                <PlusIcon className="fill-white size-4" /> Tambah Kelas Baru
             </button>
           </div>
         </div>
@@ -394,7 +394,7 @@ const Classes: React.FC = () => {
         {isMobile && (
           <MobileFloatingActions
             onAdd={() => handleOpenFormModal()}
-            addAriaLabel="Add New Class"
+            addAriaLabel="Tambah Kelas Baru"
             dataActionsProps={{
                 isExporting: isExporting || isDownloadingTemplate,
                 isImporting: importMutation.isPending,
@@ -418,11 +418,11 @@ const Classes: React.FC = () => {
                     <div className="flex items-center gap-2 mb-1">
                         <FilterIcon className="size-5 text-brand-500" />
                         <h3 className="text-sm font-bold uppercase tracking-wider text-gray-800 dark:text-gray-200">
-                            Search & Filter
+                            Cari & Filter
                         </h3>
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Find classes quickly by status, level, grade, etc.
+                        Temukan kelas dengan cepat berdasarkan status, jenjang, tingkat, dll.
                     </p>
                 </div>
                 <div className="shrink-0 ml-4">
@@ -439,35 +439,35 @@ const Classes: React.FC = () => {
                         
                         <div className="grid grid-cols-1 gap-5 mb-5 sm:grid-cols-2 lg:grid-cols-4">
                             <div className="space-y-1.5">
-                                <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Level</Label>
+                                <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Jenjang</Label>
                                 <CustomSelect
                                     value={levelFilter === "all" ? "" : levelFilter}
                                     onChange={(val) => updateFilter("level", val ? String(val) : "all")}
                                     onClear={() => updateFilter("level", "all")}
-                                    placeholder="All Levels"
+                                    placeholder="Semua Jenjang"
                                     options={educationLevels.map((l: { id: number | string; name: string }) => ({ label: l.name, value: String(l.id) }))}
                                     className="w-full [&>button]:w-full [&>button]:h-11 [&>button]:text-sm [&>button]:rounded-xl"
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Grade</Label>
+                                <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Tingkat</Label>
                                 <CustomSelect
                                     value={gradeFilter === "all" ? "" : gradeFilter}
                                     onChange={(val) => updateFilter("grade", val ? String(val) : "all")}
                                     onClear={() => updateFilter("grade", "all")}
-                                    placeholder="All Grades"
-                                    options={grades.map((g: { id: number | string; name: string }) => ({ label: `Grade ${g.name}`, value: String(g.id) }))}
+                                    placeholder="Semua Tingkat"
+                                    options={grades.map((g: { id: number | string; name: string }) => ({ label: `Tingkat ${g.name}`, value: String(g.id) }))}
                                     disabled={levelFilter === "all"}
                                     className="w-full [&>button]:w-full [&>button]:h-11 [&>button]:text-sm [&>button]:rounded-xl"
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Major</Label>
+                                <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Jurusan</Label>
                                 <CustomSelect
                                     value={majorFilter === "all" ? "" : majorFilter}
                                     onChange={(val) => updateFilter("major", val ? String(val) : "all")}
                                     onClear={() => updateFilter("major", "all")}
-                                    placeholder="All Majors"
+                                    placeholder="Semua Jurusan"
                                     options={majors.map((m: { id: number | string; name: string }) => ({ label: m.name, value: String(m.id) }))}
                                     disabled={levelFilter === "all"}
                                     className="w-full [&>button]:w-full [&>button]:h-11 [&>button]:text-sm [&>button]:rounded-xl"
@@ -479,10 +479,10 @@ const Classes: React.FC = () => {
                                     value={statusFilter === "all" ? "" : statusFilter}
                                     onChange={(val) => updateFilter("status", val ? String(val) : "all")}
                                     onClear={() => updateFilter("status", "all")}
-                                    placeholder="All Status"
+                                    placeholder="Semua Status"
                                     options={[
-                                        { label: "Active", value: "ACTIVE" },
-                                        { label: "Inactive", value: "INACTIVE" },
+                                        { label: "Aktif", value: "ACTIVE" },
+                                        { label: "Tidak Aktif", value: "INACTIVE" },
                                     ]}
                                     className="w-full [&>button]:w-full [&>button]:h-11 [&>button]:text-sm [&>button]:rounded-xl"
                                 />
@@ -508,7 +508,7 @@ const Classes: React.FC = () => {
                                                 setPage(1);
                                             }
                                         }}
-                                        placeholder="Search by Code or Name..."
+                                        placeholder="Cari berdasarkan Kode atau Nama..."
                                         className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-4 text-sm text-gray-900 transition-colors focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-white/[0.08] dark:bg-white/[0.02] dark:text-white"
                                     />
                                 </div>
@@ -526,7 +526,7 @@ const Classes: React.FC = () => {
                                     }}
                                     className="flex h-11 flex-1 items-center justify-center rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 dark:border-white/[0.08] dark:bg-transparent dark:text-gray-300"
                                 >
-                                    Reset
+                                    Atur Ulang
                                 </button>
                                 <button
                                     onClick={() => {
@@ -541,7 +541,7 @@ const Classes: React.FC = () => {
                                     className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 text-sm font-semibold text-white transition-all hover:bg-brand-600"
                                 >
                                     <SearchIcon className="size-4" />
-                                    Search
+                                    Cari
                                 </button>
                             </div>
                         </div>
@@ -556,7 +556,7 @@ const Classes: React.FC = () => {
             onClearSelection={() => setSelectedIds(new Set())}
             bulkActions={[
                 {
-                    label: "Delete Selected",
+                    label: "Hapus Terpilih",
                     icon: <TrashBinIcon className="size-3.5" />,
                     onClick: handleBulkDelete,
                     variant: "danger",
@@ -591,16 +591,16 @@ const Classes: React.FC = () => {
                 <div className="flex size-20 items-center justify-center rounded-full bg-brand-50 dark:bg-brand-500/10 mb-6">
                     <GridIcon className="size-10 text-brand-500 opacity-50" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No classes found</h3>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Tidak Ada Kelas Ditemukan</h3>
                 <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-md">
-                    {searchQuery || statusFilter !== "all" ? "No classes match your search criteria. Try adjusting your filters." : "Get started by adding your first class to the system."}
+                    {searchQuery || statusFilter !== "all" ? "Tidak ada kelas yang cocok dengan kriteria pencarian Anda. Coba sesuaikan filter Anda." : "Mulai dengan menambahkan kelas pertama Anda ke sistem."}
                 </p>
                 {!searchQuery && statusFilter === "all" && (
                     <button
                         onClick={() => handleOpenFormModal()}
                         className="hidden sm:flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-brand-500/25 transition-all hover:bg-brand-600 active:scale-[.98]"
                     >
-                        <PlusIcon className="fill-white size-4" /> Add First Class
+                        <PlusIcon className="fill-white size-4" /> Tambah Kelas Pertama
                     </button>
                 )}
             </div>
@@ -635,22 +635,22 @@ const Classes: React.FC = () => {
                                     />
                                 </TableCell>
                                 <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                    Code
+                                    Kode
                                 </TableCell>
                                 <TableCell isHeader className="px-4 py-3.5 min-w-[160px] text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                    Name
+                                    Nama
                                 </TableCell>
                                 <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                    Details
+                                    Detail
                                 </TableCell>
                                 <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                    Teacher
+                                    Wali Kelas
                                 </TableCell>
                                 <TableCell isHeader className="px-4 py-3.5 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                     Status
                                 </TableCell>
                                 <TableCell isHeader className="px-4 py-3.5 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                    Actions
+                                    Aksi
                                 </TableCell>
                             </TableRow>
                         </TableHeader>
@@ -671,7 +671,7 @@ const Classes: React.FC = () => {
                                     <TableCell className="px-4 py-4">
                                         <p className="font-medium text-gray-900 dark:text-white">{cls.name}</p>
                                         <div className="mt-1 flex items-center gap-2 text-xs text-gray-500">
-                                            {cls.grade?.name && <span>Gr. {cls.grade.name}</span>}
+                                            {cls.grade?.name && <span>Tk. {cls.grade.name}</span>}
                                             {cls.major?.name && (
                                                 <>
                                                     <span className="text-gray-300">•</span>
@@ -685,12 +685,12 @@ const Classes: React.FC = () => {
                                             {cls.roomNumber && (
                                                 <div className="flex items-center gap-1.5">
                                                     <MapPinIcon className="size-3.5 shrink-0 text-gray-400 dark:text-gray-500" />
-                                                    <span className="font-medium">Room {cls.roomNumber}</span>
+                                                    <span className="font-medium">Ruang {cls.roomNumber}</span>
                                                 </div>
                                             )}
                                             <div className="flex items-center gap-1.5">
                                                 <GroupIcon className="size-3.5 shrink-0 text-gray-400 dark:text-gray-500" />
-                                                <span className="font-medium">{cls.maxCapacity || "-"} Cap.</span>
+                                                <span className="font-medium">{cls.maxCapacity || "-"} Kap.</span>
                                             </div>
                                         </div>
                                     </TableCell>
@@ -698,13 +698,13 @@ const Classes: React.FC = () => {
                                         <div className="flex items-center gap-1.5 text-xs text-gray-500">
                                             <UserIcon className="size-3.5 shrink-0 text-gray-400 dark:text-gray-500" />
                                             <span className="font-medium truncate max-w-[120px]">
-                                                {cls.homeroomTeacher?.name || "No Teacher"}
+                                                {cls.homeroomTeacher?.name || "Tanpa Wali Kelas"}
                                             </span>
                                         </div>
                                     </TableCell>
                                     <TableCell className="px-4 py-4 text-center">
                                         <Badge color={cls.isActive ? "success" : "light"}>
-                                            {cls.isActive ? "Active" : "Inactive"}
+                                            {cls.isActive ? "Aktif" : "Tidak Aktif"}
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="px-4 py-4 text-center">
@@ -723,15 +723,15 @@ const Classes: React.FC = () => {
                     {!isLoadingDesktop && (classes.length > 0 || total > 0) && (
                         <div className="flex flex-col gap-4 border-t border-gray-100 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between dark:border-white/[0.05]">
                             <p className="text-xs text-gray-400 dark:text-gray-500">
-                                Showing{" "}
+                                Menampilkan{" "}
                                 <span className="font-semibold text-gray-600 dark:text-gray-300">
                                     {(page - 1) * limit + 1}–{Math.min(page * limit, total)}
                                 </span>{" "}
-                                of <span className="font-semibold text-gray-600 dark:text-gray-300">{total}</span>
+                                dari <span className="font-semibold text-gray-600 dark:text-gray-300">{total}</span>
                             </p>
                             <div className="flex items-center gap-1.5">
                                 <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50 disabled:pointer-events-none disabled:opacity-40 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400">
-                                    <ChevronLeftIcon className="size-3.5" /> Prev
+                                    <ChevronLeftIcon className="size-3.5" /> Sebelumnya
                                 </button>
                                 {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
                                     const p = i + 1;
@@ -743,7 +743,7 @@ const Classes: React.FC = () => {
                                 })}
                                 {totalPages > 5 && <span className="px-1 text-xs text-gray-400">…</span>}
                                 <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages || totalPages === 0} className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50 disabled:pointer-events-none disabled:opacity-40 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400">
-                                    Next <AngleRightIcon className="size-3.5" />
+                                    Selanjutnya <AngleRightIcon className="size-3.5" />
                                 </button>
                             </div>
                         </div>
@@ -758,8 +758,8 @@ const Classes: React.FC = () => {
           onClose={() => setIsImportModalOpen(false)}
           onImport={handleImportSubmit}
           onDownloadTemplate={() => handleDownloadTemplate(false)}
-          title="Import Classes"
-          description="Upload an Excel file containing class information."
+          title="Impor Kelas"
+          description="Unggah file Excel yang berisi informasi kelas."
           isImporting={importMutation.isPending}
           isDownloadingTemplate={isDownloadingTemplate}
       />

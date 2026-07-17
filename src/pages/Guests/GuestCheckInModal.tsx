@@ -10,7 +10,7 @@ import { useCheckInGuest } from "../../api/hooks/useGuests";
 import { showSuccess, showError } from "../../utils/toast";
 
 const checkInSchema = z.object({
-    purpose: z.string().min(1, "Purpose is required"),
+    purpose: z.string().min(1, "Tujuan wajib diisi"),
 });
 
 type CheckInFormValues = z.infer<typeof checkInSchema>;
@@ -40,10 +40,10 @@ const GuestCheckInModal: React.FC<GuestCheckInModalProps> = ({ isOpen, onClose, 
                 public_id: selectedGuest.public_id || String(selectedGuest.id),
                 data: { purpose: data.purpose },
             });
-            showSuccess("Guest checked in successfully");
+            showSuccess("Tamu berhasil check-in");
             onClose();
         } catch (error) {
-            showError(error, "Failed to check in guest");
+            showError(error, "Gagal melakukan check-in tamu");
         }
     };
 
@@ -52,20 +52,20 @@ const GuestCheckInModal: React.FC<GuestCheckInModalProps> = ({ isOpen, onClose, 
             isOpen={isOpen}
             onClose={onClose}
             className="max-w-lg"
-            title="Check In Guest"
-            description="Record the purpose of this visit."
+            title="Check-In Tamu"
+            description="Catat tujuan kunjungan ini."
             footer={
                 <div className="flex justify-end gap-3 w-full border-t border-gray-100 dark:border-white/5 pt-4">
-                    <Button variant="outline" type="button" onClick={onClose}>Cancel</Button>
+                    <Button variant="outline" type="button" onClick={onClose}>Batal</Button>
                     <Button onClick={handleSubmit(onSubmit)} disabled={checkInMutation.isPending}>
-                        {checkInMutation.isPending ? "Checking In..." : "Check In"}
+                        {checkInMutation.isPending ? "Memproses Check-In..." : "Check-In"}
                     </Button>
                 </div>
             }
         >
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-4 pb-2">
                 <div className="rounded-xl border border-gray-100 bg-gray-50/50 p-4 dark:border-white/[0.05] dark:bg-white/[0.02]">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400 mb-1">Guest Details</p>
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400 mb-1">Detail Tamu</p>
                     <p className="font-bold text-gray-900 dark:text-white text-base">
                         {selectedGuest?.name}
                     </p>
@@ -75,10 +75,10 @@ const GuestCheckInModal: React.FC<GuestCheckInModalProps> = ({ isOpen, onClose, 
                 </div>
 
                 <div>
-                    <Label>Purpose <span className="text-red-500">*</span></Label>
+                    <Label>Tujuan <span className="text-red-500">*</span></Label>
                     <textarea
                         {...register("purpose")}
-                        placeholder="e.g. Meeting with Principal"
+                        placeholder="misalnya Pertemuan dengan Kepala Sekolah"
                         rows={3}
                         className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm transition-all focus:border-brand-500 focus:outline-none dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-white resize-none shadow-theme-xs outline-none"
                     />

@@ -11,8 +11,8 @@ import { useCreateGuest, useUpdateGuest } from "../../api/hooks/useGuests";
 import { showSuccess, showError } from "../../utils/toast";
 
 const guestSchema = z.object({
-    name: z.string().min(1, "Name is required"),
-    email: z.string().email("Invalid email format").or(z.literal("")).optional(),
+    name: z.string().min(1, "Nama wajib diisi"),
+    email: z.string().email("Format email tidak valid").or(z.literal("")).optional(),
     phone: z.string().optional(),
     company: z.string().optional(),
     idCardNumber: z.string().optional(),
@@ -56,14 +56,14 @@ const GuestFormModal: React.FC<GuestFormModalProps> = ({ isOpen, onClose, select
                     id: selectedEntity.id || selectedEntity.public_id,
                     data,
                 });
-                showSuccess("Guest updated successfully");
+                showSuccess("Tamu berhasil diperbarui");
             } else {
                 await createMutation.mutateAsync(data);
-                showSuccess("Guest created successfully");
+                showSuccess("Tamu berhasil dibuat");
             }
             onClose();
         } catch (error) {
-            showError(error, `Failed to ${selectedEntity ? "update" : "create"} guest`);
+            showError(error, `Gagal ${selectedEntity ? "memperbarui" : "membuat"} tamu`);
         }
     };
 
@@ -72,21 +72,21 @@ const GuestFormModal: React.FC<GuestFormModalProps> = ({ isOpen, onClose, select
             isOpen={isOpen}
             onClose={onClose}
             className="max-w-lg"
-            title={selectedEntity ? "Edit Guest" : "Add New Guest"}
-            description="Enter guest details and contact information."
+            title={selectedEntity ? "Edit Tamu" : "Tambah Tamu Baru"}
+            description="Masukkan detail tamu dan informasi kontak."
             footer={
                 <div className="flex justify-end gap-3 w-full border-t border-gray-100 dark:border-white/5 pt-4">
-                    <Button variant="outline" type="button" onClick={onClose}>Cancel</Button>
+                    <Button variant="outline" type="button" onClick={onClose}>Batal</Button>
                     <Button onClick={handleSubmit(onSubmit)} disabled={createMutation.isPending || updateMutation.isPending}>
-                        {createMutation.isPending || updateMutation.isPending ? "Saving..." : "Save Guest"}
+                        {createMutation.isPending || updateMutation.isPending ? "Menyimpan..." : "Simpan Tamu"}
                     </Button>
                 </div>
             }
         >
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-4 pb-2">
                 <div>
-                    <Label>Name <span className="text-red-500">*</span></Label>
-                    <Input {...register("name")} placeholder="Guest Name" />
+                    <Label>Nama <span className="text-red-500">*</span></Label>
+                    <Input {...register("name")} placeholder="Nama Tamu" />
                     {errors.name && <p className="text-xs text-error-500 mt-1">{errors.name.message}</p>}
                 </div>
                 <div>
@@ -95,18 +95,18 @@ const GuestFormModal: React.FC<GuestFormModalProps> = ({ isOpen, onClose, select
                     {errors.email && <p className="text-xs text-error-500 mt-1">{errors.email.message}</p>}
                 </div>
                 <div>
-                    <Label>Phone</Label>
+                    <Label>Telepon</Label>
                     <Input {...register("phone")} type="tel" placeholder="08123456789" />
                     {errors.phone && <p className="text-xs text-error-500 mt-1">{errors.phone.message}</p>}
                 </div>
                 <div>
-                    <Label>Company (Optional)</Label>
-                    <Input {...register("company")} placeholder="Company Name" />
+                    <Label>Perusahaan (Opsional)</Label>
+                    <Input {...register("company")} placeholder="Nama Perusahaan" />
                     {errors.company && <p className="text-xs text-error-500 mt-1">{errors.company.message}</p>}
                 </div>
                 <div>
-                    <Label>ID Card Number (Optional)</Label>
-                    <Input {...register("idCardNumber")} placeholder="Identity Document Number" />
+                    <Label>Nomor KTP (Opsional)</Label>
+                    <Input {...register("idCardNumber")} placeholder="Nomor Dokumen Identitas" />
                     {errors.idCardNumber && <p className="text-xs text-error-500 mt-1">{errors.idCardNumber.message}</p>}
                 </div>
             </form>

@@ -112,7 +112,7 @@ const RowActionMenu = ({
           }}
           className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/[0.04]"
         >
-          <DocsIcon className="size-3.5" /> Academic Profile
+          <DocsIcon className="size-3.5" /> Profil Akademik
         </DropdownItem>
         <DropdownItem
           onClick={() => {
@@ -131,7 +131,7 @@ const RowActionMenu = ({
             }}
             className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-500/10"
           >
-            <UserCircleIcon className="size-3.5" /> Reset Password
+            <UserCircleIcon className="size-3.5" /> Reset Kata Sandi
           </DropdownItem>
         )}
         <DropdownItem
@@ -141,7 +141,7 @@ const RowActionMenu = ({
           }}
           className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/10"
         >
-          <TrashBinIcon className="size-3.5" /> Delete
+          <TrashBinIcon className="size-3.5" /> Hapus
         </DropdownItem>
       </Dropdown>
     </div>
@@ -153,11 +153,11 @@ const MAX_FILE_SIZE = 5000000; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
 const employeeSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  email: z.string().email("Invalid email"),
+  name: z.string().min(1, "Nama wajib diisi"),
+  email: z.string().email("Email tidak valid"),
   phone: z.string().optional(),
   isActive: z.boolean().default(true),
-  employeeId: z.string().min(1, "Employee ID is required"),
+  employeeId: z.string().min(1, "ID Pegawai wajib diisi"),
   nip: z.string().optional(),
   department: z.string().optional(),
   position: z.string().optional(),
@@ -177,10 +177,10 @@ const employeeSchema = z.object({
   notes: z.string().optional(),
   isTeacher: z.boolean().default(false).optional(),
   photo: z.any()
-    .refine((file) => !file || file?.size <= MAX_FILE_SIZE, `Max file size is 5MB.`)
+    .refine((file) => !file || file?.size <= MAX_FILE_SIZE, `Ukuran file maksimal 5MB.`)
     .refine(
       (file) => !file || (typeof file === "string") || ACCEPTED_IMAGE_TYPES.includes(file?.type),
-      "Only .jpg, .jpeg, .png and .webp formats are supported."
+      "Hanya format .jpg, .jpeg, .png, dan .webp yang didukung."
     ).optional(),
 });
 type EmployeeFormValues = z.infer<typeof employeeSchema>;
@@ -385,47 +385,47 @@ const EmployeesList: React.FC = () => {
   const onSubmitForm = async (data: EmployeeFormValues) => {
     const confirmed = await confirm({
       variant: selectedEmployee ? "update" : "create",
-      title: selectedEmployee ? "Update Employee" : "Create Employee",
-      message: `Are you sure you want to ${selectedEmployee ? "update" : "create"} employee "${data.name}"?`,
+      title: selectedEmployee ? "Ubah Pegawai" : "Tambah Pegawai",
+      message: `Apakah Anda yakin ingin ${selectedEmployee ? "mengubah" : "menambahkan"} data pegawai "${data.name}"?`,
     });
     if (!confirmed) return;
     try {
       if (selectedEmployee) {
         await updateMutation.mutateAsync({ userId: selectedEmployee.userId, data: data as any });
-        showSuccess(`Employee "${data.name}" updated successfully!`);
+        showSuccess(`Data pegawai "${data.name}" berhasil diubah!`);
       } else {
         const newEmployee = await createMutation.mutateAsync(data as any);
         if (data.isTeacher && newEmployee?.userId) {
             try {
                 await accessControlService.assignRole(newEmployee.userId, 'teacher');
-                showSuccess("Teacher created successfully with role assigned");
+                showSuccess("Guru berhasil dibuat dan peran berhasil ditetapkan");
             } catch (roleError) {
-                showError("Employee created but failed to assign teacher role");
+                showError("Pegawai berhasil dibuat, tetapi gagal menetapkan peran guru");
                 console.error(roleError);
             }
         } else {
-            showSuccess(`Employee "${data.name}" created successfully!`);
+            showSuccess(`Data pegawai "${data.name}" berhasil ditambahkan!`);
         }
       }
       setIsModalOpen(false);
     } catch (error) {
-      showError(error, "Failed to save employee");
+      showError(error, "Gagal menyimpan data pegawai");
     }
   };
 
   const handleDelete = async (id: string) => {
     const confirmed = await confirm({
       variant: "delete",
-      title: "Delete Employee",
-      message: "Are you sure you want to delete this employee? This action cannot be undone.",
+      title: "Hapus Pegawai",
+      message: "Apakah Anda yakin ingin menghapus pegawai ini? Tindakan ini tidak dapat dibatalkan.",
     });
     if (confirmed) {
       try {
         await deleteMutation.mutateAsync(id);
         setSelectedIds(prev => { const n = new Set(prev); n.delete(id); return n; });
-        showSuccess("Employee deleted successfully!");
+        showSuccess("Pegawai berhasil dihapus!");
       } catch (error) {
-        showError(error, "Failed to delete employee");
+        showError(error, "Gagal menghapus pegawai");
       }
     }
   };
@@ -433,15 +433,15 @@ const EmployeesList: React.FC = () => {
   const handleResetPassword = async (id: string, name: string) => {
     const confirmed = await confirm({
       variant: "update",
-      title: "Reset Password",
-      message: `Are you sure you want to reset password for ${name}? The new password will be "Password123!".`,
+      title: "Reset Kata Sandi",
+      message: `Apakah Anda yakin ingin mereset kata sandi untuk ${name}? Kata sandi baru akan menjadi "Password123!".`,
     });
     if (confirmed) {
       try {
         await resetPasswordMutation.mutateAsync(id);
-        showSuccess("Password reset successfully!");
+        showSuccess("Kata sandi berhasil direset!");
       } catch (error) {
-        showError(error, "Failed to reset password");
+        showError(error, "Gagal mereset kata sandi");
       }
     }
   };
@@ -450,15 +450,15 @@ const EmployeesList: React.FC = () => {
     if (selectedIds.size === 0) return;
     const confirmed = await confirm({
       variant: "delete",
-      title: "Delete Selected",
-      message: `Delete ${selectedIds.size} employee(s)? This cannot be undone.`,
+      title: "Hapus Terpilih",
+      message: `Hapus ${selectedIds.size} pegawai terpilih? Tindakan ini tidak dapat dibatalkan.`,
     });
     if (!confirmed) return;
     for (const id of selectedIds) {
       try { await deleteMutation.mutateAsync(id); } catch { /* skip */ }
     }
     setSelectedIds(new Set());
-    showSuccess("Selected employees deleted.");
+    showSuccess("Pegawai terpilih berhasil dihapus.");
   };
 
   // ── Export/Import handlers ────────────────────────────────────────────────
@@ -470,9 +470,9 @@ const EmployeesList: React.FC = () => {
         : { search: debouncedSearch || undefined, department: departmentFilter || undefined, employmentStatus: statusFilter || undefined };
       const blob = await profilesService.exportEmployeesExcel(params);
       downloadBlob(blob, "employees.xlsx");
-      showSuccess("Excel exported successfully!");
+      showSuccess("Excel berhasil diekspor!");
     } catch (err) {
-      showError(err, "Export failed");
+      showError(err, "Gagal mengekspor data");
     } finally {
       setIsExporting(false);
     }
@@ -486,9 +486,9 @@ const EmployeesList: React.FC = () => {
         : { search: debouncedSearch || undefined, department: departmentFilter || undefined, employmentStatus: statusFilter || undefined };
       const blob = await profilesService.exportEmployeesPdf(params);
       downloadBlob(blob, "employees.pdf");
-      showSuccess("PDF exported successfully!");
+      showSuccess("PDF berhasil diekspor!");
     } catch (err) {
-      showError(err, "Export failed");
+      showError(err, "Gagal mengekspor data");
     } finally {
       setIsExporting(false);
     }
@@ -498,9 +498,9 @@ const EmployeesList: React.FC = () => {
     try {
       const blob = await profilesService.downloadEmployeesTemplate(withData);
       downloadBlob(blob, "employees-template.xlsx");
-      showSuccess("Template downloaded!");
+      showSuccess("Template berhasil diunduh!");
     } catch (err) {
-      showError(err, "Download failed");
+      showError(err, "Gagal mengunduh template");
     }
   }, []);
 
@@ -508,20 +508,20 @@ const EmployeesList: React.FC = () => {
     try {
       const result = await importMutation.mutateAsync(file);
       if (result.errors && result.errors.length > 0) {
-        showError(null, `Import done with ${result.errors.length} errors. Created: ${result.created}, Updated: ${result.updated}`);
+        showError(null, `Impor selesai dengan ${result.errors.length} kesalahan. Dibuat: ${result.created}, Diperbarui: ${result.updated}`);
       } else {
-        showSuccess(`Import complete! Created: ${result.created}, Updated: ${result.updated}`);
+        showSuccess(`Impor berhasil! Dibuat: ${result.created}, Diperbarui: ${result.updated}`);
       }
       setIsImportModalOpen(false);
     } catch (err) {
-      showError(err, "Import failed");
+      showError(err, "Gagal mengimpor data");
     }
   }, [importMutation]);
 
   return (
     <>
-      <PageMeta title="Employee Management | HR" description="Manage system employees and teachers." />
-      <PageBreadcrumb pageTitle="Employee Management" />
+      <PageMeta title="Manajemen Pegawai | HR" description="Kelola pegawai dan guru pada sistem." />
+      <PageBreadcrumb pageTitle="Manajemen Pegawai" />
 
       <div className="space-y-5">
         {/* ── Page header ── */}
@@ -531,8 +531,8 @@ const EmployeesList: React.FC = () => {
               <UserCircleIcon className="size-5" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">Employee Management</h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">View and manage employee profiles and human resource records.</p>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">Manajemen Pegawai</h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Lihat dan kelola profil pegawai serta data kepegawaian.</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -550,7 +550,7 @@ const EmployeesList: React.FC = () => {
               onClick={() => handleOpenModal()}
               className="hidden sm:flex items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-brand-600 shadow-lg shadow-brand-500/20"
             >
-              <PlusIcon className="size-5" /> Add New Employee
+              <PlusIcon className="size-5" /> Tambah Pegawai Baru
             </button>
           </div>
         </div>
@@ -559,7 +559,7 @@ const EmployeesList: React.FC = () => {
         {isMobile && (
           <MobileFloatingActions
             onAdd={() => handleOpenModal()}
-            addAriaLabel="Add New Employee"
+            addAriaLabel="Tambah Pegawai Baru"
             dataActionsProps={{
               isExporting: isExporting,
               isImporting: importMutation.isPending,
@@ -583,11 +583,11 @@ const EmployeesList: React.FC = () => {
                     <div className="flex items-center gap-2 mb-1">
                         <FilterIcon className="size-5 text-brand-500" />
                         <h3 className="text-sm font-bold uppercase tracking-wider text-gray-800 dark:text-gray-200">
-                            Search & Filter Employees
+                            Cari & Filter Pegawai
                         </h3>
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Use the criteria below to filter employee data based on department and employment status.
+                        Gunakan kriteria di bawah ini untuk menyaring data pegawai berdasarkan departemen dan status kepegawaian.
                     </p>
                 </div>
                 <div className="shrink-0 ml-4">
@@ -606,17 +606,17 @@ const EmployeesList: React.FC = () => {
                         
                         <div className="grid grid-cols-1 gap-5 items-end sm:grid-cols-2 md:grid-cols-4">
                             <div className="space-y-1.5">
-                                <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Department</Label>
+                                <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Departemen</Label>
                                 <CustomSelect
                                     value={departmentFilter}
                                     onChange={(val) => { setDepartmentFilter(val ? String(val) : ""); setPage(1); }}
                                     onClear={() => { setDepartmentFilter(""); setPage(1); }}
-                                    placeholder="All Departments"
+                                    placeholder="Semua Departemen"
                                     options={[
                                         { label: "IT", value: "IT" },
                                         { label: "HR", value: "HR" },
-                                        { label: "ACADEMIC", value: "ACADEMIC" },
-                                        { label: "FINANCE", value: "FINANCE" },
+                                        { label: "Akademik", value: "ACADEMIC" },
+                                        { label: "Keuangan", value: "FINANCE" },
                                     ]}
                                     className="w-full [&>button]:w-full [&>button]:h-11 [&>button]:text-sm [&>button]:rounded-xl"
                                 />
@@ -627,18 +627,18 @@ const EmployeesList: React.FC = () => {
                                     value={statusFilter}
                                     onChange={(val) => { setStatusFilter(val ? String(val) : ""); setPage(1); }}
                                     onClear={() => { setStatusFilter(""); setPage(1); }}
-                                    placeholder="All Status"
+                                    placeholder="Semua Status"
                                     options={[
-                                        { label: "Permanent", value: "PERMANENT" },
-                                        { label: "Contract", value: "CONTRACT" },
-                                        { label: "Probation", value: "PROBATION" },
+                                        { label: "Tetap", value: "PERMANENT" },
+                                        { label: "Kontrak", value: "CONTRACT" },
+                                        { label: "Percobaan", value: "PROBATION" },
                                     ]}
                                     className="w-full [&>button]:w-full [&>button]:h-11 [&>button]:text-sm [&>button]:rounded-xl"
                                 />
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Name or ID</Label>
+                                <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Nama atau ID</Label>
                                 <div className="relative">
                                     <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
                                     <input
@@ -651,7 +651,7 @@ const EmployeesList: React.FC = () => {
                                                 setPage(1);
                                             }
                                         }}
-                                        placeholder="Search by Name or ID..."
+                                        placeholder="Cari berdasarkan Nama atau ID..."
                                         className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-4 text-sm text-gray-900 transition-colors focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-white/[0.08] dark:bg-white/[0.02] dark:text-white"
                                     />
                                 </div>
@@ -667,7 +667,7 @@ const EmployeesList: React.FC = () => {
                                     }}
                                     className="flex h-11 flex-1 items-center justify-center rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 dark:border-white/[0.08] dark:bg-transparent dark:text-gray-300 dark:hover:bg-white/[0.05]"
                                 >
-                                    Reset
+                                    Atur Ulang
                                 </button>
                                 <button
                                     onClick={() => {
@@ -677,7 +677,7 @@ const EmployeesList: React.FC = () => {
                                     className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 text-sm font-semibold text-white transition-all hover:bg-brand-600"
                                 >
                                     <SearchIcon className="size-4" />
-                                    Search
+                                    Cari
                                 </button>
                             </div>
                         </div>
@@ -692,7 +692,7 @@ const EmployeesList: React.FC = () => {
           onClearSelection={() => setSelectedIds(new Set())}
           bulkActions={[
             {
-              label: "Delete Selected",
+              label: "Hapus Terpilih",
               icon: <TrashBinIcon className="size-3.5" />,
               onClick: handleBulkDelete,
               variant: "danger",
@@ -708,7 +708,7 @@ const EmployeesList: React.FC = () => {
               <div className="flex items-center gap-3 px-1">
                 <Checkbox checked={allSelected} onChange={toggleAll} />
                 <span className="text-xs text-gray-500 dark:text-gray-400">
-                  {selectedIds.size > 0 ? `${selectedIds.size} selected` : "Select all"}
+                  {selectedIds.size > 0 ? `${selectedIds.size} terpilih` : "Pilih semua"}
                 </span>
               </div>
             )}
@@ -732,12 +732,12 @@ const EmployeesList: React.FC = () => {
                 <div className="flex size-14 items-center justify-center rounded-2xl bg-gray-50 dark:bg-white/[0.03]">
                   <UserCircleIcon className="size-7 opacity-30" />
                 </div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-300">No employees found</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Tidak ada pegawai yang ditemukan</p>
                 <button
                   onClick={() => handleOpenModal()}
                   className="flex items-center gap-1.5 rounded-lg bg-brand-50 px-3 py-1.5 text-xs font-medium text-brand-600 hover:bg-brand-100 dark:bg-brand-500/10 dark:text-brand-400"
                 >
-                  <PlusIcon className="size-3 fill-current" /> Add First Employee
+                  <PlusIcon className="size-3 fill-current" /> Tambah Pegawai Pertama
                 </button>
               </div>
             ) : (
@@ -751,7 +751,7 @@ const EmployeesList: React.FC = () => {
                     onEdit={() => handleOpenModal(employee)}
                     onDelete={() => handleDelete(employee.userId)}
                     showResetPassword={showResetPassword}
-                    onResetPassword={() => handleResetPassword(employee.userId, employee.user?.name || "Employee")}
+                    onResetPassword={() => handleResetPassword(employee.userId, employee.user?.name || "Pegawai")}
                   />
                 ))}
               </div>
@@ -763,7 +763,7 @@ const EmployeesList: React.FC = () => {
                 <div className="size-5 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
               )}
               {!infiniteQuery.hasNextPage && infiniteEmployees.length > 0 && (
-                <p className="text-xs text-gray-400">All records loaded</p>
+                <p className="text-xs text-gray-400">Semua data telah dimuat</p>
               )}
             </div>
           </div>
@@ -778,19 +778,19 @@ const EmployeesList: React.FC = () => {
                       <Checkbox checked={allSelected} onChange={toggleAll} />
                     </TableCell>
                     <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Employee Information
+                      Informasi Pegawai
                     </TableCell>
                     <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       ID & NIP
                     </TableCell>
                     <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Department & Position
+                      Departemen & Jabatan
                     </TableCell>
                     <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider text-center">
                       Status
                     </TableCell>
                     <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider text-center">
-                      Actions
+                      Aksi
                     </TableCell>
                   </TableRow>
                 </TableHeader>
@@ -805,7 +805,7 @@ const EmployeesList: React.FC = () => {
                           <div className="size-10 rounded-full bg-gray-50 dark:bg-white/5 flex items-center justify-center mb-1">
                             <UserCircleIcon className="size-5 opacity-20" />
                           </div>
-                          <p className="text-sm font-medium">No employees found matching your search.</p>
+                          <p className="text-sm font-medium">Tidak ada pegawai yang cocok dengan pencarian Anda.</p>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -827,8 +827,8 @@ const EmployeesList: React.FC = () => {
                                       )}
                                   </div>
                                   <div>
-                                      <p className="font-bold text-gray-900 dark:text-white text-theme-sm leading-tight">{employee.user?.name || "Unknown Employee"}</p>
-                                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{employee.user?.email || "No email linked"}</p>
+                                      <p className="font-bold text-gray-900 dark:text-white text-theme-sm leading-tight">{employee.user?.name || "Pegawai Tidak Dikenal"}</p>
+                                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{employee.user?.email || "Email tidak tertaut"}</p>
                                   </div>
                               </div>
                           </TableCell>
@@ -847,23 +847,23 @@ const EmployeesList: React.FC = () => {
                               <div className="space-y-1">
                                   <div className="flex items-center gap-1.5 text-theme-sm font-semibold text-gray-800 dark:text-gray-200">
                                       <GridIcon className="size-3.5 text-brand-500" />
-                                      {employee.position || "Staff"}
+                                      {employee.position || "Staf"}
                                   </div>
-                                  <p className="text-[11px] text-gray-400 uppercase tracking-wider">{employee.department || "General"}</p>
+                                  <p className="text-[11px] text-gray-400 uppercase tracking-wider">{employee.department || "Umum"}</p>
                               </div>
                           </TableCell>
                           <TableCell className="px-5 py-4 text-center">
                             <Badge color={employee.employmentStatus === 'PERMANENT' ? 'success' : employee.employmentStatus === 'CONTRACT' ? 'warning' : 'light'}>
-                                {employee.employmentStatus || 'UNKNOWN'}
+                                {employee.employmentStatus === 'PERMANENT' ? 'Tetap' : employee.employmentStatus === 'CONTRACT' ? 'Kontrak' : employee.employmentStatus === 'PROBATION' ? 'Percobaan' : 'Tidak Diketahui'}
                             </Badge>
                           </TableCell>
                           <TableCell className="px-5 py-4 text-center">
-                            <RowActionMenu 
-                                onEdit={() => handleOpenModal(employee)} 
-                                onDelete={() => handleDelete(employee.userId)} 
+                            <RowActionMenu
+                                onEdit={() => handleOpenModal(employee)}
+                                onDelete={() => handleDelete(employee.userId)}
                                 onAcademic={() => navigate(`/hr/employees/${employee.userId}/academic-profile`)}
                                 showResetPassword={showResetPassword}
-                                onResetPassword={() => handleResetPassword(employee.userId, employee.user?.name || "Employee")}
+                                onResetPassword={() => handleResetPassword(employee.userId, employee.user?.name || "Pegawai")}
                             />
                           </TableCell>
                         </TableRow>
@@ -945,18 +945,18 @@ const EmployeesList: React.FC = () => {
                 {/* LEFT COLUMN: Photo & Key Info */}
                 <div className="w-full lg:w-[240px] flex-shrink-0 space-y-4">
                     <div className="space-y-2">
-                        <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-500">Profile Photo</Label>
+                        <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-500">Foto Profil</Label>
                         <div 
                             onClick={() => fileInputRef.current?.click()}
                             className="relative group cursor-pointer"
                         >
                             <div className="w-full aspect-[3/4] rounded-2xl overflow-hidden bg-gray-50 dark:bg-white/[0.02] border-2 border-dashed border-gray-200 dark:border-white/10 flex items-center justify-center transition-all group-hover:border-brand-500/50 group-hover:bg-brand-50/10 shadow-inner">
                                 {previewPhoto ? (
-                                    <img src={previewPhoto} alt="Preview" className="size-full object-cover" />
+                                    <img src={previewPhoto} alt="Pratinjau" className="size-full object-cover" />
                                 ) : (
                                     <div className="text-center space-y-2 p-4">
                                         <UserCircleIcon className="size-12 mx-auto text-gray-300 dark:text-white/10 group-hover:text-brand-500 transition-colors" />
-                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-relaxed">Click to<br/>Upload</p>
+                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-relaxed">Klik untuk<br/>Unggah</p>
                                     </div>
                                 )}
                                 <div className="absolute inset-0 bg-brand-500/0 group-hover:bg-brand-500/10 transition-colors flex items-center justify-center">
@@ -984,16 +984,16 @@ const EmployeesList: React.FC = () => {
                                 className="flex items-center justify-center gap-2 text-sm text-error-500 font-bold hover:underline w-full"
                             >
                                 <TrashBinIcon className="size-4" />
-                                Remove Photo
+                                Hapus Foto
                             </button>
                         )}
                     </div>
 
                     <div className="bg-gray-50 dark:bg-white/5 p-4 rounded-xl border border-gray-100 dark:border-white/5 flex flex-col gap-2">
-                        <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-0">Account Status</Label>
+                        <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-0">Status Akun</Label>
                         <div className="flex items-center justify-between">
                             <span className={`text-xs font-bold ${watchIsActive ? 'text-success-600' : 'text-gray-400'}`}>
-                                {watchIsActive ? 'ACTIVE' : 'INACTIVE'}
+                                {watchIsActive ? 'AKTIF' : 'TIDAK AKTIF'}
                             </span>
                             <Controller
                                 name="isActive"
@@ -1007,10 +1007,10 @@ const EmployeesList: React.FC = () => {
 
                     {!selectedEmployee && (
                         <div className="bg-brand-50 dark:bg-brand-500/10 p-4 rounded-xl border border-brand-100 dark:border-brand-500/20 flex flex-col gap-2">
-                            <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-600 dark:text-brand-400 mb-0">Assign as Teacher</Label>
+                            <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-600 dark:text-brand-400 mb-0">Tetapkan sebagai Guru</Label>
                             <div className="flex items-center justify-between">
                                 <span className={`text-xs font-bold ${watchIsTeacher ? 'text-brand-600 dark:text-brand-400' : 'text-gray-400'}`}>
-                                    {watchIsTeacher ? 'YES' : 'NO'}
+                                    {watchIsTeacher ? 'YA' : 'TIDAK'}
                                 </span>
                                 <Controller
                                     name="isTeacher"
@@ -1020,7 +1020,7 @@ const EmployeesList: React.FC = () => {
                                     )}
                                 />
                             </div>
-                            <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">Grant teacher permissions to this employee</p>
+                            <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">Berikan hak akses guru kepada pegawai ini</p>
                         </div>
                     )}
                 </div>
@@ -1029,22 +1029,22 @@ const EmployeesList: React.FC = () => {
                 <div className="flex-1 space-y-6">
                     {/* User Identity */}
                     <div className="space-y-4">
-                        <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-500 border-b border-gray-100 dark:border-white/5 pb-2 block">User Identity</Label>
+                        <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-500 border-b border-gray-100 dark:border-white/5 pb-2 block">Identitas Pengguna</Label>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="md:col-span-2 space-y-1.5">
-                                <Label>Full Name <span className="text-error-500">*</span></Label>
-                                <Input placeholder="Full employee name" {...register("name")} error={errors.name?.message} />
+                                <Label>Nama Lengkap <span className="text-error-500">*</span></Label>
+                                <Input placeholder="Nama lengkap pegawai" {...register("name")} error={errors.name?.message} />
                             </div>
                             <div className="space-y-1.5">
-                                <Label>Email Address <span className="text-error-500">*</span></Label>
-                                <Input type="email" placeholder="employee@school.com" {...register("email")} error={errors.email?.message} />
+                                <Label>Alamat Email <span className="text-error-500">*</span></Label>
+                                <Input type="email" placeholder="pegawai@sekolah.com" {...register("email")} error={errors.email?.message} />
                             </div>
                             <div className="space-y-1.5">
                                 <Controller
                                     name="phone"
                                     control={control}
                                     render={({ field }) => (
-                                        <PhoneNumberInput label="Phone Number" placeholder="8xx-xxxx-xxxx" value={field.value || ""} onChange={field.onChange} />
+                                        <PhoneNumberInput label="Nomor Telepon" placeholder="8xx-xxxx-xxxx" value={field.value || ""} onChange={field.onChange} />
                                     )}
                                 />
                             </div>
@@ -1053,22 +1053,22 @@ const EmployeesList: React.FC = () => {
 
                     {/* Employment Info */}
                     <div className="space-y-4">
-                        <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-500 border-b border-gray-100 dark:border-white/5 pb-2 block">Employment Details</Label>
+                        <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-500 border-b border-gray-100 dark:border-white/5 pb-2 block">Detail Kepegawaian</Label>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                             <div className="col-span-1 space-y-1.5">
-                                <Label>Employee ID <span className="text-error-500">*</span></Label>
+                                <Label>ID Pegawai <span className="text-error-500">*</span></Label>
                                 <Input placeholder="EMP-XXXX" {...register("employeeId")} error={errors.employeeId?.message} />
                             </div>
                             <div className="space-y-1.5">
                                 <Label>NIP</Label>
-                                <Input placeholder="Official ID" {...register("nip")} />
+                                <Input placeholder="ID Resmi" {...register("nip")} />
                             </div>
                             <div className="space-y-1.5">
                                 <Controller
                                     name="employmentStatus"
                                     control={control}
                                     render={({ field }) => (
-                                        <CustomSelect label="Employment Status" value={field.value || ""} options={[{label:"Permanent",value:"PERMANENT"},{label:"Contract",value:"CONTRACT"},{label:"Probation",value:"PROBATION"}]} onChange={(v) => field.onChange(String(v))} />
+                                        <CustomSelect label="Status Kepegawaian" value={field.value || ""} options={[{label:"Tetap",value:"PERMANENT"},{label:"Kontrak",value:"CONTRACT"},{label:"Percobaan",value:"PROBATION"}]} onChange={(v) => field.onChange(String(v))} />
                                     )}
                                 />
                             </div>
@@ -1077,31 +1077,31 @@ const EmployeesList: React.FC = () => {
                                     name="hireDate"
                                     control={control}
                                     render={({ field }) => (
-                                        <DatePicker label="Hire Date" value={field.value || null} onChange={field.onChange} />
+                                        <DatePicker label="Tanggal Bergabung" value={field.value || null} onChange={field.onChange} />
                                     )}
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <Label>Department</Label>
-                                <Input placeholder="e.g. IT" {...register("department")} />
+                                <Label>Departemen</Label>
+                                <Input placeholder="cth. IT" {...register("department")} />
                             </div>
                             <div className="space-y-1.5">
-                                <Label>Position</Label>
-                                <Input placeholder="e.g. Manager" {...register("position")} />
+                                <Label>Jabatan</Label>
+                                <Input placeholder="cth. Manajer" {...register("position")} />
                             </div>
                         </div>
                     </div>
-                    
+
                     {/* Personal Details */}
                     <div className="space-y-4">
-                        <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-500 border-b border-gray-100 dark:border-white/5 pb-2 block">Personal Details</Label>
+                        <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-500 border-b border-gray-100 dark:border-white/5 pb-2 block">Data Pribadi</Label>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                             <div className="space-y-1.5">
                                 <Controller
                                     name="nik"
                                     control={control}
                                     render={({ field }) => (
-                                        <NumberInput label="NIK" placeholder="Identity Card ID" value={field.value || ""} onChange={field.onChange} />
+                                        <NumberInput label="NIK" placeholder="Nomor Induk Kependudukan" value={field.value || ""} onChange={field.onChange} />
                                     )}
                                 />
                             </div>
@@ -1110,37 +1110,37 @@ const EmployeesList: React.FC = () => {
                                     name="gender"
                                     control={control}
                                     render={({ field }) => (
-                                        <CustomSelect label="Gender" value={field.value || ""} options={[{label:"Male",value:"M"},{label:"Female",value:"F"}]} onChange={(v) => field.onChange(String(v))} />
+                                        <CustomSelect label="Jenis Kelamin" value={field.value || ""} options={[{label:"Laki-laki",value:"M"},{label:"Perempuan",value:"F"}]} onChange={(v) => field.onChange(String(v))} />
                                     )}
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <Label>Place of Birth</Label>
-                                <Input placeholder="City" {...register("placeOfBirth")} />
+                                <Label>Tempat Lahir</Label>
+                                <Input placeholder="Kota" {...register("placeOfBirth")} />
                             </div>
                             <div className="space-y-1.5">
                                 <Controller
                                     name="dateOfBirth"
                                     control={control}
                                     render={({ field }) => (
-                                        <DatePicker label="Date of Birth" value={field.value || null} onChange={field.onChange} />
+                                        <DatePicker label="Tanggal Lahir" value={field.value || null} onChange={field.onChange} />
                                     )}
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <Label>Religion</Label>
-                                <Input placeholder="Religion" {...register("religion")} />
+                                <Label>Agama</Label>
+                                <Input placeholder="Agama" {...register("religion")} />
                             </div>
                         </div>
                     </div>
 
                     {/* Address */}
                     <div className="space-y-4">
-                        <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-500 border-b border-gray-100 dark:border-white/5 pb-2 block">Address Information</Label>
+                        <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-500 border-b border-gray-100 dark:border-white/5 pb-2 block">Informasi Alamat</Label>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="md:col-span-2 space-y-1.5">
-                                <Label>Street Address</Label>
-                                <textarea rows={2} {...register("address")} className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm transition-all focus:border-brand-500 focus:outline-none dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-white resize-none shadow-sm outline-none" placeholder="Full street address..." />
+                                <Label>Alamat Jalan</Label>
+                                <textarea rows={2} {...register("address")} className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm transition-all focus:border-brand-500 focus:outline-none dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-white resize-none shadow-sm outline-none" placeholder="Alamat jalan lengkap..." />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
@@ -1163,16 +1163,16 @@ const EmployeesList: React.FC = () => {
                                 </div>
                             </div>
                             <div className="space-y-1.5">
-                                <Label>Kelurahan/Village</Label>
-                                <Input placeholder="Village" {...register("kelurahan")} />
+                                <Label>Kelurahan/Desa</Label>
+                                <Input placeholder="Kelurahan" {...register("kelurahan")} />
                             </div>
                             <div className="space-y-1.5">
-                                <Label>Kecamatan/District</Label>
-                                <Input placeholder="District" {...register("kecamatan")} />
+                                <Label>Kecamatan</Label>
+                                <Input placeholder="Kecamatan" {...register("kecamatan")} />
                             </div>
                             <div className="space-y-1.5">
-                                <Label>Province</Label>
-                                <Input placeholder="Province" {...register("province")} />
+                                <Label>Provinsi</Label>
+                                <Input placeholder="Provinsi" {...register("province")} />
                             </div>
                         </div>
                     </div>
@@ -1187,7 +1187,7 @@ const EmployeesList: React.FC = () => {
         onClose={() => !importMutation.isPending && setIsImportModalOpen(false)}
         onImport={handleImport}
         onDownloadTemplate={handleDownloadTemplate}
-        title="Import Employees"
+        title="Impor Pegawai"
         isImporting={importMutation.isPending}
       />
 

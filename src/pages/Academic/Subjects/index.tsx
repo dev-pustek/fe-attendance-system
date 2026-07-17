@@ -46,8 +46,8 @@ import Dropdown from "../../../components/molecules/Dropdown";
 import DropdownItem from "../../../components/atoms/DropdownItem";
 
 const subjectSchema = z.object({
-  code: z.string().min(1, "Subject Code is required"),
-  name: z.string().min(1, "Subject Name is required"),
+  code: z.string().min(1, "Kode Mata Pelajaran wajib diisi"),
+  name: z.string().min(1, "Nama Mata Pelajaran wajib diisi"),
   majorId: z.coerce.number().optional().nullable(),
   isActive: z.boolean().default(true),
 });
@@ -161,30 +161,30 @@ export default function Subjects() {
     try {
       if (selectedSubject) {
         await updateMutation.mutateAsync({ id: selectedSubject.id, data: payload as UpdateSubjectDto });
-        showSuccess(`Subject "${data.name}" updated successfully`);
+        showSuccess(`Mata Pelajaran "${data.name}" berhasil diperbarui`);
       } else {
         await createMutation.mutateAsync(payload as CreateSubjectDto);
-        showSuccess(`Subject "${data.name}" created successfully`);
+        showSuccess(`Mata Pelajaran "${data.name}" berhasil dibuat`);
       }
       setIsModalOpen(false);
     } catch (e) {
-      showError(e, "Failed to save subject");
+      showError(e, "Gagal menyimpan mata pelajaran");
     }
   };
 
   const handleDelete = async (subject: Subject) => {
     const confirmed = await confirm({
       variant: "delete",
-      title: "Delete Subject",
-      message: `Are you sure you want to delete "${subject.name}"? This action cannot be undone.`,
+      title: "Hapus Mata Pelajaran",
+      message: `Apakah Anda yakin ingin menghapus "${subject.name}"? Tindakan ini tidak dapat dibatalkan.`,
     });
 
     if (confirmed) {
       try {
         await deleteMutation.mutateAsync(subject.id);
-        showSuccess("Subject deleted successfully.");
+        showSuccess("Mata Pelajaran berhasil dihapus.");
       } catch (e) {
-        showError(e, "Failed to delete subject");
+        showError(e, "Gagal menghapus mata pelajaran");
       }
     }
   };
@@ -194,19 +194,19 @@ export default function Subjects() {
 
     const confirmed = await confirm({
       variant: "delete",
-      title: "Bulk Delete Subjects",
-      message: `Are you sure you want to permanently delete ${selectedIds.size} selected subjects?`,
-      confirmText: `Delete ${selectedIds.size} Subjects`,
+      title: "Hapus Massal Mata Pelajaran",
+      message: `Apakah Anda yakin ingin menghapus permanen ${selectedIds.size} mata pelajaran terpilih?`,
+      confirmText: `Hapus ${selectedIds.size} Mata Pelajaran`,
     });
 
     if (confirmed) {
       try {
         const promises = Array.from(selectedIds).map((id) => deleteMutation.mutateAsync(id));
         await Promise.all(promises);
-        showSuccess(`Successfully removed ${selectedIds.size} subjects.`);
+        showSuccess(`Berhasil menghapus ${selectedIds.size} mata pelajaran.`);
         setSelectedIds(new Set());
       } catch (e) {
-        showError(e, "Failed to remove some subjects");
+        showError(e, "Gagal menghapus beberapa mata pelajaran");
       }
     }
   };
@@ -232,8 +232,8 @@ export default function Subjects() {
 
   return (
     <>
-      <PageMeta title="Subjects | Management" description="Manage school subjects." />
-      <PageBreadcrumb pageTitle="Subjects" />
+      <PageMeta title="Mata Pelajaran | Manajemen" description="Kelola mata pelajaran sekolah." />
+      <PageBreadcrumb pageTitle="Mata Pelajaran" />
 
       <div className="space-y-6">
         {/* Header Section */}
@@ -243,8 +243,8 @@ export default function Subjects() {
               <SubjectIcon className="size-5" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">Subjects Registry</h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Manage academic subjects and associate them with majors.</p>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">Registri Mata Pelajaran</h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Kelola mata pelajaran akademik dan hubungkan dengan jurusan.</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -253,7 +253,7 @@ export default function Subjects() {
               onClick={() => handleOpenModal()}
               className="hidden sm:flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-brand-500/25 transition-all hover:bg-brand-600 active:scale-[.98]"
             >
-              <PlusIcon className="fill-white size-4" /> Add New Subject
+              <PlusIcon className="fill-white size-4" /> Tambah Mata Pelajaran
             </button>
           </div>
         </div>
@@ -262,7 +262,7 @@ export default function Subjects() {
         {isMobile && (
           <MobileFloatingActions
             onAdd={() => handleOpenModal()}
-            addAriaLabel="Add New Subject"
+            addAriaLabel="Tambah Mata Pelajaran"
             dataActionsProps={{}}
           />
         )}
@@ -277,11 +277,11 @@ export default function Subjects() {
               <div className="flex items-center gap-2 mb-1">
                 <FilterIcon className="size-5 text-brand-500" />
                 <h3 className="text-sm font-bold uppercase tracking-wider text-gray-800 dark:text-gray-200">
-                  Search & Filter
+                  Cari & Filter
                 </h3>
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                Use the criteria below to filter data based on major or status.
+                Gunakan kriteria di bawah ini untuk menyaring data berdasarkan jurusan atau status.
               </p>
             </div>
             <div className="shrink-0 ml-4">
@@ -304,12 +304,12 @@ export default function Subjects() {
 
                 <div className="grid grid-cols-1 gap-5 items-end lg:grid-cols-12">
                   <div className="space-y-1.5 lg:col-span-3">
-                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Associated Major</Label>
+                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Jurusan Terkait</Label>
                     <CustomSelect
                       value={majorFilter === "all" ? "" : Number(majorFilter)}
                       onChange={(val) => updateFilter("majorId", val ? String(val) : "all")}
                       onClear={() => updateFilter("majorId", "all")}
-                      placeholder="All Majors (Including General)"
+                      placeholder="Semua Jurusan (Termasuk Umum)"
                       options={[
                         ...majors.map((m: any) => ({ label: m.name, value: Number(m.id) })),
                       ]}
@@ -322,16 +322,16 @@ export default function Subjects() {
                       value={statusFilter === "all" ? "" : statusFilter}
                       onChange={(val) => updateFilter("status", val ? String(val) : "all")}
                       onClear={() => updateFilter("status", "all")}
-                      placeholder="All Status"
+                      placeholder="Semua Status"
                       options={[
-                        { label: "Active", value: "true" },
-                        { label: "Inactive", value: "false" },
+                        { label: "Aktif", value: "true" },
+                        { label: "Tidak Aktif", value: "false" },
                       ]}
                       className="w-full [&>button]:w-full [&>button]:h-11 [&>button]:text-sm [&>button]:rounded-xl"
                     />
                   </div>
                   <div className="space-y-1.5 lg:col-span-4">
-                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Search Subjects</Label>
+                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Cari Mata Pelajaran</Label>
                     <div className="relative">
                       <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
                       <input
@@ -344,7 +344,7 @@ export default function Subjects() {
                             setPage(1);
                           }
                         }}
-                        placeholder="Search by Code or Name..."
+                        placeholder="Cari berdasarkan Kode atau Nama..."
                         className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-4 text-sm text-gray-900 transition-colors focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-white/[0.08] dark:bg-white/[0.02] dark:text-white"
                       />
                     </div>
@@ -359,7 +359,7 @@ export default function Subjects() {
                       }}
                       className="flex h-11 flex-1 items-center justify-center rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 dark:border-white/[0.08] dark:bg-transparent dark:text-gray-300"
                     >
-                      Reset
+                      Atur Ulang
                     </button>
                     <button
                       onClick={() => {
@@ -369,7 +369,7 @@ export default function Subjects() {
                       className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 text-sm font-semibold text-white transition-all hover:bg-brand-600"
                     >
                       <SearchIcon className="size-4" />
-                      Search
+                      Cari
                     </button>
                   </div>
                 </div>
@@ -384,7 +384,7 @@ export default function Subjects() {
           onClearSelection={() => setSelectedIds(new Set())}
           bulkActions={[
             {
-              label: "Delete Selected",
+              label: "Hapus Terpilih",
               icon: <TrashBinIcon className="size-3.5" />,
               onClick: handleBulkDelete,
               variant: "danger",
@@ -399,7 +399,7 @@ export default function Subjects() {
               <div className="flex items-center gap-3 px-1">
                 <Checkbox checked={allSelected} onChange={toggleAll} />
                 <span className="text-xs text-gray-500 dark:text-gray-400">
-                  {selectedIds.size > 0 ? `${selectedIds.size} selected` : "Select all"}
+                  {selectedIds.size > 0 ? `${selectedIds.size} terpilih` : "Pilih semua"}
                 </span>
               </div>
             )}
@@ -413,7 +413,7 @@ export default function Subjects() {
                 <div className="size-10 rounded-full bg-gray-50 dark:bg-white/5 flex items-center justify-center mx-auto mb-3">
                   <SubjectIcon className="size-5 opacity-20" />
                 </div>
-                <p className="text-sm font-medium">No subjects found.</p>
+                <p className="text-sm font-medium">Tidak ada mata pelajaran yang ditemukan.</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-3">
@@ -435,7 +435,7 @@ export default function Subjects() {
                 <div className="size-5 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
               )}
               {!hasNextPage && subjects.length > 0 && (
-                <p className="text-xs text-gray-400 font-medium">All subjects loaded</p>
+                <p className="text-xs text-gray-400 font-medium">Semua mata pelajaran telah dimuat</p>
               )}
             </div>
           </div>
@@ -449,19 +449,19 @@ export default function Subjects() {
                     <Checkbox checked={allSelected} onChange={toggleAll} />
                   </TableCell>
                   <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Code
+                    Kode
                   </TableCell>
                   <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Name
+                    Nama
                   </TableCell>
                   <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Major
+                    Jurusan
                   </TableCell>
                   <TableCell isHeader className="px-4 py-3.5 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Status
                   </TableCell>
                   <TableCell isHeader className="px-4 py-3.5 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Actions
+                    Aksi
                   </TableCell>
                 </TableRow>
               </TableHeader>
@@ -471,7 +471,7 @@ export default function Subjects() {
                     <TableCell colSpan={6} className="py-12 text-center text-gray-400">
                       <div className="flex flex-col items-center gap-3">
                         <div className="size-6 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
-                        <span className="text-sm">Loading subjects...</span>
+                        <span className="text-sm">Memuat mata pelajaran...</span>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -482,7 +482,7 @@ export default function Subjects() {
                         <div className="size-10 rounded-full bg-gray-50 dark:bg-white/5 flex items-center justify-center mb-1">
                           <SubjectIcon className="size-5 opacity-20" />
                         </div>
-                        <p className="text-sm font-medium">No subjects found.</p>
+                        <p className="text-sm font-medium">Tidak ada mata pelajaran yang ditemukan.</p>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -514,12 +514,12 @@ export default function Subjects() {
                             <span className="text-theme-sm text-gray-600 dark:text-gray-400">{subject.major.name}</span>
                           </div>
                         ) : (
-                          <span className="text-theme-xs text-gray-400 italic">General Subject (All Majors)</span>
+                          <span className="text-theme-xs text-gray-400 italic">Mata Pelajaran Umum (Semua Jurusan)</span>
                         )}
                       </TableCell>
                       <TableCell className="px-4 py-4 text-center">
                         <Badge color={subject.isActive ? "success" : "light"}>
-                          {subject.isActive ? "Active" : "Inactive"}
+                          {subject.isActive ? "Aktif" : "Tidak Aktif"}
                         </Badge>
                       </TableCell>
                       <TableCell className="px-4 py-4 text-center">
@@ -527,14 +527,14 @@ export default function Subjects() {
                           <button
                             onClick={() => handleOpenModal(subject)}
                             className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-brand-50 hover:text-brand-500 dark:hover:bg-brand-500/10"
-                            title="Edit Subject"
+                            title="Ubah Mata Pelajaran"
                           >
                             <PencilIcon className="size-4" />
                           </button>
                           <button
                             onClick={() => handleDelete(subject)}
                             className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-error-50 hover:text-error-500 dark:hover:bg-error-500/10"
-                            title="Delete Subject"
+                            title="Hapus Mata Pelajaran"
                           >
                             <TrashBinIcon className="size-4" />
                           </button>
@@ -550,15 +550,15 @@ export default function Subjects() {
             {total > 0 && (
               <div className="flex flex-col gap-4 border-t border-gray-100 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between dark:border-white/[0.05]">
                 <p className="text-xs text-gray-400 dark:text-gray-500">
-                  Showing{" "}
+                  Menampilkan{" "}
                   <span className="font-semibold text-gray-600 dark:text-gray-300">
                     {(page - 1) * limit + 1}–{Math.min(page * limit, total)}
                   </span>{" "}
-                  of <span className="font-semibold text-gray-600 dark:text-gray-300">{total}</span>
+                  dari <span className="font-semibold text-gray-600 dark:text-gray-300">{total}</span>
                 </p>
                 <div className="flex items-center gap-1.5">
                   <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50 disabled:pointer-events-none disabled:opacity-40 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400">
-                    <ChevronLeftIcon className="size-3.5" /> Prev
+                    <ChevronLeftIcon className="size-3.5" /> Sebelumnya
                   </button>
                   {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
                     const p = i + 1;
@@ -584,8 +584,8 @@ export default function Subjects() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         className="max-w-xl"
-        title={selectedSubject ? "Update Subject" : "Register New Subject"}
-        description="Configure specific subjects and associate them with majors if applicable."
+        title={selectedSubject ? "Ubah Mata Pelajaran" : "Daftarkan Mata Pelajaran Baru"}
+        description="Atur mata pelajaran dan kaitkan dengan jurusan jika diperlukan."
         footer={
           <div className="flex justify-end gap-3">
             <button
@@ -593,14 +593,14 @@ export default function Subjects() {
               onClick={() => setIsModalOpen(false)}
               className="rounded-xl px-4 py-2 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.05]"
             >
-              Cancel
+              Batal
             </button>
             <button
               type="submit"
               form="subject-form"
               className="rounded-xl bg-brand-500 px-6 py-2 text-sm font-medium text-white transition-all hover:bg-brand-600 shadow-lg shadow-brand-500/20"
             >
-              {selectedSubject ? "Update" : "Create"}
+              {selectedSubject ? "Perbarui" : "Buat"}
             </button>
           </div>
         }
@@ -608,20 +608,20 @@ export default function Subjects() {
         <form id="subject-form" onSubmit={hookFormSubmit(onSubmitForm)} className="space-y-6">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Subject Code</Label>
+              <Label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Kode Mata Pelajaran</Label>
               <Input
                 type="text"
                 {...register("code")}
-                placeholder="e.g. MTK-10"
+                placeholder="cth. MTK-10"
                 error={errors.code?.message}
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Subject Name</Label>
+              <Label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Mata Pelajaran</Label>
               <Input
                 type="text"
                 {...register("name")}
-                placeholder="e.g. Matematika Kelas 10"
+                placeholder="cth. Matematika Kelas 10"
                 error={errors.name?.message}
               />
             </div>
@@ -633,14 +633,14 @@ export default function Subjects() {
             render={({ field }) => (
               <div className="space-y-1.5">
                 <CustomSelect
-                  label="Associated Major (Optional)"
+                  label="Jurusan Terkait (Opsional)"
                   value={field.value || ""}
                   onChange={(val) => field.onChange(val ? Number(val) : null)}
                   options={[
-                    { label: "General Subject (All Majors)", value: "" },
+                    { label: "Mata Pelajaran Umum (Semua Jurusan)", value: "" },
                     ...majors.map((m: any) => ({ label: m.name, value: m.id })),
                   ]}
-                  placeholder="Choose Major"
+                  placeholder="Pilih Jurusan"
                   onClear={() => field.onChange(null)}
                 />
                 {errors.majorId && <p className="text-xs text-error-500">{errors.majorId.message}</p>}
@@ -653,7 +653,7 @@ export default function Subjects() {
             control={control}
             render={({ field }) => (
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-gray-500 dark:text-gray-400">Subject Status</Label>
+                <Label className="text-xs font-medium text-gray-500 dark:text-gray-400">Status Mata Pelajaran</Label>
                 <div
                   className={`flex items-center justify-between rounded-xl border px-4 py-3 transition-all ${
                     field.value
@@ -667,10 +667,10 @@ export default function Subjects() {
                         field.value ? "text-green-700 dark:text-green-400" : "text-gray-700 dark:text-gray-300"
                       }`}
                     >
-                      {field.value ? "Active Subject" : "Inactive Subject"}
+                      {field.value ? "Mata Pelajaran Aktif" : "Mata Pelajaran Tidak Aktif"}
                     </span>
                     <span className="text-[10px] text-gray-500 dark:text-gray-500">
-                      {field.value ? "Subject is available for scheduling." : "Subject is currently disabled."}
+                      {field.value ? "Mata pelajaran tersedia untuk penjadwalan." : "Mata pelajaran sedang dinonaktifkan."}
                     </span>
                   </div>
                   <Switch checked={field.value} onChange={field.onChange} />

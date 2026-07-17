@@ -38,8 +38,8 @@ const StudentListModal: React.FC<StudentListModalProps> = ({ classId, isOpen, on
     <Modal 
       isOpen={isOpen} 
       onClose={onClose} 
-      title="Enrolled Students" 
-      description="List of students currently enrolled in this class."
+      title="Siswa Terdaftar"
+      description="Daftar siswa yang saat ini terdaftar di kelas ini."
       className="max-w-xl"
       footer={
            <div className="flex justify-end pt-2">
@@ -47,7 +47,7 @@ const StudentListModal: React.FC<StudentListModalProps> = ({ classId, isOpen, on
                 onClick={onClose}
                 className="rounded-xl px-4 py-2 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.05]"
               >
-                Close
+                Tutup
               </button>
            </div>
       }
@@ -57,7 +57,7 @@ const StudentListModal: React.FC<StudentListModalProps> = ({ classId, isOpen, on
             <div className="flex h-full items-center justify-center">
                 <div className="flex flex-col items-center gap-3">
                   <div className="size-8 animate-spin rounded-full border-2 border-brand-500 border-t-transparent"></div>
-                  <span className="text-sm text-gray-400">Loading students...</span>
+                  <span className="text-sm text-gray-400">Memuat siswa...</span>
                 </div>
             </div>
         ) : students.length === 0 ? (
@@ -65,8 +65,8 @@ const StudentListModal: React.FC<StudentListModalProps> = ({ classId, isOpen, on
                 <div className="size-12 rounded-full bg-gray-50 dark:bg-white/5 flex items-center justify-center mb-3">
                   <UserIcon className="size-6 opacity-20" />
                 </div>
-                <p className="font-medium">No students enrolled</p>
-                <p className="text-sm opacity-60">There are no students assigned to this class yet.</p>
+                <p className="font-medium">Belum ada siswa terdaftar</p>
+                <p className="text-sm opacity-60">Belum ada siswa yang ditempatkan di kelas ini.</p>
             </div>
         ) : (
             <div className="space-y-3">
@@ -81,7 +81,7 @@ const StudentListModal: React.FC<StudentListModalProps> = ({ classId, isOpen, on
                         </div>
                         <div className="flex-1 min-w-0">
                             <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
-                                {student.user?.name || student.studentId || "Unknown Student"}
+                                {student.user?.name || student.studentId || "Siswa Tidak Diketahui"}
                             </p>
                             <div className="flex items-center gap-2 text-xs text-gray-500">
                                 <span className="font-mono">{student.nis || "-"}</span>
@@ -108,13 +108,13 @@ const StudentListModal: React.FC<StudentListModalProps> = ({ classId, isOpen, on
 };
 
 const DAYS_OF_WEEK = [
-  { label: "Monday", value: "Monday" },
-  { label: "Tuesday", value: "Tuesday" },
-  { label: "Wednesday", value: "Wednesday" },
-  { label: "Thursday", value: "Thursday" },
-  { label: "Friday", value: "Friday" },
-  { label: "Saturday", value: "Saturday" },
-  { label: "Sunday", value: "Sunday" },
+  { label: "Senin", value: "Monday" },
+  { label: "Selasa", value: "Tuesday" },
+  { label: "Rabu", value: "Wednesday" },
+  { label: "Kamis", value: "Thursday" },
+  { label: "Jumat", value: "Friday" },
+  { label: "Sabtu", value: "Saturday" },
+  { label: "Minggu", value: "Sunday" },
 ];
 
 const ClassSchedules: React.FC = () => {
@@ -203,7 +203,7 @@ const ClassSchedules: React.FC = () => {
         
         return {
             id: String(schedule.id),
-            title: `${schedule.class?.name || 'Class'} (${schedule.startTime} - ${schedule.endTime})`,
+            title: `${schedule.class?.name || 'Kelas'} (${schedule.startTime} - ${schedule.endTime})`,
             startTime: schedule.startTime,
             endTime: schedule.endTime,
             daysOfWeek: [dayMap[schedule.dayOfWeek] ?? 1],
@@ -262,14 +262,14 @@ const ClassSchedules: React.FC = () => {
     const isUpdate = !!selectedSchedule;
 
     if (!formData.classId || !formData.academicYearId) {
-        showError(null, "Please select both a Class and an Academic Year");
+        showError(null, "Silakan pilih Kelas dan Tahun Ajaran");
         return;
     }
 
     const confirmed = await confirm({
       variant: isUpdate ? 'update' : 'create',
-      title: isUpdate ? 'Update Schedule' : 'Create Schedule',
-      message: `Are you sure you want to ${isUpdate ? 'update' : 'create'} this class schedule?`,
+      title: isUpdate ? 'Perbarui Jadwal' : 'Buat Jadwal',
+      message: `Apakah Anda yakin ingin ${isUpdate ? 'memperbarui' : 'membuat'} jadwal kelas ini?`,
     });
 
     if (!confirmed) return;
@@ -286,30 +286,30 @@ const ClassSchedules: React.FC = () => {
           id: selectedSchedule.id,
           data: payload
         });
-        showSuccess("Class schedule updated successfully!");
+        showSuccess("Jadwal kelas berhasil diperbarui!");
       } else {
         await createMutation.mutateAsync(payload);
-        showSuccess("Class schedule created successfully!");
+        showSuccess("Jadwal kelas berhasil dibuat!");
       }
       setIsModalOpen(false);
     } catch (error) {
-      showError(error, `Failed to ${isUpdate ? 'update' : 'create'} class schedule`);
+      showError(error, `Gagal ${isUpdate ? 'memperbarui' : 'membuat'} jadwal kelas`);
     }
   };
 
   const handleDelete = async (id: number | string) => {
     const confirmed = await confirm({
       variant: 'delete',
-      title: 'Delete Schedule',
-      message: 'Are you sure you want to delete this class schedule?',
+      title: 'Hapus Jadwal',
+      message: 'Apakah Anda yakin ingin menghapus jadwal kelas ini?',
     });
 
     if (confirmed) {
       try {
         await deleteMutation.mutateAsync(id);
-        showSuccess("Class schedule deleted successfully!");
+        showSuccess("Jadwal kelas berhasil dihapus!");
       } catch (error) {
-        showError(error, "Failed to delete class schedule");
+        showError(error, "Gagal menghapus jadwal kelas");
       }
     }
   };
@@ -336,33 +336,33 @@ const ClassSchedules: React.FC = () => {
     const count = selectedIds.length;
     const confirmed = await confirm({
       variant: 'delete',
-      title: 'Bulk Delete Schedules',
-      message: `Are you sure you want to permanently delete ${count} selected class schedules? This action cannot be undone.`,
-      confirmText: `Delete ${count} Schedules`
+      title: 'Hapus Jadwal Massal',
+      message: `Apakah Anda yakin ingin menghapus permanen ${count} jadwal kelas terpilih? Tindakan ini tidak dapat dibatalkan.`,
+      confirmText: `Hapus ${count} Jadwal`
     });
 
     if (confirmed) {
       try {
         const promises = selectedIds.map(id => deleteMutation.mutateAsync(id));
         await Promise.all(promises);
-        showSuccess(`Successfully deleted ${count} schedules.`);
+        showSuccess(`Berhasil menghapus ${count} jadwal.`);
         setSelectedIds([]);
       } catch (error) {
-        showError(error, "Failed to delete some schedules");
+        showError(error, "Gagal menghapus beberapa jadwal");
       }
     }
   };
 
   return (
     <>
-      <PageMeta title="Class Schedules | Academic" description="Manage weekly class schedules." />
-      <PageBreadcrumb pageTitle="Class Schedules" />
+      <PageMeta title="Jadwal Kelas | Akademik" description="Kelola jadwal kehadiran kelas mingguan." />
+      <PageBreadcrumb pageTitle="Jadwal Kelas" />
 
       <div className="space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Class Schedules</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Manage class timetables per academic year.</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Jadwal Kelas</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Kelola jadwal kehadiran kelas per tahun ajaran.</p>
           </div>
           <div className="flex items-center gap-3">
              {/* View Toggle */}
@@ -376,7 +376,7 @@ const ClassSchedules: React.FC = () => {
                   }`}
                 >
                   <ListIcon className="size-4 mr-1.5" />
-                  <span className="text-xs font-semibold">List</span>
+                  <span className="text-xs font-semibold">Daftar</span>
                 </button>
                 <button
                   onClick={() => setViewMode("calendar")}
@@ -387,7 +387,7 @@ const ClassSchedules: React.FC = () => {
                   }`}
                 >
                   <TableIcon className="size-4 mr-1.5" />
-                  <span className="text-xs font-semibold">Calendar</span>
+                  <span className="text-xs font-semibold">Kalender</span>
                 </button>
              </div>
 
@@ -396,7 +396,7 @@ const ClassSchedules: React.FC = () => {
                 className="flex items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-brand-600 shadow-lg shadow-brand-500/20"
               >
                 <PlusIcon className="fill-white text-xl text-white" />
-                Add Schedule
+                Tambah Jadwal
               </button>
           </div>
         </div>
@@ -404,34 +404,34 @@ const ClassSchedules: React.FC = () => {
         {/* Filters */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <CustomSelect
-            label="Filter Class"
+            label="Filter Kelas"
             value={filterClassId}
             onChange={(val) => { setFilterClassId(String(val)); setPage(1); }}
             options={[
-              { label: "All Classes", value: "" },
+              { label: "Semua Kelas", value: "" },
               ...classes.map(c => ({ label: c.name, value: String(c.id) }))
             ]}
-            placeholder="Select Class"
+            placeholder="Pilih Kelas"
           />
           <CustomSelect
-            label="Filter Academic Year"
+            label="Filter Tahun Ajaran"
             value={filterAcademicYearId}
             onChange={(val) => { setFilterAcademicYearId(String(val)); setPage(1); }}
             options={[
-              { label: "All Academic Years", value: "" },
+              { label: "Semua Tahun Ajaran", value: "" },
               ...academicYears.map(y => ({ label: y.name, value: String(y.id) }))
             ]}
-            placeholder="Select Academic Year"
+            placeholder="Pilih Tahun Ajaran"
           />
           <CustomSelect
-            label="Filter Day"
+            label="Filter Hari"
             value={filterDay}
             onChange={(val) => { setFilterDay(String(val)); setPage(1); }}
             options={[
-              { label: "All Days", value: "" },
+              { label: "Semua Hari", value: "" },
               ...DAYS_OF_WEEK
             ]}
-            placeholder="Select Day"
+            placeholder="Pilih Hari"
           />
         </div>
 
@@ -442,7 +442,7 @@ const ClassSchedules: React.FC = () => {
               <div className="size-8 rounded-full bg-brand-500 text-white flex items-center justify-center text-sm font-bold shadow-sm font-mono">
                 {selectedIds.length}
               </div>
-              <p className="text-sm font-semibold text-brand-700 dark:text-brand-400">Schedules Selected</p>
+              <p className="text-sm font-semibold text-brand-700 dark:text-brand-400">Jadwal Terpilih</p>
             </div>
             <div className="flex items-center gap-2">
                 <button
@@ -450,13 +450,13 @@ const ClassSchedules: React.FC = () => {
                     className="flex items-center gap-2 px-4 py-2 bg-error-50 dark:bg-error-500/10 border border-error-100 dark:border-error-500/20 rounded-xl text-sm font-bold text-error-600 dark:text-error-400 hover:bg-error-100 transition-all shadow-sm"
                 >
                     <TrashBinIcon className="size-4" />
-                    Delete Selected
+                    Hapus Terpilih
                 </button>
                 <button
                     onClick={() => setSelectedIds([])}
                     className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-700 transition-colors"
                 >
-                    Cancel
+                    Batal
                 </button>
             </div>
           </div>
@@ -478,31 +478,31 @@ const ClassSchedules: React.FC = () => {
                 </TableCell>
                 <TableCell isHeader className="px-5 py-4 text-left">
                   <button onClick={() => handleSort("class.name")} className="flex items-center gap-2 text-theme-xs font-medium text-gray-500 dark:text-gray-400 hover:text-brand-500 transition-colors uppercase tracking-wider">
-                    Class <SortIcon column="class.name" />
+                    Kelas <SortIcon column="class.name" />
                   </button>
                 </TableCell>
                 <TableCell isHeader className="px-5 py-4 text-left">
                   <button onClick={() => handleSort("academicYear.name")} className="flex items-center gap-2 text-theme-xs font-medium text-gray-500 dark:text-gray-400 hover:text-brand-500 transition-colors uppercase tracking-wider">
-                     Academic Year <SortIcon column="academicYear.name" />
+                     Tahun Ajaran <SortIcon column="academicYear.name" />
                   </button>
                 </TableCell>
                 <TableCell isHeader className="px-5 py-4 text-left">
                    <button onClick={() => handleSort("dayOfWeek")} className="flex items-center gap-2 text-theme-xs font-medium text-gray-500 dark:text-gray-400 hover:text-brand-500 transition-colors uppercase tracking-wider">
-                     Day & Time <SortIcon column="dayOfWeek" />
+                     Hari & Waktu <SortIcon column="dayOfWeek" />
                    </button>
                 </TableCell>
-                <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tolerance</TableCell>
-                <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">Actions</TableCell>
+                <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Toleransi</TableCell>
+                <TableCell isHeader className="px-5 py-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">Aksi</TableCell>
               </TableRow>
             </TableHeader>
             <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-12 text-center text-gray-400">Loading schedules...</TableCell>
+                  <TableCell colSpan={6} className="py-12 text-center text-gray-400">Memuat jadwal...</TableCell>
                 </TableRow>
               ) : sortedSchedules.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-12 text-center text-gray-400">No schedules found.</TableCell>
+                  <TableCell colSpan={6} className="py-12 text-center text-gray-400">Tidak ada jadwal ditemukan.</TableCell>
                 </TableRow>
               ) : (
                 sortedSchedules.map((schedule) => (
@@ -535,8 +535,8 @@ const ClassSchedules: React.FC = () => {
                     </TableCell>
                     <TableCell className="px-5 py-4">
                       <div className="flex flex-col gap-0.5">
-                        <p className="text-xs text-gray-600 dark:text-gray-400">Late: <span className="font-medium text-brand-500">{schedule.lateToleranceMinutes}m</span></p>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">Early: <span className="font-medium text-warning-500">{schedule.earlyLeaveThresholdMinutes}m</span></p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">Terlambat: <span className="font-medium text-brand-500">{schedule.lateToleranceMinutes}m</span></p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">Pulang Cepat: <span className="font-medium text-warning-500">{schedule.earlyLeaveThresholdMinutes}m</span></p>
                       </div>
                     </TableCell>
                     <TableCell className="px-5 py-4 text-right">
@@ -544,7 +544,7 @@ const ClassSchedules: React.FC = () => {
                         <button
                           onClick={() => setStudentListClassId(String(schedule.classId))}
                           className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-brand-50 hover:text-brand-500 dark:hover:bg-brand-500/10"
-                          title="View Students"
+                          title="Lihat Siswa"
                         >
                           <UserIcon className="size-4" />
                         </button>
@@ -591,9 +591,9 @@ const ClassSchedules: React.FC = () => {
         {meta && (meta.totalPages || 1) > 1 && (
              <div className="flex flex-col gap-4 px-2 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                     Showing <span className="font-medium text-gray-700 dark:text-white">{(page - 1) * limit + 1}</span> to{" "}
-                     <span className="font-medium text-gray-700 dark:text-white">{Math.min(page * limit, meta.total)}</span> of{" "}
-                     <span className="font-medium text-gray-700 dark:text-white">{meta.total}</span> items
+                     Menampilkan <span className="font-medium text-gray-700 dark:text-white">{(page - 1) * limit + 1}</span> sampai{" "}
+                     <span className="font-medium text-gray-700 dark:text-white">{Math.min(page * limit, meta.total)}</span> dari{" "}
+                     <span className="font-medium text-gray-700 dark:text-white">{meta.total}</span> item
                 </p>
                 <div className="flex items-center gap-2">
                      <button
@@ -602,7 +602,7 @@ const ClassSchedules: React.FC = () => {
                          className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400 dark:hover:bg-white/[0.05]"
                      >
                          <ChevronLeftIcon className="size-4" />
-                         Previous
+                         Sebelumnya
                      </button>
                      <div className="flex items-center gap-1.5 px-2">
                          <span className="text-sm font-semibold text-gray-900 dark:text-white">{page}</span>
@@ -614,7 +614,7 @@ const ClassSchedules: React.FC = () => {
                          disabled={page === (meta.totalPages || 1)}
                          className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400 dark:hover:bg-white/[0.05]"
                      >
-                         Next
+                         Berikutnya
                          <AngleRightIcon className="size-4" />
                      </button>
                 </div>
@@ -626,8 +626,8 @@ const ClassSchedules: React.FC = () => {
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
         className="max-w-md"
-        title={selectedSchedule ? "Update Schedule" : "Create Schedule"}
-        description="Manage class timetables, timings, and attendance tolerances."
+        title={selectedSchedule ? "Perbarui Jadwal" : "Buat Jadwal"}
+        description="Kelola waktu, jadwal, dan toleransi kehadiran kelas."
         footer={
            <div className="flex justify-end gap-3">
               <button
@@ -635,14 +635,14 @@ const ClassSchedules: React.FC = () => {
                 onClick={() => setIsModalOpen(false)}
                 className="rounded-xl px-4 py-2 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.05]"
               >
-                Cancel
+                Batal
               </button>
               <button
                 type="submit"
                 form="schedule-form"
                 className="rounded-xl bg-brand-500 px-6 py-2 text-sm font-medium text-white transition-all hover:bg-brand-600 shadow-lg shadow-brand-500/20"
               >
-                {selectedSchedule ? "Update" : "Create"}
+                {selectedSchedule ? "Perbarui" : "Buat"}
               </button>
            </div>
         }
@@ -650,23 +650,23 @@ const ClassSchedules: React.FC = () => {
         <div className="p-1">
           <form id="schedule-form" onSubmit={handleSubmit} className="space-y-4">
             <CustomSelect
-              label="Class"
+              label="Kelas"
               value={formData.classId}
               onChange={(val) => setFormData({ ...formData, classId: String(val) })}
               options={classes.map(c => ({ label: c.name, value: String(c.id) }))}
-              placeholder="Select Class"
-            />
-            
-            <CustomSelect
-              label="Academic Year"
-              value={formData.academicYearId}
-              onChange={(val) => setFormData({ ...formData, academicYearId: String(val) })}
-              options={academicYears.map(y => ({ label: y.name, value: String(y.id) }))}
-              placeholder="Select Academic Year"
+              placeholder="Pilih Kelas"
             />
 
             <CustomSelect
-              label="Day of Week"
+              label="Tahun Ajaran"
+              value={formData.academicYearId}
+              onChange={(val) => setFormData({ ...formData, academicYearId: String(val) })}
+              options={academicYears.map(y => ({ label: y.name, value: String(y.id) }))}
+              placeholder="Pilih Tahun Ajaran"
+            />
+
+            <CustomSelect
+              label="Hari"
               value={formData.dayOfWeek}
               onChange={(val) => setFormData({ ...formData, dayOfWeek: String(val) })}
               options={DAYS_OF_WEEK}
@@ -674,7 +674,7 @@ const ClassSchedules: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-4">
                <div className="space-y-1.5">
-                 <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Start Time</label>
+                 <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Waktu Mulai</label>
                  <input
                    type="time"
                    value={formData.startTime}
@@ -684,7 +684,7 @@ const ClassSchedules: React.FC = () => {
                  />
                </div>
                <div className="space-y-1.5">
-                 <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">End Time</label>
+                 <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Waktu Selesai</label>
                  <input
                    type="time"
                    value={formData.endTime}
@@ -697,14 +697,14 @@ const ClassSchedules: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-4">
                 <NumberInput
-                    label="Late Tolerance (Min)"
+                    label="Toleransi Keterlambatan (Menit)"
                     value={formData.lateToleranceMinutes}
                     onChange={(val) => setFormData({ ...formData, lateToleranceMinutes: Number(val) })}
                     placeholder="0"
                     labelClassName="text-xs font-medium text-gray-500 uppercase tracking-wider"
                 />
                 <NumberInput
-                    label="Early Leave (Min)"
+                    label="Pulang Cepat (Menit)"
                     value={formData.earlyLeaveThresholdMinutes}
                     onChange={(val) => setFormData({ ...formData, earlyLeaveThresholdMinutes: Number(val) })}
                     placeholder="0"

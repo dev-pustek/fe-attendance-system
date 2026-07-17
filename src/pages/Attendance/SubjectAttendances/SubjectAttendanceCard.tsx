@@ -22,17 +22,17 @@ interface SubjectAttendanceCardProps {
 const getStatusConfig = (status: SubjectAttendance["status"]) => {
   switch (status?.toLowerCase()) {
     case "present":
-      return { color: "success" as const, text: "Present" };
+      return { color: "success" as const, text: "Hadir" };
     case "late":
-      return { color: "warning" as const, text: "Late" };
+      return { color: "warning" as const, text: "Terlambat" };
     case "absent":
-      return { color: "error" as const, text: "Absent" };
+      return { color: "error" as const, text: "Tidak Hadir" };
     case "excused":
-      return { color: "info" as const, text: "Excused" };
+      return { color: "info" as const, text: "Izin" };
     case "sick":
-      return { color: "info" as const, text: "Sick" };
+      return { color: "info" as const, text: "Sakit" };
     default:
-      return { color: "light" as const, text: status || "Unknown" };
+      return { color: "light" as const, text: status || "Tidak Diketahui" };
   }
 };
 
@@ -72,7 +72,7 @@ const SubjectAttendanceCard: React.FC<SubjectAttendanceCardProps> = ({
         <div className="flex items-center gap-2">
           {attendance.status === "present" && <CheckCircleIcon className="size-4 shrink-0 text-success-500" />}
           <p className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white leading-tight truncate">
-            {attendance.student?.name || "Unknown Student"}
+            {attendance.student?.name || "Siswa Tidak Diketahui"}
           </p>
         </div>
         
@@ -95,7 +95,7 @@ const SubjectAttendanceCard: React.FC<SubjectAttendanceCardProps> = ({
         {/* Remarks */}
         {attendance.remarks && (
           <div className="mt-3 rounded-lg bg-gray-50 p-2 text-xs text-gray-600 dark:bg-white/[0.02] dark:text-gray-400">
-            <span className="font-semibold mr-1 text-gray-700 dark:text-gray-300">Notes:</span>
+            <span className="font-semibold mr-1 text-gray-700 dark:text-gray-300">Catatan:</span>
             {attendance.remarks}
           </div>
         )}
@@ -110,7 +110,7 @@ const SubjectAttendanceCard: React.FC<SubjectAttendanceCardProps> = ({
           }}
           className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/[0.04]"
         >
-          <PencilIcon className="size-3.5" /> Edit
+          <PencilIcon className="size-3.5" /> Ubah
         </button>
         <div className="h-4 w-px bg-gray-200 dark:bg-white/[0.06] mx-1" />
         <button
@@ -120,7 +120,7 @@ const SubjectAttendanceCard: React.FC<SubjectAttendanceCardProps> = ({
           }}
           className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/10"
         >
-          <TrashBinIcon className="size-3.5" /> Delete
+          <TrashBinIcon className="size-3.5" /> Hapus
         </button>
       </div>
     </div>

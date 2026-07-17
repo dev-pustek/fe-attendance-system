@@ -39,7 +39,7 @@ const SubjectCard: React.FC<SubjectCardProps> = ({
             {subject.code}
           </span>
           <Badge color={subject.isActive ? "success" : "light"}>
-            {subject.isActive ? "Active" : "Inactive"}
+            {subject.isActive ? "Aktif" : "Tidak Aktif"}
           </Badge>
         </div>
         <Checkbox
@@ -64,7 +64,7 @@ const SubjectCard: React.FC<SubjectCardProps> = ({
         <div className="mt-2 flex items-center gap-1.5 text-[11px] sm:text-xs text-gray-500 dark:text-gray-400">
           <InfoIcon className="size-3.5 shrink-0 text-gray-400 dark:text-gray-500" />
           <span className="font-medium">
-            {subject.major ? subject.major.name : "General Subject"}
+            {subject.major ? subject.major.name : "Mata Pelajaran Umum"}
           </span>
         </div>
       </div>
@@ -78,7 +78,7 @@ const SubjectCard: React.FC<SubjectCardProps> = ({
           }}
           className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/[0.04]"
         >
-          <PencilIcon className="size-3.5" /> Edit
+          <PencilIcon className="size-3.5" /> Ubah
         </button>
         <div className="h-4 w-px bg-gray-200 dark:bg-white/[0.06] mx-1" />
         <button
@@ -88,7 +88,7 @@ const SubjectCard: React.FC<SubjectCardProps> = ({
           }}
           className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/10"
         >
-          <TrashBinIcon className="size-3.5" /> Delete
+          <TrashBinIcon className="size-3.5" /> Hapus
         </button>
       </div>
     </div>

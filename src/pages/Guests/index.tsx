@@ -79,7 +79,7 @@ const RowActionMenu = ({ onEdit, onDelete, onCheckIn }: { onEdit: () => void; on
                     }}
                     className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-500/10"
                 >
-                    <CheckCircleIcon className="size-3.5" /> Check In
+                    <CheckCircleIcon className="size-3.5" /> Check-In
                 </DropdownItem>
                 <DropdownItem
                     onClick={() => {
@@ -97,7 +97,7 @@ const RowActionMenu = ({ onEdit, onDelete, onCheckIn }: { onEdit: () => void; on
                     }}
                     className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/10"
                 >
-                    <TrashBinIcon className="size-3.5" /> Delete
+                    <TrashBinIcon className="size-3.5" /> Hapus
                 </DropdownItem>
             </Dropdown>
         </div>
@@ -202,21 +202,21 @@ const Guests: React.FC = () => {
   const handleDelete = async (guest: Guest) => {
     const confirmed = await confirm({
       variant: "delete",
-      title: "Delete Guest",
-      message: `Are you sure you want to delete ${guest.name}? This action cannot be undone.`,
+      title: "Hapus Tamu",
+      message: `Apakah Anda yakin ingin menghapus ${guest.name}? Tindakan ini tidak dapat dibatalkan.`,
     });
 
     if (confirmed) {
       try {
         await deleteMutation.mutateAsync(Number(guest.id || guest.public_id));
-        showSuccess("Guest deleted successfully");
+        showSuccess("Tamu berhasil dihapus");
         setSelectedIds(prev => {
             const next = new Set(prev);
             next.delete(String(guest.id || guest.public_id));
             return next;
         });
       } catch (error) {
-        showError(error, "Failed to delete guest");
+        showError(error, "Gagal menghapus tamu");
       }
     }
   };
@@ -243,19 +243,19 @@ const Guests: React.FC = () => {
 
     const confirmed = await confirm({
       variant: "delete",
-      title: "Bulk Delete Guests",
-      message: `Are you sure you want to permanently delete ${selectedIds.size} selected guests? This action cannot be undone.`,
-      confirmText: `Delete ${selectedIds.size} Guests`
+      title: "Hapus Banyak Tamu",
+      message: `Apakah Anda yakin ingin menghapus permanen ${selectedIds.size} tamu yang dipilih? Tindakan ini tidak dapat dibatalkan.`,
+      confirmText: `Hapus ${selectedIds.size} Tamu`
     });
 
     if (confirmed) {
       try {
         const promises = Array.from(selectedIds).map(id => deleteMutation.mutateAsync(Number(id)));
         await Promise.all(promises);
-        showSuccess(`Successfully removed ${selectedIds.size} guests.`);
+        showSuccess(`Berhasil menghapus ${selectedIds.size} tamu.`);
         setSelectedIds(new Set());
       } catch (error) {
-        showError(error, "Failed to remove some guests");
+        showError(error, "Gagal menghapus beberapa tamu");
       }
     }
   };
@@ -267,9 +267,9 @@ const Guests: React.FC = () => {
           const params = ids && ids.length > 0 ? { ids: ids.join(',') } : queryParams;
           const blob = await guestService.exportGuestsExcel(params);
           downloadBlob(blob, "guests_export.xlsx");
-          showSuccess("Exported successfully");
+          showSuccess("Berhasil diekspor");
       } catch (err) {
-          showError(err, "Failed to export to Excel");
+          showError(err, "Gagal mengekspor ke Excel");
       } finally {
           setIsExporting(false);
       }
@@ -282,7 +282,7 @@ const Guests: React.FC = () => {
           const blob = await guestService.exportGuestsPdf(params);
           downloadBlob(blob, "guests_export.pdf");
       } catch (err) {
-          showError(err, "Failed to export to PDF");
+          showError(err, "Gagal mengekspor ke PDF");
       } finally {
           setIsExporting(false);
       }
@@ -293,9 +293,9 @@ const Guests: React.FC = () => {
       try {
           const blob = await guestService.downloadGuestsTemplate(withData);
           downloadBlob(blob, "guests_template.xlsx");
-          showSuccess("Template downloaded successfully!");
+          showSuccess("Template berhasil diunduh!");
       } catch (err) {
-          showError(err, "Failed to download template");
+          showError(err, "Gagal mengunduh template");
       } finally {
           setIsDownloadingTemplate(false);
       }
@@ -304,17 +304,17 @@ const Guests: React.FC = () => {
   const handleImportSubmit = async (file: File) => {
       try {
           const result = await importMutation.mutateAsync(file);
-          showSuccess(`Successfully imported ${result.created} new guests, updated ${result.updated}.`);
+          showSuccess(`Berhasil mengimpor ${result.created} tamu baru, memperbarui ${result.updated}.`);
           setIsImportModalOpen(false);
       } catch (err) {
-          showError(err, "Failed to import guests");
+          showError(err, "Gagal mengimpor tamu");
       }
   };
 
   return (
     <>
-      <PageMeta title="Guest Visitors | SIAPUS" description="Manage visitor list." />
-      <PageBreadcrumb pageTitle="Guest Visitors" />
+      <PageMeta title="Tamu | SIAPUS" description="Kelola daftar tamu." />
+      <PageBreadcrumb pageTitle="Tamu" />
 
       <div className="space-y-6">
         {/* Header - Hidden on Mobile */}
@@ -324,8 +324,8 @@ const Guests: React.FC = () => {
                   <UserIcon className="size-5" />
               </div>
               <div>
-                  <h1 className="text-xl font-bold text-gray-900 dark:text-white">Guest Visitors</h1>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">View and manage registered guests.</p>
+                  <h1 className="text-xl font-bold text-gray-900 dark:text-white">Daftar Tamu</h1>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Lihat dan kelola tamu terdaftar.</p>
               </div>
           </div>
           <div className="flex items-center gap-3">
@@ -343,7 +343,7 @@ const Guests: React.FC = () => {
                 onClick={() => handleOpenFormModal()}
                 className="hidden sm:flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-brand-500/25 transition-all hover:bg-brand-600 active:scale-[.98]"
             >
-                <PlusIcon className="fill-white size-4" /> Add New Guest
+                <PlusIcon className="fill-white size-4" /> Tambah Tamu Baru
             </button>
           </div>
         </div>
@@ -352,7 +352,7 @@ const Guests: React.FC = () => {
         {isMobile && (
             <MobileFloatingActions
                 onAdd={() => handleOpenFormModal()}
-                addAriaLabel="Add New Guest"
+                addAriaLabel="Tambah Tamu Baru"
                 dataActionsProps={{
                     isExporting: isExporting || isDownloadingTemplate,
                     isImporting: importMutation.isPending,
@@ -376,11 +376,11 @@ const Guests: React.FC = () => {
                     <div className="flex items-center gap-2 mb-1">
                         <FilterIcon className="size-5 text-brand-500" />
                         <h3 className="text-sm font-bold uppercase tracking-wider text-gray-800 dark:text-gray-200">
-                            Search & Filter
+                            Pencarian & Filter
                         </h3>
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Find guests quickly
+                        Temukan tamu dengan cepat
                     </p>
                 </div>
                 <div className="shrink-0 ml-4">
@@ -414,7 +414,7 @@ const Guests: React.FC = () => {
                                                 setPage(1);
                                             }
                                         }}
-                                        placeholder="Search by Name, Email or Phone..."
+                                        placeholder="Cari berdasarkan Nama, Email, atau Telepon..."
                                         className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-4 text-sm text-gray-900 transition-colors focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-white/[0.08] dark:bg-white/[0.02] dark:text-white"
                                     />
                                 </div>
@@ -447,7 +447,7 @@ const Guests: React.FC = () => {
                                     className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 text-sm font-semibold text-white transition-all hover:bg-brand-600"
                                 >
                                     <SearchIcon className="size-4" />
-                                    Search
+                                    Cari
                                 </button>
                             </div>
                         </div>
@@ -462,7 +462,7 @@ const Guests: React.FC = () => {
             onClearSelection={() => setSelectedIds(new Set())}
             bulkActions={[
                 {
-                    label: "Delete Selected",
+                    label: "Hapus Terpilih",
                     icon: <TrashBinIcon className="size-3.5" />,
                     onClick: handleBulkDelete,
                     variant: "danger",
@@ -499,16 +499,16 @@ const Guests: React.FC = () => {
                 <div className="flex size-20 items-center justify-center rounded-full bg-brand-50 dark:bg-brand-500/10 mb-6">
                     <UserIcon className="size-10 text-brand-500 opacity-50" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No guests found</h3>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Tidak ada tamu ditemukan</h3>
                 <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-md">
-                    {searchQuery ? "No guests match your search criteria. Try adjusting your filters." : "Get started by adding your first guest to the system."}
+                    {searchQuery ? "Tidak ada tamu yang sesuai dengan kriteria pencarian Anda. Coba sesuaikan filter Anda." : "Mulai dengan menambahkan tamu pertama Anda ke sistem."}
                 </p>
                 {!searchQuery && (
                     <button
                         onClick={() => handleOpenFormModal()}
                         className="hidden sm:flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-brand-500/25 transition-all hover:bg-brand-600 active:scale-[.98]"
                     >
-                        <PlusIcon className="fill-white size-4" /> Add First Guest
+                        <PlusIcon className="fill-white size-4" /> Tambah Tamu Pertama
                     </button>
                 )}
             </div>
@@ -518,7 +518,7 @@ const Guests: React.FC = () => {
                     <div className="flex items-center gap-3 px-1">
                         <Checkbox checked={allSelected} onChange={handleSelectAll} />
                         <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">
-                            {selectedIds.size > 0 ? `${selectedIds.size} selected` : "Select all"}
+                            {selectedIds.size > 0 ? `${selectedIds.size} dipilih` : "Pilih semua"}
                         </span>
                     </div>
                 )}
@@ -553,19 +553,19 @@ const Guests: React.FC = () => {
                                     />
                                 </TableCell>
                                 <TableCell isHeader className="px-4 py-3.5 min-w-[200px] text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                    Guest Name
+                                    Nama Tamu
                                 </TableCell>
                                 <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                    Company
+                                    Perusahaan
                                 </TableCell>
                                 <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                     Email
                                 </TableCell>
                                 <TableCell isHeader className="px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                    Phone
+                                    Telepon
                                 </TableCell>
                                 <TableCell isHeader className="px-4 py-3.5 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                    Actions
+                                    Aksi
                                 </TableCell>
                             </TableRow>
                         </TableHeader>
@@ -620,13 +620,13 @@ const Guests: React.FC = () => {
                 {!isLoadingDesktop && (guests.length > 0 || total > 0) && (
                     <div className="flex flex-col gap-4 border-t border-gray-100 p-4 dark:border-white/[0.05] sm:flex-row sm:items-center sm:justify-between">
                         <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Showing <span className="font-medium text-gray-700 dark:text-white">{(page - 1) * limit + 1}</span> to{" "}
-                            <span className="font-medium text-gray-700 dark:text-white">{Math.min(page * limit, total)}</span> of{" "}
-                            <span className="font-medium text-gray-700 dark:text-white">{total}</span> requests
+                            Menampilkan <span className="font-medium text-gray-700 dark:text-white">{(page - 1) * limit + 1}</span> hingga{" "}
+                            <span className="font-medium text-gray-700 dark:text-white">{Math.min(page * limit, total)}</span> dari{" "}
+                            <span className="font-medium text-gray-700 dark:text-white">{total}</span> tamu
                         </p>
                         <div className="flex items-center gap-2">
                             <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400">
-                                <ChevronLeftIcon className="size-4" /> Previous
+                                <ChevronLeftIcon className="size-4" /> Sebelumnya
                             </button>
                             <div className="flex items-center gap-1.5 px-2">
                                 <span className="text-sm font-semibold text-gray-900 dark:text-white">{page}</span>
@@ -634,7 +634,7 @@ const Guests: React.FC = () => {
                                 <span className="text-sm text-gray-500 dark:text-gray-400">{totalPages || 1}</span>
                             </div>
                             <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages || totalPages === 0} className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400">
-                                Next <AngleRightIcon className="size-4" />
+                                Selanjutnya <AngleRightIcon className="size-4" />
                             </button>
                         </div>
                     </div>
@@ -648,8 +648,8 @@ const Guests: React.FC = () => {
           onClose={() => setIsImportModalOpen(false)}
           onImport={handleImportSubmit}
           onDownloadTemplate={() => handleDownloadTemplate(false)}
-          title="Import Guests"
-          description="Upload an Excel file containing guest information."
+          title="Impor Tamu"
+          description="Unggah file Excel yang berisi data tamu."
           isImporting={importMutation.isPending}
           isDownloadingTemplate={isDownloadingTemplate}
       />

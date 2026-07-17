@@ -86,20 +86,20 @@ const GuestActionDropdown = ({
                                 onClick={() => { setIsOpen(false); onCheckOut(); }}
                                 className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-500/10"
                             >
-                                <CheckCircleIcon className="size-3.5" /> Check Out
+                                <CheckCircleIcon className="size-3.5" /> Check-Out
                             </DropdownItem>
                         )}
                         <DropdownItem
                             onClick={() => { setIsOpen(false); onEdit(); }}
                             className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/[0.04]"
                         >
-                            <PencilIcon className="size-3.5" /> Edit
+                            <PencilIcon className="size-3.5" /> Ubah
                         </DropdownItem>
                         <DropdownItem
                             onClick={() => { setIsOpen(false); onDelete(); }}
                             className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/10"
                         >
-                            <TrashBinIcon className="size-3.5" /> Delete
+                            <TrashBinIcon className="size-3.5" /> Hapus
                         </DropdownItem>
                     </Dropdown>
                 </div>,
@@ -288,11 +288,11 @@ const GuestVisits: React.FC = () => {
         const s = status?.toLowerCase() || "scheduled";
         switch (s) {
             case "completed":
-                return <Badge color="success" size="sm" variant="light">Completed</Badge>;
+                return <Badge color="success" size="sm" variant="light">Selesai</Badge>;
             case "active":
-                return <Badge color="primary" size="sm" variant="light" className="animate-pulse">Active</Badge>;
+                return <Badge color="primary" size="sm" variant="light" className="animate-pulse">Aktif</Badge>;
             case "scheduled":
-                return <Badge color="warning" size="sm" variant="light">Scheduled</Badge>;
+                return <Badge color="warning" size="sm" variant="light">Terjadwal</Badge>;
             default:
                 return <Badge color="light" size="sm" variant="light">{status}</Badge>;
         }
@@ -301,8 +301,8 @@ const GuestVisits: React.FC = () => {
     const handleCheckOut = async (visit: GuestVisit) => {
         const confirmed = await confirm({
             variant: "update",
-            title: "Guest Check-out",
-            message: `Are you sure you want to check out ${visit.guest?.name || "this guest"}?`,
+            title: "Check-Out Tamu",
+            message: `Apakah Anda yakin ingin melakukan check-out untuk ${visit.guest?.name || "tamu ini"}?`,
         });
 
         if (!confirmed) return;
@@ -315,25 +315,25 @@ const GuestVisits: React.FC = () => {
                     statusLabel: "Completed",
                 }
             });
-            showSuccess(`Checked out ${visit.guest?.name || "Guest"}`);
+            showSuccess(`Berhasil check-out ${visit.guest?.name || "Tamu"}`);
         } catch (error) {
-            showError(error, "Failed to check out");
+            showError(error, "Gagal melakukan check-out");
         }
     };
 
     const handleDelete = async (visit: GuestVisit) => {
         const confirmed = await confirm({
             variant: "delete",
-            title: "Delete Visit Record",
-            message: `Are you sure you want to delete this visit record for ${visit.guest?.name}?`,
+            title: "Hapus Catatan Kunjungan",
+            message: `Apakah Anda yakin ingin menghapus catatan kunjungan untuk ${visit.guest?.name}?`,
         });
 
         if (confirmed) {
             try {
                 await deleteVisitMutation.mutateAsync(visit.id);
-                showSuccess("Visit record deleted successfully");
+                showSuccess("Catatan kunjungan berhasil dihapus");
             } catch (error) {
-                showError(error, "Failed to delete visit record");
+                showError(error, "Gagal menghapus catatan kunjungan");
             }
         }
     };
@@ -374,7 +374,7 @@ const GuestVisits: React.FC = () => {
                 idCardNumber: createForm.idCardNumber,
                 photoUrl: createForm.photoUrl,
             });
-            showSuccess("Guest visit registered successfully");
+            showSuccess("Kunjungan tamu berhasil didaftarkan");
             setIsCreateModalOpen(false);
             setCreateForm({
                 name: "",
@@ -387,7 +387,7 @@ const GuestVisits: React.FC = () => {
             });
             setCreateImagePreview(null);
         } catch (error) {
-            showError(error, "Failed to create guest visit");
+            showError(error, "Gagal mendaftarkan kunjungan tamu");
         }
     };
 
@@ -422,10 +422,10 @@ const GuestVisits: React.FC = () => {
                 }
             });
 
-            showSuccess("Visit record updated successfully");
+            showSuccess("Catatan kunjungan berhasil diperbarui");
             setIsEditModalOpen(false);
         } catch (error) {
-            showError(error, "Failed to update visit");
+            showError(error, "Gagal memperbarui kunjungan");
         }
     };
 
@@ -435,9 +435,9 @@ const GuestVisits: React.FC = () => {
             const params = ids && ids.length > 0 ? { ids: ids.join(',') } : queryParams;
             const blob = await guestService.exportVisitsExcel(params);
             downloadBlob(blob, "visits_export.xlsx");
-            showSuccess("Exported successfully");
+            showSuccess("Berhasil diekspor");
         } catch (err) {
-            showError(err, "Failed to export to Excel");
+            showError(err, "Gagal mengekspor ke Excel");
         } finally {
             setIsExporting(false);
         }
@@ -450,7 +450,7 @@ const GuestVisits: React.FC = () => {
             const blob = await guestService.exportVisitsPdf(params);
             downloadBlob(blob, "visits_export.pdf");
         } catch (err) {
-            showError(err, "Failed to export to PDF");
+            showError(err, "Gagal mengekspor ke PDF");
         } finally {
             setIsExporting(false);
         }
@@ -458,8 +458,8 @@ const GuestVisits: React.FC = () => {
 
     return (
         <>
-            <PageMeta title="Guest Visits | SIAPUS" description="Monitor and manage guest entrance history." />
-            <PageBreadcrumb pageTitle="Guest Visits" />
+            <PageMeta title="Kunjungan Tamu | SIAPUS" description="Pantau dan kelola riwayat kunjungan tamu sekolah." />
+            <PageBreadcrumb pageTitle="Kunjungan Tamu" />
 
             <div className="space-y-6">
                 <div className="hidden sm:flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -468,8 +468,8 @@ const GuestVisits: React.FC = () => {
                             <UserIcon className="size-5" />
                         </div>
                         <div>
-                            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Guest Entry Registry</h1>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">Manage monitoring and attendance for school visitors.</p>
+                            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Registri Kunjungan Tamu</h1>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Kelola pemantauan dan kehadiran tamu sekolah.</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
@@ -485,7 +485,7 @@ const GuestVisits: React.FC = () => {
                             className="hidden sm:flex items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-brand-600 shadow-lg shadow-brand-500/20"
                         >
                             <PlusIcon className="fill-white size-5 text-white" />
-                            Register Visit
+                            Daftarkan Kunjungan
                         </button>
                     </div>
                 </div>
@@ -494,7 +494,7 @@ const GuestVisits: React.FC = () => {
                 {isMobile && (
                     <MobileFloatingActions
                         onAdd={() => setIsCreateModalOpen(true)}
-                        addAriaLabel="Register Visit"
+                        addAriaLabel="Daftarkan Kunjungan"
                         dataActionsProps={{
                             isExporting: isExporting,
                             onExportExcel: () => handleExportExcel(),
@@ -513,11 +513,11 @@ const GuestVisits: React.FC = () => {
                             <div className="flex items-center gap-2 mb-1">
                                 <FilterIcon className="size-5 text-brand-500" />
                                 <h3 className="text-sm font-bold uppercase tracking-wider text-gray-800 dark:text-gray-200">
-                                    Search & Filter
+                                    Cari &amp; Filter
                                 </h3>
                             </div>
                             <p className="text-xs text-gray-500 dark:text-gray-400">
-                                Find visits quickly
+                                Temukan kunjungan dengan cepat
                             </p>
                         </div>
                         <div className="shrink-0 ml-4">
@@ -537,15 +537,15 @@ const GuestVisits: React.FC = () => {
                                         <DatePicker 
                                             value={startDate} 
                                             onChange={(date) => setStartDate(date)}
-                                            placeholder="Start Date"
+                                            placeholder="Tanggal Mulai"
                                             className="h-11 w-full rounded-xl dark:bg-white/[0.03]"
                                         />
                                     </div>
                                     <div className="w-full md:w-[220px]">
-                                        <DatePicker 
-                                            value={endDate} 
+                                        <DatePicker
+                                            value={endDate}
                                             onChange={(date) => setEndDate(date)}
-                                            placeholder="End Date"
+                                            placeholder="Tanggal Selesai"
                                             className="h-11 w-full rounded-xl dark:bg-white/[0.03]"
                                         />
                                     </div>
@@ -567,7 +567,7 @@ const GuestVisits: React.FC = () => {
                                                         setPage(1);
                                                     }
                                                 }}
-                                                placeholder="Search by Name or Email..."
+                                                placeholder="Cari berdasarkan Nama atau Email..."
                                                 className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-4 text-sm text-gray-900 transition-colors focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-white/[0.08] dark:bg-white/[0.02] dark:text-white"
                                             />
                                         </div>
@@ -589,7 +589,7 @@ const GuestVisits: React.FC = () => {
                                             }}
                                             className="flex h-11 flex-1 items-center justify-center rounded-xl border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 dark:border-white/[0.08] dark:bg-transparent dark:text-gray-300 md:flex-none"
                                         >
-                                            Reset
+                                            Atur Ulang
                                         </button>
                                         <button
                                             onClick={() => {
@@ -605,7 +605,7 @@ const GuestVisits: React.FC = () => {
                                             className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-brand-500 px-5 text-sm font-semibold text-white transition-all hover:bg-brand-600 md:flex-none"
                                         >
                                             <SearchIcon className="size-4" />
-                                            Search
+                                            Cari
                                         </button>
                                     </div>
                                 </div>
@@ -659,16 +659,16 @@ const GuestVisits: React.FC = () => {
                         <div className="flex size-20 items-center justify-center rounded-full bg-brand-50 dark:bg-brand-500/10 mb-6">
                             <UserIcon className="size-10 text-brand-500 opacity-50" />
                         </div>
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No visit records found</h3>
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Tidak ada catatan kunjungan ditemukan</h3>
                         <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-md">
-                            {searchQuery ? "No records match your search criteria. Try adjusting your filters." : "Get started by registering a new guest visit."}
+                            {searchQuery ? "Tidak ada catatan yang cocok dengan pencarian Anda. Coba sesuaikan filter Anda." : "Mulai dengan mendaftarkan kunjungan tamu baru."}
                         </p>
                         {!searchQuery && (
                             <button
                                 onClick={() => setIsCreateModalOpen(true)}
                                 className="hidden sm:flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-brand-500/25 transition-all hover:bg-brand-600 active:scale-[.98]"
                             >
-                                <PlusIcon className="fill-white size-4" /> Register First Visit
+                                <PlusIcon className="fill-white size-4" /> Daftarkan Kunjungan Pertama
                             </button>
                         )}
                     </div>
@@ -700,17 +700,17 @@ const GuestVisits: React.FC = () => {
                                     <TableRow>
                                         <TableCell isHeader className="px-5 py-4 text-left">
                                             <button onClick={() => handleSort("guest.name")} className="flex items-center gap-2 text-theme-xs font-medium text-gray-500 dark:text-gray-400 hover:text-brand-500 transition-colors uppercase tracking-wider">
-                                                Guest <SortIcon column="guest.name" />
+                                                Tamu <SortIcon column="guest.name" />
                                             </button>
                                         </TableCell>
                                         <TableCell isHeader className="px-5 py-4 text-left">
                                             <button onClick={() => handleSort("purpose")} className="flex items-center gap-2 text-theme-xs font-medium text-gray-500 dark:text-gray-400 hover:text-brand-500 transition-colors uppercase tracking-wider">
-                                                Purpose <SortIcon column="purpose" />
+                                                Tujuan <SortIcon column="purpose" />
                                             </button>
                                         </TableCell>
                                         <TableCell isHeader className="px-5 py-4 text-left font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider text-theme-xs">Status</TableCell>
-                                        <TableCell isHeader className="px-5 py-4 text-left font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider text-theme-xs">Time Details</TableCell>
-                                        <TableCell isHeader className="px-5 py-4 text-right font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider text-theme-xs">Actions</TableCell>
+                                        <TableCell isHeader className="px-5 py-4 text-left font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider text-theme-xs">Detail Waktu</TableCell>
+                                        <TableCell isHeader className="px-5 py-4 text-right font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider text-theme-xs">Aksi</TableCell>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
@@ -727,13 +727,13 @@ const GuestVisits: React.FC = () => {
                                                         )}
                                                     </div>
                                                     <div className="flex flex-col">
-                                                        <span className="font-bold text-gray-900 dark:text-white text-theme-sm">{visit.guest?.name || "Unknown"}</span>
-                                                        <span className="text-xs text-gray-500">{visit.guest?.company || "Personal Visit"}</span>
+                                                        <span className="font-bold text-gray-900 dark:text-white text-theme-sm">{visit.guest?.name || "Tidak Diketahui"}</span>
+                                                        <span className="text-xs text-gray-500">{visit.guest?.company || "Kunjungan Pribadi"}</span>
                                                     </div>
                                                 </div>
                                             </TableCell>
                                             <TableCell className="px-5 py-4 max-w-[200px] truncate">
-                                                <span className="text-theme-sm text-gray-600 dark:text-gray-400">{visit.purpose || "Meeting"}</span>
+                                                <span className="text-theme-sm text-gray-600 dark:text-gray-400">{visit.purpose || "Pertemuan"}</span>
                                             </TableCell>
                                             <TableCell className="px-5 py-4">
                                                 {getStatusBadge(visit.status)}
@@ -741,12 +741,12 @@ const GuestVisits: React.FC = () => {
                                             <TableCell className="px-5 py-4">
                                                 <div className="flex flex-col gap-1">
                                                     <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                                                        <div className="size-1 rounded-full bg-brand-500" /> In: 
+                                                        <div className="size-1 rounded-full bg-brand-500" /> Masuk:
                                                         <span className="font-mono text-gray-600 dark:text-gray-400 normal-case tracking-normal">{formatDate(visit.checkIn || visit.checkInTime || visit.visitDate)}</span>
                                                     </div>
                                                     {(visit.checkOut || visit.checkOutTime) && (
                                                         <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                                                            <div className="size-1 rounded-full bg-gray-300" /> Out: 
+                                                            <div className="size-1 rounded-full bg-gray-300" /> Keluar:
                                                             <span className="font-mono text-gray-600 dark:text-gray-400 normal-case tracking-normal">{formatDate(visit.checkOut || visit.checkOutTime)}</span>
                                                         </div>
                                                     )}
@@ -767,9 +767,9 @@ const GuestVisits: React.FC = () => {
                         {!isLoading && total > 0 && (
                             <div className="border-t border-gray-100 dark:border-white/[0.05] p-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                                    Showing <span className="font-medium text-gray-700 dark:text-white">{(page - 1) * limit + 1}</span> to{" "}
-                                    <span className="font-medium text-gray-700 dark:text-white">{Math.min(page * limit, total)}</span> of{" "}
-                                    <span className="font-medium text-gray-700 dark:text-white">{total}</span> records
+                                    Menampilkan <span className="font-medium text-gray-700 dark:text-white">{(page - 1) * limit + 1}</span> sampai{" "}
+                                    <span className="font-medium text-gray-700 dark:text-white">{Math.min(page * limit, total)}</span> dari{" "}
+                                    <span className="font-medium text-gray-700 dark:text-white">{total}</span> data
                                 </p>
                                 <div className="flex items-center gap-2">
                                     <button
@@ -778,7 +778,7 @@ const GuestVisits: React.FC = () => {
                                         className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400 dark:hover:bg-white/[0.05]"
                                     >
                                         <ChevronLeftIcon className="size-4" />
-                                        Previous
+                                        Sebelumnya
                                     </button>
                                     <div className="flex items-center gap-1.5 px-2">
                                         <span className="text-sm font-semibold text-gray-900 dark:text-white">{page}</span>
@@ -790,7 +790,7 @@ const GuestVisits: React.FC = () => {
                                         disabled={page === totalPages || totalPages === 0}
                                         className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400 dark:hover:bg-white/[0.05]"
                                     >
-                                        Next
+                                        Berikutnya
                                         <AngleRightIcon className="size-4" />
                                     </button>
                                 </div>
@@ -805,24 +805,24 @@ const GuestVisits: React.FC = () => {
                 isOpen={isCreateModalOpen} 
                 onClose={() => setIsCreateModalOpen(false)} 
                 className="max-w-6xl"
-                title="Register New Visit"
-                description="Create a new entry for a physical visitor. This will register the guest and their visit simultaneously."
+                title="Daftarkan Kunjungan Baru"
+                description="Buat entri baru untuk pengunjung fisik. Ini akan mendaftarkan tamu dan kunjungannya secara bersamaan."
                 footer={
                     <div className="flex justify-end gap-3">
-                        <button 
-                            type="button" 
-                            onClick={() => setIsCreateModalOpen(false)} 
+                        <button
+                            type="button"
+                            onClick={() => setIsCreateModalOpen(false)}
                             className="rounded-xl px-5 py-2.5 text-sm font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
                         >
-                            Cancel
+                            Batal
                         </button>
-                        <button 
+                        <button
                             form="create-visit-form"
                             type="submit"
                             disabled={registerVisitMutation.isPending}
                             className="rounded-xl bg-brand-500 px-6 py-2.5 text-sm font-bold text-white transition-all hover:bg-brand-600 shadow-lg shadow-brand-500/20 disabled:opacity-50 tracking-wide"
                         >
-                            {registerVisitMutation.isPending ? "Registering..." : "Register Visit"}
+                            {registerVisitMutation.isPending ? "Mendaftarkan..." : "Daftarkan Kunjungan"}
                         </button>
                     </div>
                 }
@@ -832,18 +832,18 @@ const GuestVisits: React.FC = () => {
                         {/* LEFT COLUMN: Photo Upload */}
                         <div className="w-full lg:w-[240px] flex-shrink-0 space-y-4">
                             <div className="space-y-2">
-                                <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-500">Visual Evidence</Label>
+                                <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-500">Bukti Visual</Label>
                                 <div 
                                     onClick={() => document.getElementById('create-photo-upload')?.click()}
                                     className="relative group cursor-pointer"
                                 >
                                     <div className="w-full aspect-[3/4] rounded-2xl overflow-hidden bg-gray-50 dark:bg-white/[0.02] border-2 border-dashed border-gray-200 dark:border-white/10 flex items-center justify-center transition-all group-hover:border-brand-500/50 group-hover:bg-brand-50/10 shadow-inner">
                                         {createImagePreview ? (
-                                            <img src={createImagePreview} alt="Preview" className="size-full object-cover" />
+                                            <img src={createImagePreview} alt="Pratinjau" className="size-full object-cover" />
                                         ) : (
                                             <div className="text-center space-y-2 p-4">
                                                 <UserIcon className="size-12 mx-auto text-gray-300 dark:text-white/10 group-hover:text-brand-500 transition-colors" />
-                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-relaxed">Click to<br/>Capture</p>
+                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-relaxed">Klik untuk<br/>Ambil Foto</p>
                                             </div>
                                         )}
                                         <div className="absolute inset-0 bg-brand-500/0 group-hover:bg-brand-500/10 transition-colors flex items-center justify-center">
@@ -878,7 +878,7 @@ const GuestVisits: React.FC = () => {
                                         className="flex items-center justify-center gap-2 text-sm text-error-500 font-bold hover:underline w-full mt-2"
                                     >
                                         <TrashBinIcon className="size-4" />
-                                        Remove Photo
+                                        Hapus Foto
                                     </button>
                                 )}
                             </div>
@@ -889,19 +889,19 @@ const GuestVisits: React.FC = () => {
                             
                             {/* Visitor Identity */}
                             <div className="space-y-4">
-                                <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-500 border-b border-gray-100 dark:border-white/5 pb-2 block">Visitor Identity</Label>
+                                <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-500 border-b border-gray-100 dark:border-white/5 pb-2 block">Identitas Pengunjung</Label>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="md:col-span-2 space-y-1.5">
-                                        <Label>Full Guest Name <span className="text-error-500">*</span></Label>
+                                        <Label>Nama Lengkap Tamu <span className="text-error-500">*</span></Label>
                                         <Input
-                                            placeholder="e.g. Robert Smith"
+                                            placeholder="cth. Robert Smith"
                                             value={createForm.name}
                                             onChange={(e) => setCreateForm(prev => ({...prev, name: e.target.value}))}
                                             required
                                         />
                                     </div>
                                     <div className="space-y-1.5">
-                                        <Label>Email Address</Label>
+                                        <Label>Alamat Email</Label>
                                         <Input
                                             placeholder="robert@example.com"
                                             type="email"
@@ -911,16 +911,16 @@ const GuestVisits: React.FC = () => {
                                     </div>
                                     <div className="space-y-1.5">
                                         <PhoneNumberInput
-                                            label="Phone Contact"
-                                            placeholder="Enter phone number"
+                                            label="Nomor Telepon"
+                                            placeholder="Masukkan nomor telepon"
                                             value={createForm.phone}
                                             onChange={(value) => setCreateForm(prev => ({...prev, phone: value}))}
                                         />
                                     </div>
                                     <div className="md:col-span-2 space-y-1.5">
-                                        <Label>National ID / Passport</Label>
+                                        <Label>KTP / Paspor</Label>
                                         <Input
-                                            placeholder="Enter identification number"
+                                            placeholder="Masukkan nomor identitas"
                                             value={createForm.idCardNumber}
                                             onChange={(e) => setCreateForm(prev => ({...prev, idCardNumber: e.target.value}))}
                                         />
@@ -930,23 +930,23 @@ const GuestVisits: React.FC = () => {
 
                             {/* Visit Details */}
                             <div className="space-y-4">
-                                <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-500 border-b border-gray-100 dark:border-white/5 pb-2 block">Visit Information</Label>
+                                <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-500 border-b border-gray-100 dark:border-white/5 pb-2 block">Informasi Kunjungan</Label>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="md:col-span-2 space-y-1.5">
-                                        <Label>Company / Entity</Label>
+                                        <Label>Perusahaan / Instansi</Label>
                                         <Input
-                                            placeholder="e.g. Acme Innovations"
+                                            placeholder="cth. Acme Innovations"
                                             value={createForm.company}
                                             onChange={(e) => setCreateForm(prev => ({...prev, company: e.target.value}))}
                                         />
                                     </div>
                                     <div className="md:col-span-2 space-y-1.5">
-                                        <Label>Purpose of Visit <span className="text-error-500">*</span></Label>
+                                        <Label>Tujuan Kunjungan <span className="text-error-500">*</span></Label>
                                         <textarea
                                             value={createForm.purpose}
                                             onChange={(e) => setCreateForm(prev => ({...prev, purpose: e.target.value}))}
                                             rows={3}
-                                            placeholder="Describe the reason for entry..."
+                                            placeholder="Jelaskan alasan kunjungan..."
                                             className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm transition-all focus:border-brand-500 focus:outline-none focus:ring-3 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:focus:border-brand-800 resize-none shadow-theme-xs"
                                             required
                                         />
@@ -963,24 +963,24 @@ const GuestVisits: React.FC = () => {
                 isOpen={isEditModalOpen} 
                 onClose={() => setIsEditModalOpen(false)} 
                 className="max-w-6xl"
-                title="Edit Visit Details"
-                description={`Updating metadata for ${selectedVisit?.guest?.name}'s visit record.`}
+                title="Ubah Detail Kunjungan"
+                description={`Memperbarui data untuk catatan kunjungan ${selectedVisit?.guest?.name}.`}
                 footer={
                     <div className="flex justify-end gap-3">
-                        <button 
-                            type="button" 
-                            onClick={() => setIsEditModalOpen(false)} 
+                        <button
+                            type="button"
+                            onClick={() => setIsEditModalOpen(false)}
                             className="rounded-xl px-5 py-2.5 text-sm font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
                         >
-                            Cancel
+                            Batal
                         </button>
-                        <button 
+                        <button
                             form="edit-visit-form"
                             type="submit"
                             disabled={updateVisitMutation.isPending || updateGuestMutation.isPending}
                             className="rounded-xl bg-brand-500 px-6 py-2.5 text-sm font-bold text-white transition-all hover:bg-brand-600 shadow-lg shadow-brand-500/20 disabled:opacity-50 tracking-wide"
                         >
-                            {updateVisitMutation.isPending || updateGuestMutation.isPending ? "Saving..." : "Save Changes"}
+                            {updateVisitMutation.isPending || updateGuestMutation.isPending ? "Menyimpan..." : "Simpan Perubahan"}
                         </button>
                     </div>
                 }
@@ -990,18 +990,18 @@ const GuestVisits: React.FC = () => {
                         {/* LEFT COLUMN: Photo Upload & Status */}
                         <div className="w-full lg:w-[240px] flex-shrink-0 space-y-4">
                             <div className="space-y-2">
-                                <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-500">Visual Evidence</Label>
+                                <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-500">Bukti Visual</Label>
                                 <div 
                                     onClick={() => document.getElementById('edit-photo-upload')?.click()}
                                     className="relative group cursor-pointer"
                                 >
                                     <div className="w-full aspect-[3/4] rounded-2xl overflow-hidden bg-gray-50 dark:bg-white/[0.02] border-2 border-dashed border-gray-200 dark:border-white/10 flex items-center justify-center transition-all group-hover:border-brand-500/50 group-hover:bg-brand-50/10 shadow-inner">
                                         {editImagePreview ? (
-                                            <img src={editImagePreview} alt="Preview" className="size-full object-cover" />
+                                            <img src={editImagePreview} alt="Pratinjau" className="size-full object-cover" />
                                         ) : (
                                             <div className="text-center space-y-2 p-4">
                                                 <UserIcon className="size-12 mx-auto text-gray-300 dark:text-white/10 group-hover:text-brand-500 transition-colors" />
-                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-relaxed">Click to<br/>Capture</p>
+                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-relaxed">Klik untuk<br/>Ambil Foto</p>
                                             </div>
                                         )}
                                         <div className="absolute inset-0 bg-brand-500/0 group-hover:bg-brand-500/10 transition-colors flex items-center justify-center">
@@ -1036,22 +1036,22 @@ const GuestVisits: React.FC = () => {
                                         className="flex items-center justify-center gap-2 text-sm text-error-500 font-bold hover:underline w-full mt-2"
                                     >
                                         <TrashBinIcon className="size-4" />
-                                        Remove Photo
+                                        Hapus Foto
                                     </button>
                                 )}
                             </div>
 
                             <div className="bg-gray-50 dark:bg-white/5 p-4 rounded-xl border border-gray-100 dark:border-white/5 flex flex-col gap-2">
-                                <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-0">Record Status</Label>
+                                <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-0">Status Catatan</Label>
                                 <CustomSelect
                                     options={[
-                                        { value: "scheduled", label: "Scheduled" },
-                                        { value: "active", label: "Active" },
-                                        { value: "completed", label: "Completed" },
+                                        { value: "scheduled", label: "Terjadwal" },
+                                        { value: "active", label: "Aktif" },
+                                        { value: "completed", label: "Selesai" },
                                     ]}
                                     value={editForm.status}
                                     onChange={(value) => setEditForm(prev => ({...prev, status: String(value)}))}
-                                    placeholder="Select visit status"
+                                    placeholder="Pilih status kunjungan"
                                 />
                             </div>
                         </div>
@@ -1061,19 +1061,19 @@ const GuestVisits: React.FC = () => {
                             
                             {/* Visitor Identity */}
                             <div className="space-y-4">
-                                <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-500 border-b border-gray-100 dark:border-white/5 pb-2 block">Visitor Identity</Label>
+                                <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-500 border-b border-gray-100 dark:border-white/5 pb-2 block">Identitas Pengunjung</Label>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="md:col-span-2 space-y-1.5">
-                                        <Label>Full Guest Name <span className="text-error-500">*</span></Label>
+                                        <Label>Nama Lengkap Tamu <span className="text-error-500">*</span></Label>
                                         <Input
-                                            placeholder="e.g. Robert Smith"
+                                            placeholder="cth. Robert Smith"
                                             value={editForm.name}
                                             onChange={(e) => setEditForm(prev => ({...prev, name: e.target.value}))}
                                             required
                                         />
                                     </div>
                                     <div className="space-y-1.5">
-                                        <Label>Email Address</Label>
+                                        <Label>Alamat Email</Label>
                                         <Input
                                             type="email"
                                             placeholder="robert@example.com"
@@ -1083,8 +1083,8 @@ const GuestVisits: React.FC = () => {
                                     </div>
                                     <div className="space-y-1.5">
                                         <PhoneNumberInput
-                                            label="Phone Contact"
-                                            placeholder="Enter phone number"
+                                            label="Nomor Telepon"
+                                            placeholder="Masukkan nomor telepon"
                                             value={editForm.phone}
                                             onChange={(value) => setEditForm(prev => ({...prev, phone: value}))}
                                         />
@@ -1094,46 +1094,46 @@ const GuestVisits: React.FC = () => {
 
                             {/* Visit Details */}
                             <div className="space-y-4">
-                                <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-500 border-b border-gray-100 dark:border-white/5 pb-2 block">Visit Information</Label>
+                                <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-500 border-b border-gray-100 dark:border-white/5 pb-2 block">Informasi Kunjungan</Label>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="md:col-span-2 space-y-1.5">
-                                        <Label>Company / Entity</Label>
+                                        <Label>Perusahaan / Instansi</Label>
                                         <Input
-                                            placeholder="e.g. Acme Innovations"
+                                            placeholder="cth. Acme Innovations"
                                             value={editForm.company}
                                             onChange={(e) => setEditForm(prev => ({...prev, company: e.target.value}))}
                                         />
                                     </div>
                                     <div className="space-y-1.5">
-                                        <Label>Visit Date</Label>
-                                        <DatePicker 
+                                        <Label>Tanggal Kunjungan</Label>
+                                        <DatePicker
                                             type="datetime"
-                                            value={editForm.visitDate} 
+                                            value={editForm.visitDate}
                                             onChange={(date) => setEditForm(prev => ({...prev, visitDate: date}))}
                                         />
                                     </div>
                                     <div className="col-span-1 hidden md:block"></div>
-                                    
+
                                     <div className="space-y-1.5">
-                                        <Label>Check In Time</Label>
-                                        <DatePicker 
+                                        <Label>Waktu Check-In</Label>
+                                        <DatePicker
                                             type="datetime"
-                                            value={editForm.checkIn} 
+                                            value={editForm.checkIn}
                                             onChange={(date) => setEditForm(prev => ({...prev, checkIn: date}))}
-                                            placeholder="Auto on arrival"
+                                            placeholder="Otomatis saat kedatangan"
                                         />
                                     </div>
                                     <div className="space-y-1.5">
-                                        <Label>Check Out Time</Label>
-                                        <DatePicker 
+                                        <Label>Waktu Check-Out</Label>
+                                        <DatePicker
                                             type="datetime"
-                                            value={editForm.checkOut} 
+                                            value={editForm.checkOut}
                                             onChange={(date) => setEditForm(prev => ({...prev, checkOut: date}))}
-                                            placeholder="Not checked out"
+                                            placeholder="Belum check-out"
                                         />
                                     </div>
                                     <div className="md:col-span-2 space-y-1.5">
-                                        <Label>Purpose of Visit <span className="text-error-500">*</span></Label>
+                                        <Label>Tujuan Kunjungan <span className="text-error-500">*</span></Label>
                                         <textarea
                                             value={editForm.purpose}
                                             onChange={(e) => setEditForm(prev => ({...prev, purpose: e.target.value}))}
@@ -1154,8 +1154,8 @@ const GuestVisits: React.FC = () => {
                 isOpen={isDetailModalOpen} 
                 onClose={() => setIsDetailModalOpen(false)} 
                 className="max-w-md" 
-                title="Visit Summary"
-                description="Comprehensive overview of guest identification and visitation metrics."
+                title="Ringkasan Kunjungan"
+                description="Ikhtisar lengkap identitas tamu dan metrik kunjungan."
             >
                 {selectedVisit && (
                     <div className="space-y-6 py-4">
@@ -1164,7 +1164,7 @@ const GuestVisits: React.FC = () => {
                                 {selectedVisit.guest?.photoUrl ? (
                                     <img 
                                         src={selectedVisit.guest.photoUrl} 
-                                        alt="Guest" 
+                                        alt="Tamu"
                                         className="h-full w-full object-cover rounded-2xl"
                                         onClick={(e) => {
                                             e.stopPropagation();
@@ -1177,44 +1177,44 @@ const GuestVisits: React.FC = () => {
                                 )}
                             </div>
                             <h4 className="text-xl font-bold text-gray-900 dark:text-white">{selectedVisit.guest?.name}</h4>
-                            <p className="text-xs font-medium text-gray-400 mt-1 uppercase tracking-widest">{selectedVisit.guest?.company || "Personal Guest"}</p>
+                            <p className="text-xs font-medium text-gray-400 mt-1 uppercase tracking-widest">{selectedVisit.guest?.company || "Tamu Pribadi"}</p>
                         </div>
 
                         <div className="space-y-5">
                             <div className="rounded-2xl border border-gray-100 bg-gray-50/50 p-4 dark:border-white/[0.05] dark:bg-white/[0.02]">
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Time Tracking</p>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Pelacakan Waktu</p>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <span className="text-xs text-gray-500 block mb-1">Check In:</span>
+                                        <span className="text-xs text-gray-500 block mb-1">Check-In:</span>
                                         <p className="text-sm font-bold text-gray-900 dark:text-white">{formatDate(selectedVisit.checkIn || selectedVisit.visitDate)}</p>
                                     </div>
                                     <div>
-                                        <span className="text-xs text-gray-500 block mb-1">Check Out:</span>
-                                        <p className="text-sm font-bold text-gray-900 dark:text-white">{selectedVisit.checkOut ? formatDate(selectedVisit.checkOut) : "Active Now"}</p>
+                                        <span className="text-xs text-gray-500 block mb-1">Check-Out:</span>
+                                        <p className="text-sm font-bold text-gray-900 dark:text-white">{selectedVisit.checkOut ? formatDate(selectedVisit.checkOut) : "Masih Aktif"}</p>
                                     </div>
                                 </div>
                             </div>
 
                             <div className="px-1">
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Visit Intent</p>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Tujuan Kunjungan</p>
                                 <p className="text-sm leading-relaxed text-gray-700 dark:text-gray-300">
                                     {selectedVisit.purpose}
                                 </p>
                             </div>
 
                             <div className="px-1 pt-2">
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Identification</p>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Identifikasi</p>
                                 <div className="flex flex-col gap-3">
                                     <div className="flex items-center justify-between text-sm">
-                                        <span className="text-gray-500">Contact:</span>
+                                        <span className="text-gray-500">Kontak:</span>
                                         <span className="font-medium text-gray-900 dark:text-white">{selectedVisit.guest?.phone || selectedVisit.guest?.email || "-"}</span>
                                     </div>
                                     <div className="flex items-center justify-between text-sm">
-                                        <span className="text-gray-500">ID Number:</span>
+                                        <span className="text-gray-500">Nomor Identitas:</span>
                                         <span className="font-medium text-gray-900 dark:text-white">{selectedVisit.guest?.idCardNumber || "-"}</span>
                                     </div>
                                     <div className="flex items-center justify-between text-sm">
-                                        <span className="text-gray-500">Global ID:</span>
+                                        <span className="text-gray-500">ID Global:</span>
                                         <span className="font-mono text-[10px] text-gray-400">{selectedVisit.guest?.public_id}</span>
                                     </div>
                                 </div>
@@ -1235,7 +1235,7 @@ const GuestVisits: React.FC = () => {
                     </button>
                     <img 
                         src={previewImageUrl} 
-                        alt="High definition preview" 
+                        alt="Pratinjau resolusi tinggi"
                         className="w-full h-auto max-h-[90vh] object-contain rounded-2xl"
                     />
                 </div>

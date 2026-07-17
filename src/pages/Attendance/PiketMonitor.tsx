@@ -321,7 +321,7 @@ const PiketMonitor: React.FC = () => {
           <StatCard
             label="Total Arrivals"
             value={total > 0 ? stats.total : records.length}
-            sub="students"
+            sub="users"
             iconBg="bg-brand-50 dark:bg-brand-500/15"
             iconColor="text-brand-500"
             borderColor="border-brand-100 dark:border-brand-500/20"
@@ -596,7 +596,7 @@ const PiketMonitor: React.FC = () => {
                   Waiting for Arrivals
                 </h3>
                 <p className="text-gray-400 dark:text-gray-500 text-sm mt-1 max-w-xs">
-                  No attendance records yet for today. Students will appear here as they check in.
+                  No attendance records yet for today. Users will appear here as they check in.
                 </p>
               </div>
               <button
@@ -615,7 +615,7 @@ const PiketMonitor: React.FC = () => {
                       Check-In
                     </TableCell>
                     <TableCell isHeader className="px-5 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-                      Student
+                      User
                     </TableCell>
                     <TableCell isHeader className="px-5 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap">
                       Class / Major
@@ -781,7 +781,7 @@ const PiketMonitor: React.FC = () => {
                 </span>{" "}
                 of{" "}
                 <span className="font-semibold text-gray-700 dark:text-gray-300">{total}</span>{" "}
-                students
+                users
               </p>
               <div className="flex items-center gap-2">
                 <button
@@ -817,7 +817,7 @@ const PiketMonitor: React.FC = () => {
         onClose={() => setShowQrModal(false)}
         title="Gate Entry QR Code"
         className="max-w-3xl"
-        description="Display this QR code at the school entrance for student self-check-in."
+        description="Display this QR code at the school entrance for user self-check-in."
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* LEFT — QR Code */}
@@ -889,7 +889,7 @@ const PiketMonitor: React.FC = () => {
                     No schedule policy detected
                   </p>
                   <p className="text-xs text-gray-400 mt-0.5">
-                    Window will be resolved per-student when they scan.
+                    Window will be resolved per-user when they scan.
                   </p>
                 </div>
               </div>
@@ -903,7 +903,7 @@ const PiketMonitor: React.FC = () => {
                   Already Attended
                 </p>
                 <p className="text-xs text-orange-600 dark:text-orange-400 mt-0.5">
-                  Students who checked in today <strong>will be rejected</strong> if they scan again.
+                  Users who checked in today <strong>will be rejected</strong> if they scan again.
                 </p>
               </div>
             </div>

@@ -23,15 +23,15 @@ import { showSuccess, showError } from "../../../utils/toast";
 import { useDebounce } from "../../../hooks/useDebounce";
 
 const classSchema = z.object({
-  code: z.string().min(1, "Code is required"),
-  name: z.string().min(1, "Name is required"),
-  educationLevelId: z.union([z.string(), z.number()]).refine(val => val !== "", { message: "Education Level is required" }),
-  gradeId: z.union([z.string(), z.number()]).refine(val => val !== "", { message: "Grade is required" }),
-  majorId: z.union([z.string(), z.number()]).refine(val => val !== "", { message: "Major is required" }),
-  academicYearId: z.union([z.string(), z.number()]).refine(val => val !== "", { message: "Academic Year is required" }),
+  code: z.string().min(1, "Kode wajib diisi"),
+  name: z.string().min(1, "Nama wajib diisi"),
+  educationLevelId: z.union([z.string(), z.number()]).refine(val => val !== "", { message: "Jenjang Pendidikan wajib diisi" }),
+  gradeId: z.union([z.string(), z.number()]).refine(val => val !== "", { message: "Tingkat wajib diisi" }),
+  majorId: z.union([z.string(), z.number()]).refine(val => val !== "", { message: "Jurusan wajib diisi" }),
+  academicYearId: z.union([z.string(), z.number()]).refine(val => val !== "", { message: "Tahun Ajaran wajib diisi" }),
   homeroomTeacherId: z.string().nullable().optional(),
   roomNumber: z.string().nullable().optional(),
-  maxCapacity: z.number().min(1, "Must be at least 1"),
+  maxCapacity: z.number().min(1, "Minimal harus 1"),
   isActive: z.boolean().default(true),
 });
 
@@ -151,14 +151,14 @@ const ClassFormModal: React.FC<ClassFormModalProps> = ({ isOpen, onClose, select
           id: selectedEntity!.id,
           data: formattedData as UpdateClassDto,
         });
-        showSuccess("Class updated successfully");
+        showSuccess("Kelas berhasil diperbarui");
       } else {
         await createMutation.mutateAsync(formattedData as CreateClassDto);
-        showSuccess("Class created successfully");
+        showSuccess("Kelas berhasil dibuat");
       }
       onClose();
     } catch (error) {
-      showError(error, `Failed to ${isEditing ? "update" : "create"} class`);
+      showError(error, `Gagal ${isEditing ? "memperbarui" : "membuat"} kelas`);
     }
   };
 
@@ -166,24 +166,24 @@ const ClassFormModal: React.FC<ClassFormModalProps> = ({ isOpen, onClose, select
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={isEditing ? "Edit Class" : "Add New Class"}
-      description={isEditing ? "Update class details below." : "Enter the new class information."}
+      title={isEditing ? "Ubah Kelas" : "Tambah Kelas Baru"}
+      description={isEditing ? "Perbarui detail kelas di bawah ini." : "Masukkan informasi kelas baru."}
       className="max-w-2xl"
     >
       <form id="class-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-                <Label>Class Code</Label>
+                <Label>Kode Kelas</Label>
                 <Input
-                    placeholder="e.g. 10-A-RPL"
+                    placeholder="cth. 10-A-RPL"
                     {...register("code")}
                     error={errors.code?.message}
                 />
             </div>
             <div className="space-y-1.5">
-                <Label>Class Name</Label>
+                <Label>Nama Kelas</Label>
                 <Input
-                    placeholder="e.g. 10 RPL A"
+                    placeholder="cth. 10 RPL A"
                     {...register("name")}
                     error={errors.name?.message}
                 />
@@ -196,12 +196,12 @@ const ClassFormModal: React.FC<ClassFormModalProps> = ({ isOpen, onClose, select
                 control={control}
                 render={({ field }) => (
                 <div className="space-y-1.5 z-50">
-                    <Label>Education Level</Label>
+                    <Label>Jenjang Pendidikan</Label>
                     <CustomSelect
                         value={field.value}
                         onChange={field.onChange}
                         options={educationLevels.map((l: { id: number | string; name: string }) => ({ label: l.name, value: l.id }))}
-                        placeholder="Select Level"
+                        placeholder="Pilih Jenjang"
                     />
                     {errors.educationLevelId && <p className="text-xs text-error-500">{errors.educationLevelId.message}</p>}
                 </div>
@@ -212,12 +212,12 @@ const ClassFormModal: React.FC<ClassFormModalProps> = ({ isOpen, onClose, select
                 control={control}
                 render={({ field }) => (
                 <div className="space-y-1.5 z-40">
-                    <Label>Grade</Label>
+                    <Label>Tingkat</Label>
                     <CustomSelect
                         value={field.value}
                         onChange={field.onChange}
-                        options={grades.map((g: { id: number | string; name: string }) => ({ label: `Grade ${g.name}`, value: g.id }))}
-                        placeholder="Select Grade"
+                        options={grades.map((g: { id: number | string; name: string }) => ({ label: `Tingkat ${g.name}`, value: g.id }))}
+                        placeholder="Pilih Tingkat"
                         disabled={!selectedLevelId}
                     />
                     {errors.gradeId && <p className="text-xs text-error-500">{errors.gradeId.message}</p>}
@@ -232,12 +232,12 @@ const ClassFormModal: React.FC<ClassFormModalProps> = ({ isOpen, onClose, select
                 control={control}
                 render={({ field }) => (
                 <div className="space-y-1.5 z-30">
-                    <Label>Major</Label>
+                    <Label>Jurusan</Label>
                     <CustomSelect
                         value={field.value}
                         onChange={field.onChange}
                         options={majors.map((m: { id: number | string; name: string }) => ({ label: m.name, value: m.id }))}
-                        placeholder="Select Major"
+                        placeholder="Pilih Jurusan"
                         disabled={!selectedLevelId}
                     />
                     {errors.majorId && <p className="text-xs text-error-500">{errors.majorId.message}</p>}
@@ -249,12 +249,12 @@ const ClassFormModal: React.FC<ClassFormModalProps> = ({ isOpen, onClose, select
                 control={control}
                 render={({ field }) => (
                 <div className="space-y-1.5 z-20">
-                    <Label>Academic Year</Label>
+                    <Label>Tahun Ajaran</Label>
                     <CustomSelect
                         value={field.value}
                         onChange={field.onChange}
                         options={academicYears.map((y: { id: number | string; name: string }) => ({ label: y.name, value: y.id }))}
-                        placeholder="Select Year"
+                        placeholder="Pilih Tahun"
                     />
                     {errors.academicYearId && <p className="text-xs text-error-500">{errors.academicYearId.message}</p>}
                 </div>
@@ -268,23 +268,23 @@ const ClassFormModal: React.FC<ClassFormModalProps> = ({ isOpen, onClose, select
                 control={control}
                 render={({ field }) => (
                 <div className="space-y-1.5 z-10">
-                    <Label>Homeroom Teacher (Optional)</Label>
+                    <Label>Wali Kelas (Opsional)</Label>
                     <SearchableAsyncSelect
                         value={field.value || ""}
                         onChange={field.onChange}
                         onSearch={setTeacherSearch}
                         options={teachers.map((t: { public_id: string; name: string }) => ({ label: t.name, value: t.public_id }))}
                         isLoading={isLoadingTeachers}
-                        placeholder="Search teacher..."
+                        placeholder="Cari guru..."
                     />
                     {errors.homeroomTeacherId && <p className="text-xs text-error-500">{errors.homeroomTeacherId.message}</p>}
                 </div>
                 )}
             />
             <div className="space-y-1.5">
-                <Label>Room Number (Optional)</Label>
+                <Label>Nomor Ruangan (Opsional)</Label>
                 <Input
-                    placeholder="e.g. 101"
+                    placeholder="cth. 101"
                     {...register("roomNumber")}
                     error={errors.roomNumber?.message}
                 />
@@ -297,7 +297,7 @@ const ClassFormModal: React.FC<ClassFormModalProps> = ({ isOpen, onClose, select
                 control={control}
                 render={({ field }) => (
                 <div className="space-y-1.5">
-                    <Label>Max Capacity</Label>
+                    <Label>Kapasitas Maksimal</Label>
                     <NumberInput
                         value={field.value}
                         onChange={field.onChange}
@@ -315,7 +315,7 @@ const ClassFormModal: React.FC<ClassFormModalProps> = ({ isOpen, onClose, select
                 <div className="flex items-center justify-between rounded-xl border border-gray-200 p-4 dark:border-white/[0.08]">
                     <div className="space-y-0.5">
                         <Label>Status</Label>
-                        <p className="text-xs text-gray-500">Active classes accept enrollments.</p>
+                        <p className="text-xs text-gray-500">Kelas aktif dapat menerima pendaftaran siswa.</p>
                     </div>
                     <Switch checked={field.value} onChange={field.onChange} />
                 </div>
@@ -329,7 +329,7 @@ const ClassFormModal: React.FC<ClassFormModalProps> = ({ isOpen, onClose, select
             onClick={onClose}
             className="rounded-xl px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/[0.05]"
           >
-            Cancel
+            Batal
           </button>
           <button
             type="submit"
@@ -337,7 +337,7 @@ const ClassFormModal: React.FC<ClassFormModalProps> = ({ isOpen, onClose, select
             disabled={createMutation.isPending || updateMutation.isPending}
             className="rounded-xl bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50"
           >
-            {createMutation.isPending || updateMutation.isPending ? "Saving..." : "Save Class"}
+            {createMutation.isPending || updateMutation.isPending ? "Menyimpan..." : "Simpan Kelas"}
           </button>
         </div>
       </form>

@@ -5,7 +5,7 @@ import Checkbox from "../../../components/atoms/Checkbox";
 import { PencilIcon, TrashBinIcon, CalenderIcon, GridIcon } from "../../../components/atoms/Icons";
 
 const formatDate = (d?: string) =>
-  d ? new Date(d).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" }) : "—";
+  d ? new Date(d).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "—";
 
 interface EmployeeCardProps {
     employee: EmployeeProfile;
@@ -60,10 +60,10 @@ const EmployeeCard: React.FC<EmployeeCardProps> = ({
                     </div>
                     <div>
                         <p className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white leading-tight">
-                            {employee.user?.name || "Unknown Employee"}
+                            {employee.user?.name || "Pegawai Tidak Diketahui"}
                         </p>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                            {employee.user?.email || "No email linked"}
+                            {employee.user?.email || "Belum ada email"}
                         </p>
                     </div>
                 </div>
@@ -71,14 +71,14 @@ const EmployeeCard: React.FC<EmployeeCardProps> = ({
                 <div className="mt-3 flex items-center gap-4 text-[11px] sm:text-xs text-gray-500 dark:text-gray-400">
                     <div className="flex items-center gap-1.5 font-medium">
                         <GridIcon className="size-3.5 shrink-0 text-gray-400 dark:text-gray-500" />
-                        <span>{employee.position || "Staff"} - {employee.department || "General"}</span>
+                        <span>{employee.position || "Staf"} - {employee.department || "Umum"}</span>
                     </div>
                 </div>
                 
                 {employee.hireDate && (
                     <div className="mt-2 flex items-center gap-1.5 text-[11px] sm:text-xs text-gray-500 dark:text-gray-400">
                         <CalenderIcon className="size-3.5 shrink-0 text-gray-400 dark:text-gray-500" />
-                        <span className="font-medium">Hired: {formatDate(employee.hireDate)}</span>
+                        <span className="font-medium">Bergabung: {formatDate(employee.hireDate)}</span>
                     </div>
                 )}
             </div>
@@ -88,17 +88,17 @@ const EmployeeCard: React.FC<EmployeeCardProps> = ({
                 {showResetPassword && onResetPassword && (
                     <button onClick={(e) => { e.stopPropagation(); onResetPassword(); }}
                         className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-500/10">
-                        Reset Password
+                        Atur Ulang Kata Sandi
                     </button>
                 )}
                 <button onClick={(e) => { e.stopPropagation(); onEdit(); }}
                     className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/[0.04]">
-                    <PencilIcon className="size-3.5" /> Edit
+                    <PencilIcon className="size-3.5" /> Ubah
                 </button>
                 <div className="h-4 w-px bg-gray-200 dark:bg-white/[0.06] mx-1" />
                 <button onClick={(e) => { e.stopPropagation(); onDelete(); }}
                     className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/10">
-                    <TrashBinIcon className="size-3.5" /> Delete
+                    <TrashBinIcon className="size-3.5" /> Hapus
                 </button>
             </div>
         </div>
