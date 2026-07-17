@@ -94,7 +94,8 @@ export const useAppMenu = () => {
   const showAcademicFeatures = isAcademicAdmin || isGuru;
 
   // Event management: only admin-level roles can manage events
-  const canManageEvents = isAdmin || isSuperAdmin || isKurikulum;
+  // Acara hidden for now, per request: super admin / admin only
+  const canManageEvents = isAdmin || isSuperAdmin;
 
   // Gate access: piket, admin, superadmin
   const hasGateAccess = isAdmin || isSuperAdmin || isPiket;
@@ -109,11 +110,17 @@ export const useAppMenu = () => {
       { icon: <MailIcon />, name: "Notifikasi", path: "/notifications" }
     ];
 
-    // Teacher: daily teaching schedule
+    // Teacher: weekly template schedule
     if (isGuru) {
       mainMenu.push({
         icon: <CalenderIcon />,
         name: "Jadwal Saya",
+        path: "/student/schedule/weekly",
+      });
+      // Distinct from Jadwal Saya: today-only view with start-class / take-attendance actions
+      mainMenu.push({
+        icon: <TimeIcon />,
+        name: "Jadwal Hari Ini",
         path: "/attendance/my-schedule",
       });
     }
@@ -154,21 +161,47 @@ export const useAppMenu = () => {
       });
     }
 
+    // Teacher: personal attendance metrics (TeacherMetricsView scopes this to their own data)
+    if (isGuru && !hasGateAccess) {
+      attendanceItems.push({
+        icon: <ChartBarIcon className="size-5" />,
+        name: "Metrik",
+        path: "/attendance/metrics",
+      });
+    }
+
     // Teacher, Admin, Super Admin, and Piket: class attendance (teaching sessions, subject attendances)
     if (isGuru || hasGateAccess) {
+      const classAttendanceSubItems: SubItem[] = [];
+      // Perintah Kelas: gate staff / admin only, not teachers
+      if (hasGateAccess) {
+        classAttendanceSubItems.push({ name: "Perintah Kelas", path: "/attendance/classroom-command", icon: <ComputerDesktopIcon className="size-5" /> });
+      }
+      classAttendanceSubItems.push(
+        { name: "Sesi Mengajar", path: "/attendance/teaching-sessions", icon: <AcademicCapIcon className="size-5" /> },
+        { name: "Kehadiran Mata Pelajaran", path: "/attendance/subject-attendances" },
+      );
       attendanceItems.push({
         icon: <TaskIcon />,
         name: "Kehadiran Kelas",
+        subItems: classAttendanceSubItems,
+      });
+    }
+
+    // Karyawan (non-gate-access employees): self-service attendance records
+    if (isKaryawan && !hasGateAccess) {
+      attendanceItems.push({
+        icon: <TimeIcon />,
+        name: "Kehadiran Saya",
         subItems: [
-          { name: "Perintah Kelas", path: "/attendance/classroom-command", icon: <ComputerDesktopIcon className="size-5" /> },
-          { name: "Sesi Mengajar", path: "/attendance/teaching-sessions", icon: <AcademicCapIcon className="size-5" /> },
-          { name: "Kehadiran Mata Pelajaran", path: "/attendance/subject-attendances" },
+          { name: "Rekam Kehadiran", path: "/attendance/records" },
+          { name: "Riwayat", path: "/attendance/history", icon: <ClockIcon className="size-5" /> },
         ],
       });
     }
 
-    // Gate staff: guest management
-    if (hasGateAccess) {
+    // Guest management: super admin only for now
+    if (isSuperAdmin) {
       attendanceItems.push({
         icon: <UserIcon />,
         name: "Tamu",

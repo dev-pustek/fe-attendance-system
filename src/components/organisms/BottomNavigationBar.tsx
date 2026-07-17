@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import { Link, useLocation } from "react-router";
-import { HomeIcon, CalenderIcon, DocsIcon, ListIcon, VideoIcon, TimeIcon } from "../atoms/Icons";
+import { HomeIcon, CalenderIcon, ListIcon, VideoIcon, TimeIcon, MailIcon, DocsIcon } from "../atoms/Icons";
+import { ComputerDesktopIcon } from "@heroicons/react/24/solid";
 import { useAuthStore } from "../../store/authStore";
 
 const BottomNavigationBar: React.FC = () => {
@@ -24,16 +25,28 @@ const BottomNavigationBar: React.FC = () => {
   };
 
   const { user } = useAuthStore();
-  const isTeacher = user?.roles?.some((r: any) => ["guru", "teacher"].includes(r.name.toLowerCase())) || 
-                    user?.userTypes?.some((t: any) => ["guru", "teacher"].includes(t.toLowerCase()));
+  const roleNames = [
+    ...(user?.roles?.map((r: any) => r.name.toLowerCase()) || []),
+    ...(user?.userTypes?.map((t: any) => t.toLowerCase()) || []),
+  ];
+  const isTeacher = roleNames.some((r) => ["guru", "teacher"].includes(r));
+  const hasGateAccess = roleNames.some((r) => ["admin", "superadmin", "super admin", "piket", "security"].includes(r));
+  const isKurikulum = roleNames.some((r) => r === "kurikulum");
+  const isKaryawan = roleNames.some((r) => ["karyawan", "staff"].includes(r));
 
   const navItems = [
     { name: "Absen", path: "/attendance/gate-scan", icon: <VideoIcon className="w-5 h-5" /> },
-    { name: "Izin", path: "/leaves/requests", icon: <DocsIcon className="w-5 h-5" /> },
-    { name: "Beranda", path: "/", icon: <HomeIcon className="w-5 h-5" /> },
-    isTeacher 
+    hasGateAccess
+      ? { name: "Monitor Piket", path: "/attendance/piket", icon: <ComputerDesktopIcon className="w-5 h-5" /> }
+      : isTeacher
       ? { name: "Jadwal", path: "/student/schedule/weekly", icon: <CalenderIcon className="w-5 h-5" /> }
-      : { name: "Riwayat", path: "/attendance/history", icon: <TimeIcon className="w-5 h-5" /> },
+      : isKurikulum
+      ? { name: "Jadwal", path: "/academic/teaching-schedule-templates", icon: <DocsIcon className="w-5 h-5" /> }
+      : isKaryawan
+      ? { name: "Jadwal Kerja", path: "/schedules", icon: <CalenderIcon className="w-5 h-5" /> }
+      : { name: "Notifikasi", path: "/notifications", icon: <MailIcon className="w-5 h-5" /> },
+    { name: "Beranda", path: "/", icon: <HomeIcon className="w-5 h-5" /> },
+    { name: "Riwayat", path: "/attendance/history", icon: <TimeIcon className="w-5 h-5" /> },
     { name: "Lainnya", path: "/menu", icon: <ListIcon className="w-5 h-5" /> },
   ];
 

@@ -35,7 +35,7 @@ export default function StudentPerformance({ overview }: StudentPerformanceProps
             fontWeight: 700,
             color: "#111827",
             offsetY: -10,
-            formatter: (val) => `${val}%`
+            formatter: (val) => `${val.toFixed(1)}%`
           },
         },
       },

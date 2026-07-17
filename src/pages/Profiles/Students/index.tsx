@@ -102,7 +102,7 @@ function downloadBlob(blob: Blob, filename: string) {
 }
 
 export default function StudentManagement() {
-    const [isFilterOpen, setIsFilterOpen] = useState(true);
+    const [isFilterOpen, setIsFilterOpen] = useState(() => window.innerWidth >= 640);
     const isMobile = useIsMobile();
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();

@@ -40,6 +40,19 @@ const StudentWeeklySchedule = () => {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
+    // Measure the app's sticky header so the tab bar sticks just below it
+    // instead of overlapping it (the header's height isn't a fixed constant).
+    const [headerHeight, setHeaderHeight] = useState(0);
+    useEffect(() => {
+        const headerEl = document.querySelector("header");
+        if (!headerEl) return;
+        const update = () => setHeaderHeight(headerEl.getBoundingClientRect().height);
+        update();
+        const ro = new ResizeObserver(update);
+        ro.observe(headerEl);
+        return () => ro.disconnect();
+    }, []);
+
     // User's active class ID should be in their profile. 
     // Types might be tricky, checking flexible access
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -255,8 +268,11 @@ const StudentWeeklySchedule = () => {
                                  </div>
                             </div>
 
-                            {/* STICKY TABS */}
-                            <div className="sticky top-0 z-40 bg-white/90 dark:bg-[#0B0B0F]/90 backdrop-blur-md border-b border-gray-200 dark:border-white/10 px-4 md:px-6 pt-2">
+                            {/* STICKY TABS — sticks just below the app header, not over it */}
+                            <div
+                                className="sticky z-20 bg-white/90 dark:bg-[#0B0B0F]/90 backdrop-blur-md border-b border-gray-200 dark:border-white/10 px-4 md:px-6 pt-2"
+                                style={{ top: headerHeight }}
+                            >
                                 <div className="flex items-center gap-8 overflow-x-auto no-scrollbar relative">
                                      {academicYears.map(year => {
                                          const isActive = selectedAcademicYearId === year.id.toString();

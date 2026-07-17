@@ -65,7 +65,7 @@ const Events: React.FC = () => {
   const { confirm, confirmState } = useConfirm();
 
   const [page, setPage] = useState(1);
-  const [isFilterOpen, setIsFilterOpen] = useState(true);
+  const [isFilterOpen, setIsFilterOpen] = useState(() => window.innerWidth >= 640);
   const [limit] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 500);

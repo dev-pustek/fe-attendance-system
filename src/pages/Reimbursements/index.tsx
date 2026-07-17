@@ -44,7 +44,7 @@ const Reimbursements: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState(""); // Debounced/submitted
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [isFilterOpen, setIsFilterOpen] = useState(true);
+  const [isFilterOpen, setIsFilterOpen] = useState(() => window.innerWidth >= 640);
 
   const debouncedSearch = useDebounce(searchQuery, 500);
 

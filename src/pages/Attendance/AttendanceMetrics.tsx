@@ -20,7 +20,7 @@ const AttendanceMetrics: React.FC = () => {
   const { user } = useAuthStore();
   
   // States for input fields
-  const [isFilterOpen, setIsFilterOpen] = useState(true);
+  const [isFilterOpen, setIsFilterOpen] = useState(() => window.innerWidth >= 640);
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [academicYearId, setAcademicYearId] = useState<number | undefined>(undefined);

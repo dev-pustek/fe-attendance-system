@@ -30,7 +30,7 @@ const LeaveTypes: React.FC = () => {
     const [isExporting, setIsExporting] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-    const [isFilterOpen, setIsFilterOpen] = useState(true);
+    const [isFilterOpen, setIsFilterOpen] = useState(() => window.innerWidth >= 640);
 
     // Data Hooks
     const { data: leaveTypesResponse, isLoading } = useLeaveTypes();

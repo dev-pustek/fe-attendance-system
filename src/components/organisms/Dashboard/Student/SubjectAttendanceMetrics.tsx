@@ -34,7 +34,7 @@ export default function SubjectAttendanceMetrics({ metrics }: Props) {
                     <RadialBar background={{ fill: '#E5E7EB', opacity: 0.2 }} dataKey="value" cornerRadius={10} />
                 </RadialBarChart>
             </ResponsiveContainer>
-            <span className="absolute text-xl font-bold text-gray-900 dark:text-white">{metrics.attendanceRate}%</span>
+            <span className="absolute text-xl font-bold text-gray-900 dark:text-white">{metrics.attendanceRate.toFixed(1)}%</span>
         </div>
       </div>
       

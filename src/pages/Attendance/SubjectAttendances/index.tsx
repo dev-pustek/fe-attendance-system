@@ -232,7 +232,7 @@ const SubjectAttendances: React.FC = () => {
   const [studentIdFilter, setStudentIdFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [isFilterOpen, setIsFilterOpen] = useState(true);
+  const [isFilterOpen, setIsFilterOpen] = useState(() => window.innerWidth >= 640);
   const [academicYearIdFilter, setAcademicYearIdFilter] = useState("");
   const [classIdFilter, setClassIdFilter] = useState("");
   const [subjectIdFilter, setSubjectIdFilter] = useState("");
@@ -809,7 +809,7 @@ const SubjectAttendances: React.FC = () => {
                 setIsReportModalOpen(true);
               }}
             />
-            {sessionIdFilter && (
+            {sessionIdFilter && isGlobalView && (
               <Button
                 variant="outline"
                 className="hidden sm:flex"
@@ -819,19 +819,21 @@ const SubjectAttendances: React.FC = () => {
                 Catat Massal
               </Button>
             )}
-            <button
-              onClick={() => handleOpenModal()}
-              className="hidden sm:flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-brand-500/25 transition-all hover:bg-brand-600 active:scale-[.98]"
-            >
-              <PlusIcon className="fill-white size-4" /> Catat Kehadiran
-            </button>
+            {isGlobalView && (
+              <button
+                onClick={() => handleOpenModal()}
+                className="hidden sm:flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-brand-500/25 transition-all hover:bg-brand-600 active:scale-[.98]"
+              >
+                <PlusIcon className="fill-white size-4" /> Catat Kehadiran
+              </button>
+            )}
           </div>
         </div>
 
         {/* ── Mobile FAB ── */}
         {isMobile && (
           <MobileFloatingActions
-            onAdd={() => handleOpenModal()}
+            onAdd={isGlobalView ? () => handleOpenModal() : undefined}
             addAriaLabel="Catat Kehadiran"
             dataActionsProps={{
               onExportPdf: () => {
@@ -842,7 +844,7 @@ const SubjectAttendances: React.FC = () => {
               }
             }}
             customActions={
-              sessionIdFilter && (
+              sessionIdFilter && isGlobalView && (
                 <button
                   onClick={handleOpenBulkModal}
                   className="flex size-12 items-center justify-center rounded-full bg-white text-gray-700 shadow-lg border border-gray-100 transition-transform active:scale-95"
@@ -1099,13 +1101,15 @@ const SubjectAttendances: React.FC = () => {
                       {sessionIdFilter ? "Belum ada kehadiran tercatat untuk sesi ini." : "Pilih sesi atau sesuaikan filter."}
                     </p>
                   </div>
-                  <button
-                    onClick={() => handleOpenModal()}
-                    className="mt-1 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600 transition-colors shadow-lg shadow-brand-500/20"
-                  >
-                    <PlusIcon className="size-3.5" />
-                    Catat Kehadiran Pertama
-                  </button>
+                  {isGlobalView && (
+                    <button
+                      onClick={() => handleOpenModal()}
+                      className="mt-1 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600 transition-colors shadow-lg shadow-brand-500/20"
+                    >
+                      <PlusIcon className="size-3.5" />
+                      Catat Kehadiran Pertama
+                    </button>
+                  )}
                 </div>
               </div>
             ) : (
@@ -1189,13 +1193,15 @@ const SubjectAttendances: React.FC = () => {
                               {sessionIdFilter ? "Belum ada kehadiran tercatat untuk sesi ini." : "Pilih sesi atau sesuaikan filter."}
                             </p>
                           </div>
-                          <button
-                            onClick={() => handleOpenModal()}
-                            className="mt-1 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600 transition-colors shadow-lg shadow-brand-500/20"
-                          >
-                            <PlusIcon className="size-3.5" />
-                            Catat Kehadiran Pertama
-                          </button>
+                          {isGlobalView && (
+                            <button
+                              onClick={() => handleOpenModal()}
+                              className="mt-1 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600 transition-colors shadow-lg shadow-brand-500/20"
+                            >
+                              <PlusIcon className="size-3.5" />
+                              Catat Kehadiran Pertama
+                            </button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>

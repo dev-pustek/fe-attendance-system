@@ -15,7 +15,7 @@ export default function Home() {
 
   const allRoles = [...roles, ...userTypes, ...typeAssignments].filter((r): r is string => !!r);
 
-  const isAdminOrStaff = allRoles.some(r => r.includes('admin') || r.includes('staff'));
+  const isAdminOrStaff = allRoles.some(r => r.includes('admin') || r.includes('staff') || r.includes('piket') || r.includes('security'));
   const isTeacher = allRoles.some(r => r.includes('teacher'));
   // Default to student if no other role matches, or explicitly student
   const isStudent = allRoles.some(r => r === 'student' || r.includes('student')) || (!isAdminOrStaff && !isTeacher);

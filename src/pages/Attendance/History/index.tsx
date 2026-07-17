@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router";
 import PageMeta from "../../../components/atoms/PageMeta";
 import PageBreadcrumb from "../../../components/molecules/PageBreadcrumb";
@@ -21,6 +21,19 @@ export default function AttendanceHistory() {
   const initialTab = searchParams.get("tab") as AttendanceTab || 'gate';
 
   const [activeTab, setActiveTab] = useState<AttendanceTab>(initialTab);
+
+  // Measure the app's sticky header so the tab bar sticks just below it
+  // instead of overlapping it (the header's height isn't a fixed constant).
+  const [headerHeight, setHeaderHeight] = useState(0);
+  useEffect(() => {
+    const headerEl = document.querySelector("header");
+    if (!headerEl) return;
+    const update = () => setHeaderHeight(headerEl.getBoundingClientRect().height);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(headerEl);
+    return () => ro.disconnect();
+  }, []);
 
   const tabs: TabItem[] = [
     { id: 'gate', label: 'Akses Gerbang', icon: GridIcon },
@@ -66,8 +79,11 @@ export default function AttendanceHistory() {
                           </div>
                       </div>
 
-                      {/* Sticky Header for Mobile Tab Navigation */}
-                      <div className="sticky top-0 z-40 bg-white/90 dark:bg-[#0B0B0F]/90 backdrop-blur-md border-b border-gray-200 dark:border-white/10 pt-2 md:static md:bg-transparent md:pt-4 md:px-6">
+                      {/* Sticky Header for Mobile Tab Navigation — sticks just below the app header, not over it */}
+                      <div
+                        className="sticky z-20 bg-white/90 dark:bg-[#0B0B0F]/90 backdrop-blur-md border-b border-gray-200 dark:border-white/10 pt-2 md:static md:top-auto md:bg-transparent md:pt-4 md:px-6"
+                        style={{ top: headerHeight }}
+                      >
                           <TabNavigation
                               tabs={tabs}
                               activeTab={activeTab}

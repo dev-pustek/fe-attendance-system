@@ -112,7 +112,7 @@ export default function NotificationInbox() {
   const isSuperAdmin = user?.userTypes?.some((role: string) => ["superadmin", "super admin", "admin"].includes(role.toLowerCase()));
 
   // ── Desktop pagination & filter state ────────────────────────────────────
-  const [isFilterOpen, setIsFilterOpen] = useState(true);
+  const [isFilterOpen, setIsFilterOpen] = useState(() => window.innerWidth >= 640);
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [statusFilter, setStatusFilter] = useState<'read' | 'unread' | ''>('');

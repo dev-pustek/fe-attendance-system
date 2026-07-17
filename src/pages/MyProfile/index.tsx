@@ -10,11 +10,11 @@ export default function MyProfile() {
   const { user } = useAuthStore();
 
   const isStudent = user?.userTypes?.includes("student");
-  const isEmployee = user?.userTypes?.some(type => 
-      ["admin", "super admin", "teacher", "staff", "headmaster"].includes(type.toLowerCase())
-  ) || user?.roles?.some(role => 
-      ["admin", "super admin", "teacher", "staff", "headmaster"].includes(role.name.toLowerCase())
-  );
+  // Everyone who isn't a student is treated as an employee-style profile
+  // (admin, superadmin, teacher, karyawan, piket, kurikulum, ...) rather
+  // than maintaining a role allowlist that drifts out of sync with actual
+  // DB role names.
+  const isEmployee = !isStudent;
 
   return (
     <>

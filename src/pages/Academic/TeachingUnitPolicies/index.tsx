@@ -51,7 +51,7 @@ const TeachingUnitPolicies: React.FC = () => {
   const [limit] = useState(10);
   const [statusFilter, setStatusFilter] = useState("");
   const [academicYearIdFilter, setAcademicYearIdFilter] = useState("");
-  const [isFilterOpen, setIsFilterOpen] = useState(true);
+  const [isFilterOpen, setIsFilterOpen] = useState(() => window.innerWidth >= 640);
   
   const { confirm, confirmState } = useConfirm();
   const isMobile = useIsMobile();

@@ -62,7 +62,7 @@ export default function EventTab() {
   const isMobile = useIsMobile();
 
   // ── Pagination & Filters ──
-  const [isFilterOpen, setIsFilterOpen] = useState(true);
+  const [isFilterOpen, setIsFilterOpen] = useState(() => window.innerWidth >= 640);
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [eventStatus, setEventStatus] = useState("");

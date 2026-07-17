@@ -11,7 +11,6 @@ import PageMeta from "../../components/atoms/PageMeta";
 import PageBreadcrumb from "../../components/molecules/PageBreadcrumb";
 import Input from "../../components/atoms/InputField";
 import Label from "../../components/atoms/Label";
-import Switch from "../../components/atoms/Switch";
 import NumberInput from "../../components/atoms/NumberInput";
 import PhoneNumberInput from "../../components/atoms/PhoneNumberInput";
 import DatePicker from "../../components/molecules/DatePicker";
@@ -206,29 +205,6 @@ export default function EmployeeProfileForm() {
               )}
             </div>
 
-            <div className="bg-gray-50 dark:bg-white/5 p-5 rounded-2xl border border-gray-100 dark:border-white/5 flex flex-col gap-3">
-              <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-0">
-                Account Status
-              </Label>
-              <div className="flex items-center justify-between">
-                <span
-                  className={`text-sm font-bold ${formData.isActive ? "text-success-600" : "text-gray-400"}`}
-                >
-                  {formData.isActive ? "ACTIVE" : "INACTIVE"}
-                </span>
-                {/* User cannot change their own status usually, so maybe read-only or hidden */}
-                {/* Keeping it consistent with modal but disabled */}
-                <div className="opacity-50 pointer-events-none">
-                  <Switch
-                    checked={formData.isActive || false}
-                    onChange={() => {}}
-                  />
-                </div>
-              </div>
-              <p className="text-[10px] text-gray-400">
-                Contact admin to change status
-              </p>
-            </div>
           </div>
 
           {/* RIGHT COLUMN: Inputs Grid */}

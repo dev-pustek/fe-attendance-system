@@ -1,5 +1,13 @@
 // Role-based route permissions configuration
-export type UserRole = 'admin' | 'superadmin' | 'super admin' | 'teacher' | 'student' | 'staff' | 'parent' | 'piket' | 'security';
+export type UserRole = 'admin' | 'superadmin' | 'super admin' | 'teacher' | 'student' | 'staff' | 'parent' | 'piket' | 'security' | 'karyawan' | 'kurikulum';
+
+// DB role names that aren't in the permission vocabulary above but should
+// satisfy it. Without this, any DB role not literally spelled out in every
+// route's allowedRoles gets denied everywhere, including "/".
+const ROLE_ALIASES: Record<string, UserRole[]> = {
+  karyawan: ['staff'],
+  kurikulum: ['staff', 'admin'],
+};
 
 export interface RoutePermission {
   path: string;
@@ -21,7 +29,7 @@ export const routePermissions: RoutePermission[] = [
   { path: '/students/:userId', allowedRoles: ['admin', 'teacher', 'student', 'staff', 'piket', 'security'] },
 
   // Teacher-specific routes
-  { path: '/teacher/classroom', allowedRoles: ['admin', 'teacher'] },
+  { path: '/teacher/classroom', allowedRoles: ['admin', 'staff', 'piket', 'security'] },
   { path: '/attendance/my-schedule', allowedRoles: ['admin', 'teacher', 'staff'] },
   { path: '/hr/employees/:employeeId/academic-profile', allowedRoles: ['admin', 'teacher'] },
 
@@ -30,13 +38,13 @@ export const routePermissions: RoutePermission[] = [
   { path: '/attendance/history', allowedRoles: ['admin', 'teacher', 'staff', 'student', 'piket', 'security'] },
   { path: '/attendance/gate-scan', allowedRoles: ['admin', 'teacher', 'student', 'staff', 'parent', 'piket', 'security'] }, // Everyone can scan for attendance
   { path: '/attendance/piket', allowedRoles: ['admin', 'staff', 'piket', 'security'] },
-  { path: '/attendance/classroom-command', allowedRoles: ['admin', 'staff', 'teacher', 'piket', 'security'] },
+  { path: '/attendance/classroom-command', allowedRoles: ['admin', 'staff', 'piket', 'security'] },
   { path: '/attendance/history', allowedRoles: ['admin', 'staff', 'student', 'piket', 'security'] },
-  { path: '/attendance/teaching-sessions', allowedRoles: ['admin', 'teacher', 'staff'] },
-  { path: '/attendance/subject-attendances', allowedRoles: ['admin', 'teacher', 'staff'] },
+  { path: '/attendance/teaching-sessions', allowedRoles: ['admin', 'teacher', 'staff', 'piket', 'security'] },
+  { path: '/attendance/subject-attendances', allowedRoles: ['admin', 'teacher', 'staff', 'piket', 'security'] },
   { path: '/attendance/events', allowedRoles: ['admin', 'staff', 'piket', 'security'] },
   { path: '/attendance/metrics', allowedRoles: ['admin', 'teacher', 'student', 'staff', 'piket', 'security'] },
-  { path: '/attendance/reports', allowedRoles: ['admin', 'staff'] },
+  { path: '/attendance/reports', allowedRoles: ['admin', 'staff', 'piket', 'security'] },
   { path: '/attendance/policies', allowedRoles: ['admin'] },
 
   // Academic Management - Admin and Staff only
@@ -83,13 +91,14 @@ export const routePermissions: RoutePermission[] = [
   { path: '/reimbursements', allowedRoles: ['super admin', 'superadmin'] },
 
   // Events - Most users
-  { path: '/events', allowedRoles: ['admin', 'teacher', 'student', 'staff', 'piket', 'security'] },
-  { path: '/events/:id/invitations', allowedRoles: ['admin', 'staff'] },
-  { path: '/events/:id/invitation-paper', allowedRoles: ['admin', 'teacher', 'student', 'staff'] },
+  // Acara hidden for now, per request: super admin / admin only
+  { path: '/events', allowedRoles: ['super admin', 'superadmin', 'admin'] },
+  { path: '/events/:id/invitations', allowedRoles: ['super admin', 'superadmin', 'admin'] },
+  { path: '/events/:id/invitation-paper', allowedRoles: ['super admin', 'superadmin', 'admin'] },
 
   // Guests - Admin and Staff
-  { path: '/guests', allowedRoles: ['admin', 'staff', 'piket', 'security'] },
-  { path: '/guests/visits', allowedRoles: ['admin', 'staff', 'piket', 'security'] },
+  { path: '/guests', allowedRoles: ['super admin', 'superadmin'] },
+  { path: '/guests/visits', allowedRoles: ['super admin', 'superadmin'] },
 
   // Scheduling
   { path: '/scheduling/templates', allowedRoles: ['admin', 'staff'] },
@@ -132,6 +141,9 @@ export const hasRoutePermission = (
   }
 
   const roleNames = roles.map(r => r.name.toLowerCase());
+  // Fold in aliases so DB-only role names (karyawan, kurikulum, ...) match
+  // the routePermissions vocabulary (staff, admin, ...)
+  roleNames.push(...roleNames.flatMap(r => ROLE_ALIASES[r] || []));
 
   // 2. SUPER ADMIN BYPASS: If user is superadmin, they can access EVERYTHING
   if (roleNames.some(r => r === 'super admin' || r === 'superadmin')) {

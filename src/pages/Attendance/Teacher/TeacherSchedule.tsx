@@ -6,13 +6,13 @@ import { TodayScheduleItem, CreateTeachingSessionDto, SubjectAttendance } from "
 import { ClassEnrollment } from "../../../api/types/academic";
 import { useTodaySchedule, useAttendanceStatuses, useSubjectAttendances, useValidateSession } from "../../../api/hooks/useAttendance";
 import PageMeta from "../../../components/atoms/PageMeta";
-import PageBreadcrumb from "../../../components/molecules/PageBreadcrumb";
-import { 
-  CalenderIcon, 
-  CheckCircleIcon, 
+import MetricCard from "../../../components/molecules/MetricCard";
+import {
+  CalenderIcon,
+  CheckCircleIcon,
   PlusIcon,
   UserIcon,
-} from "../../../components/atoms/Icons"; 
+} from "../../../components/atoms/Icons";
 import { MapPinIcon, UsersIcon, QrCodeIcon, ArrowPathIcon, TableCellsIcon, CameraIcon, ExclamationTriangleIcon, ClockIcon } from "@heroicons/react/24/outline";
 import { motion, AnimatePresence } from "framer-motion";
 import { showSuccess, showError } from "../../../utils/toast";
@@ -182,6 +182,18 @@ const TeacherSchedule: React.FC = () => {
       if (currentTimeVal >= startTimeVal && currentTimeVal <= endTimeVal) return 'now';
       return 'upcoming';
   };
+
+  const summaryStats = React.useMemo(() => {
+      let ongoing = 0, completed = 0, upcoming = 0;
+      schedule.forEach((item) => {
+          const s = getClassStatus(item);
+          if (s === 'now' || s === 'active') ongoing++;
+          else if (s === 'passed') completed++;
+          else if (s === 'upcoming') upcoming++;
+      });
+      return { total: schedule.length, ongoing, completed, upcoming };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [schedule, currentTime]);
 
   const handleStartClass = async (item: TodayScheduleItem) => {
       // Strict Check: Only allow starting if status is 'now'
@@ -736,16 +748,31 @@ const TeacherSchedule: React.FC = () => {
 
   return (
     <>
-      <PageMeta title="Jadwal Saya | SIAPUS" description="Lihat jadwal mengajar hari ini dan catat kehadiran." />
-      <PageBreadcrumb pageTitle="Jadwal Saya" />
+      <PageMeta title="Jadwal Hari Ini | SIAPUS" description="Lihat jadwal mengajar hari ini dan catat kehadiran." />
 
-      <div className="space-y-8">
-        <div>
-           <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Jadwal Hari Ini</h1>
-           <p className="text-gray-500 dark:text-gray-400 mt-1">
-             {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-           </p>
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:flex size-10 items-center justify-center rounded-xl bg-brand-50 text-brand-500 dark:bg-brand-500/10">
+              <CalenderIcon className="size-5" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">Jadwal Hari Ini</h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+              </p>
+            </div>
+          </div>
         </div>
+
+        {!isLoading && schedule.length > 0 && (
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <MetricCard title="Total Kelas" value={summaryStats.total} icon={<CalenderIcon />} color="brand" />
+            <MetricCard title="Berlangsung" value={summaryStats.ongoing} icon={<ArrowPathIcon />} color="green" />
+            <MetricCard title="Akan Datang" value={summaryStats.upcoming} icon={<ClockIcon />} color="blue" />
+            <MetricCard title="Selesai" value={summaryStats.completed} icon={<CheckCircleIcon />} color="orange" />
+          </div>
+        )}
 
         {isLoading ? (
              <div className="flex justify-center py-20"><div className="animate-spin size-10 border-4 border-brand-500 border-t-transparent rounded-full"></div></div>

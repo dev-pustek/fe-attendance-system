@@ -165,7 +165,7 @@ const TeachingSessions: React.FC = () => {
   const [teacherIdFilter, setTeacherIdFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [isFilterOpen, setIsFilterOpen] = useState(true);
+  const [isFilterOpen, setIsFilterOpen] = useState(() => window.innerWidth >= 640);
   
   const [selectedIds, setSelectedIds] = useState<Set<number | string>>(new Set());
   const [isExporting, setIsExporting] = useState(false);
@@ -626,13 +626,15 @@ const TeachingSessions: React.FC = () => {
                 Generate Sesi
               </button>
             )}
-            <button
-              onClick={() => handleOpenModal()}
-              className="hidden sm:flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-brand-500/25 transition-all hover:bg-brand-600 active:scale-[.98]"
-            >
-              <PlusIcon className="size-4 fill-current" />
-              Rekam Sesi
-            </button>
+            {isGlobalView && (
+              <button
+                onClick={() => handleOpenModal()}
+                className="hidden sm:flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-brand-500/25 transition-all hover:bg-brand-600 active:scale-[.98]"
+              >
+                <PlusIcon className="size-4 fill-current" />
+                Rekam Sesi
+              </button>
+            )}
           </div>
         </div>
 
@@ -650,12 +652,14 @@ const TeachingSessions: React.FC = () => {
               </button>
             )}
 
-            <button
-              onClick={() => handleOpenModal()}
-              className="flex size-14 items-center justify-center rounded-full bg-brand-500 text-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] shadow-brand-500/30 transition-transform active:scale-95"
-            >
-              <PlusIcon className="size-6 fill-white" />
-            </button>
+            {isGlobalView && (
+              <button
+                onClick={() => handleOpenModal()}
+                className="flex size-14 items-center justify-center rounded-full bg-brand-500 text-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] shadow-brand-500/30 transition-transform active:scale-95"
+              >
+                <PlusIcon className="size-6 fill-white" />
+              </button>
+            )}
           </div>
         )}
 
@@ -833,10 +837,12 @@ const TeachingSessions: React.FC = () => {
                   <CalenderIcon className="size-7 opacity-30" />
                 </div>
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Sesi mengajar tidak ditemukan.</p>
-                <button onClick={() => handleOpenModal()}
-                  className="flex items-center gap-1.5 rounded-lg bg-brand-50 px-3 py-1.5 text-xs font-medium text-brand-600 hover:bg-brand-100 dark:bg-brand-500/10 dark:text-brand-400">
-                  <PlusIcon className="size-3 fill-current" /> Rekam Sesi Pertama
-                </button>
+                {isGlobalView && (
+                  <button onClick={() => handleOpenModal()}
+                    className="flex items-center gap-1.5 rounded-lg bg-brand-50 px-3 py-1.5 text-xs font-medium text-brand-600 hover:bg-brand-100 dark:bg-brand-500/10 dark:text-brand-400">
+                    <PlusIcon className="size-3 fill-current" /> Rekam Sesi Pertama
+                  </button>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-3">
@@ -901,9 +907,11 @@ const TeachingSessions: React.FC = () => {
                           <CalenderIcon className="size-5 opacity-20" />
                         </div>
                         <p className="text-sm font-medium">Sesi mengajar tidak ditemukan.</p>
-                        <button onClick={() => handleOpenModal()} className="flex items-center gap-1.5 text-xs text-brand-500 hover:underline">
-                          <PlusIcon className="size-3" /> Rekam sesi pertama
-                        </button>
+                        {isGlobalView && (
+                          <button onClick={() => handleOpenModal()} className="flex items-center gap-1.5 text-xs text-brand-500 hover:underline">
+                            <PlusIcon className="size-3" /> Rekam sesi pertama
+                          </button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

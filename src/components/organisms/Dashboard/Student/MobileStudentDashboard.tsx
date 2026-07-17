@@ -167,20 +167,29 @@ export default function MobileStudentDashboard({ logs = [] }: MobileStudentDashb
   const isAdmin = useMemo(() => user?.roles?.some(r => r.name.toLowerCase() === 'admin') || false, [user]);
   const isPiket = useMemo(() => user?.roles?.some(r => r.name.toLowerCase() === 'piket' || r.name.toLowerCase() === 'security') || false, [user]);
   const isKurikulum = useMemo(() => user?.roles?.some(r => r.name.toLowerCase() === 'kurikulum') || false, [user]);
+  const isKaryawan = useMemo(() => user?.roles?.some(r => r.name.toLowerCase() === 'karyawan') || false, [user]);
   const isTeacherUser = useMemo(() => user?.userTypes?.includes('teacher') || user?.userTypes?.includes('employee') || user?.roles?.some(r => r.name.toLowerCase() === 'teacher' || r.name.toLowerCase() === 'guru' || r.name.toLowerCase() === 'employee') || (user as any)?.role === 'teacher', [user]);
 
   const PREFERRED_PATHS = useMemo(() => {
     if (isSuperAdmin) return ["/attendance/policies", "/attendance/metrics", "/attendance/reports", "/hr/employees"];
     if (isAdmin) return ["/attendance/metrics", "/attendance/reports", "/events", "/hr/employees"];
-    if (isKurikulum) return ["/attendance/metrics", "/attendance/reports", "/hr/employees", "/attendance/policies"];
-    if (isPiket) return ["/attendance/metrics", "/attendance/reports", "/attendance/piket", "/events"];
-    if (isTeacherUser) return ["/attendance/metrics", "/attendance/history", "/attendance/teaching-sessions", "/profile"];
+    // policies excluded here: it's already the bottom bar's 2nd slot for kurikulum
+    if (isKurikulum) return ["/attendance/metrics", "/attendance/reports", "/hr/employees", "/profile"];
+    if (isPiket) return ["/attendance/classroom-command", "/attendance/metrics", "/attendance/reports", "/events"];
+    // Checked before isTeacherUser: karyawan accounts also carry the
+    // 'employee' userType, which isTeacherUser matches too broadly.
+    if (isKaryawan) return ["/attendance/records", "/attendance/history", "/notifications", "/profile"];
+    if (isTeacherUser) return ["/attendance/metrics", "/attendance/my-schedule", "/notifications", "/profile"];
     return ["/attendance/metrics", "/attendance/history", "/events", "/profile"];
-  }, [isSuperAdmin, isAdmin, isKurikulum, isPiket, isTeacherUser]);
+  }, [isSuperAdmin, isAdmin, isKurikulum, isPiket, isKaryawan, isTeacherUser]);
 
   // Dynamically extract up to 4 quick access links that are not in the bottom bar
   const quickAccessLinks = useMemo(() => {
-    const EXCLUDED_PATHS = ["/", "/attendance/gate-scan", "/leaves/requests", "/student/schedule/weekly", "/menu"];
+    const EXCLUDED_PATHS = ["/", "/attendance/gate-scan", "/attendance/piket", "/schedules", "/leaves/requests", "/student/schedule/weekly", "/menu"];
+    // teaching-schedule-templates is the bottom bar's 2nd slot for kurikulum (superadmin's bottom bar shows Monitor Piket instead)
+    if (isKurikulum) {
+      EXCLUDED_PATHS.push("/academic/teaching-schedule-templates");
+    }
     const allLinks = navGroups.flatMap(group => 
       group.items.flatMap(item => {
         if (item.subItems) {
@@ -211,7 +220,7 @@ export default function MobileStudentDashboard({ logs = [] }: MobileStudentDashb
       if (idxB !== -1) return 1;
       return 0;
     }).slice(0, 4);
-  }, [navGroups, PREFERRED_PATHS]);
+  }, [navGroups, PREFERRED_PATHS, isTeacherUser, isPiket, isKurikulum]);
 
   const QUICK_ACCESS_STYLES = useMemo(() => [
     "from-brand-400 to-brand-600 shadow-[0_8px_16px_rgba(79,70,229,0.25)] dark:from-brand-500 dark:to-brand-700",

@@ -79,7 +79,7 @@ export default function SummaryCards({ overview }: SummaryCardsProps) {
               Attendance Rate
             </span>
             <h4 className="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
-              {overview.attendanceRate}%
+              {overview.attendanceRate.toFixed(1)}%
             </h4>
         </div>
       </div>

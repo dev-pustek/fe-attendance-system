@@ -13,7 +13,7 @@ export default function StudentSummaryCards({ overview }: Props) {
   const cards = [
     {
       title: "Attendance Rate",
-      value: `${overview.attendanceRate}%`,
+      value: `${overview.attendanceRate.toFixed(1)}%`,
       icon: ChartPieIcon,
       gradient: "from-blue-600 to-indigo-500",
       iconBg: "bg-blue-500/20",

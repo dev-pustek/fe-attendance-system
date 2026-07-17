@@ -93,7 +93,7 @@ const Grades: React.FC = () => {
   
   // Filter state
   const [levelFilter, setLevelFilter] = useState("all");
-  const [isFilterOpen, setIsFilterOpen] = useState(true);
+  const [isFilterOpen, setIsFilterOpen] = useState(() => window.innerWidth >= 640);
 
   const [selectedIds, setSelectedIds] = useState<Set<string | number>>(new Set());
 

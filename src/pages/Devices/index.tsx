@@ -22,7 +22,7 @@ const Devices: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   // const [typeFilter, setTypeFilter] = useState(""); // Removed type filter
   const [statusFilter, setStatusFilter] = useState("");
-  const [isFilterOpen, setIsFilterOpen] = useState(true);
+  const [isFilterOpen, setIsFilterOpen] = useState(() => window.innerWidth >= 640);
   const debouncedSearch = useDebounce(searchQuery, 500);
   const { confirm, confirmState } = useConfirm();
 

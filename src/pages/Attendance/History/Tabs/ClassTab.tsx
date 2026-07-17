@@ -77,7 +77,7 @@ export default function ClassTab() {
   const isTeacherUser = user?.userTypes?.includes('teacher') || user?.userTypes?.includes('employee') || user?.roles?.some((r: any) => r.name.toLowerCase() === 'teacher' || r.name.toLowerCase() === 'guru' || r.name.toLowerCase() === 'employee') || (user as any)?.role === 'teacher';
 
   // ── Pagination & Filters ──
-  const [isFilterOpen, setIsFilterOpen] = useState(true);
+  const [isFilterOpen, setIsFilterOpen] = useState(() => window.innerWidth >= 640);
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [statusFilter, setStatusFilter] = useState("");

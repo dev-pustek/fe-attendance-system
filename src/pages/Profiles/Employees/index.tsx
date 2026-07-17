@@ -199,7 +199,7 @@ const EmployeesList: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isExporting, setIsExporting] = useState(false);
-  const [isFilterOpen, setIsFilterOpen] = useState(true);
+  const [isFilterOpen, setIsFilterOpen] = useState(() => window.innerWidth >= 640);
   const { confirm, confirmState } = useConfirm();
 
   // ── Desktop query ─────────────────────────────────────────────────────────

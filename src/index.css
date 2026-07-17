@@ -213,8 +213,11 @@
   [role="button"]:not(:disabled) {
     cursor: pointer;
   }
+  html {
+    @apply overflow-x-hidden;
+  }
   body {
-    @apply relative z-1 bg-gray-50;
+    @apply relative z-1 bg-gray-50 overflow-x-hidden;
     font-family: var(--font-outfit);
   }
 }

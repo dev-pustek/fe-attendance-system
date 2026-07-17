@@ -114,7 +114,7 @@ const Guests: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
   const searchTerm = searchParams.get("search") || "";
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [isFilterOpen, setIsFilterOpen] = useState(true);
+  const [isFilterOpen, setIsFilterOpen] = useState(() => window.innerWidth >= 640);
   const [isExporting, setIsExporting] = useState(false);
   const [isDownloadingTemplate, setIsDownloadingTemplate] = useState(false);
 

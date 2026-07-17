@@ -69,7 +69,7 @@ export default function StudentMetrics() {
             </span>
             <div className="flex items-end justify-between mt-1">
                 <h4 className="font-bold text-gray-800 text-title-sm dark:text-white/90">
-                {metrics.attendancePercentage}%
+                {metrics.attendancePercentage.toFixed(1)}%
                 </h4>
                 <Badge color={getRateColor(metrics.attendancePercentage)}>
                     {metrics.attendancePercentage >= 90 ? "Excellent" : "Needs Attention"}
