@@ -65,10 +65,10 @@ const IdCard = forwardRef<HTMLDivElement, IdCardProps>(({
   
   // Defaults
   const {
-      organizationName = "SMK AL AMANAH",
-      website = "www.smkalamanahs.sch.id",
-      npsn = "69447",
-      helpdesk = "AL AMANAH AL BANTANI"
+      organizationName = "School Name",
+      website = "",
+      npsn = "",
+      helpdesk = ""
   } = config;
 
   // Image Pre-loading for Capture Reliability

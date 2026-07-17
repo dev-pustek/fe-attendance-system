@@ -1,11 +1,14 @@
 import { useMemo } from "react";
 import IdCard from "../../../molecules/IdCard";
 import { useDownloadCards } from "../../../../pages/Users/IdCardPrint/useDownloadCards";
+import { useSetting } from "../../../../api/hooks/useSettings";
 import { ArrowDownTrayIcon } from "@heroicons/react/24/outline";
 import Button from "../../../atoms/Button";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function StudentIdCardSection({ user }: { user: any }) {
+    const { data: schoolNameSetting } = useSetting("school_name");
+    const organizationName = schoolNameSetting?.value;
     // Construct user object for IdCard component
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const userForCard: any = useMemo(() => {
@@ -57,7 +60,7 @@ export default function StudentIdCardSection({ user }: { user: any }) {
                             user={userForCard} 
                             side="front" 
                             domId={`card-${safeUserId}-front`}
-                            config={{ organizationName: "SMK AL AMANAH" }} 
+                            config={{ organizationName }}
                             primaryColor="#3b82f6" 
                          />
                     </div>
@@ -69,7 +72,7 @@ export default function StudentIdCardSection({ user }: { user: any }) {
                             user={userForCard} 
                             side="back" 
                             domId={`card-${safeUserId}-back`}
-                             config={{ organizationName: "SMK AL AMANAH" }}
+                             config={{ organizationName }}
                              primaryColor="#3b82f6"
                          />
                     </div>

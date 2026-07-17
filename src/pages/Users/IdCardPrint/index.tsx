@@ -9,6 +9,7 @@ import { ChevronLeftIcon, GridIcon, SearchIcon, CloseIcon, PlugInIcon, PlusIcon,
 import IdCard from "../../../components/molecules/IdCard";
 import { Modal } from "../../../components/molecules/Modal";
 import CustomSelect from "../../../components/molecules/CustomSelect";
+import { useSetting } from "../../../api/hooks/useSettings";
 
 interface User {
     id?: string; // Internal/Local ID (Optional)
@@ -56,14 +57,22 @@ export default function IdCardPrint() {
   const [activeTab, setActiveTab] = useState<'users' | 'design' | 'content'>('users'); 
   
   // Dynamic Content State
+  const { data: schoolNameSetting } = useSetting("school_name");
   const [config, setConfig] = useState({
-      organizationName: "SMK AL AMANAH",
+      organizationName: "",
       cardTitle: "E - STUDENT - CARD",
-      address: "Jl. Pendidikan No. 1, Tangerang Selatan",
-      contact: "call 021.7412566",
-      website: "www.smkalamanahs.sch.id",
-      helpdesk: "PT MENCARI CINTA SEJATI"
+      address: "",
+      contact: "",
+      website: "",
+      helpdesk: ""
   });
+
+  // Prefill organization name from system settings once loaded
+  useEffect(() => {
+      if (schoolNameSetting?.value) {
+          setConfig(prev => (prev.organizationName ? prev : { ...prev, organizationName: schoolNameSetting.value }));
+      }
+  }, [schoolNameSetting]);
   
   // ----- STATE -----
   // Queue & Selection
@@ -845,7 +854,7 @@ export default function IdCardPrint() {
                                                 value={config.organizationName}
                                                 onChange={e => setConfig({ ...config, organizationName: e.target.value })}
                                                 className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
-                                                placeholder="e.g. SMK AL AMANAH"
+                                                placeholder="e.g. SMK Negeri 1"
                                             />
                                         </div>
                                         <div>
@@ -883,7 +892,7 @@ export default function IdCardPrint() {
                                                 value={config.helpdesk}
                                                 onChange={e => setConfig({ ...config, helpdesk: e.target.value })}
                                                 className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-gray-600"
-                                                placeholder="e.g. AL AMANAH AL BANTANI"
+                                                placeholder="e.g. School Helpdesk"
                                             />
                                         </div>
                                         <div>
