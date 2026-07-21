@@ -192,6 +192,7 @@ export interface AttendanceParams extends PaginationParams {
   overtimeMinutes?: number | string;
   type?: "DAILY" | "CLASS" | string;
   majorId?: string | number;
+  search?: string;
 }
 
 export interface AttendanceEventParams extends PaginationParams {

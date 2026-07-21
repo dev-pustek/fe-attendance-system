@@ -54,9 +54,9 @@ export const userService = {
     }
     formData.append("photo", data.photo);
 
-    const response = await apiClient.post<BaseResponse<User>>("/users", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    // Do NOT set Content-Type manually — axios/browser must set it with the
+    // multipart boundary itself, otherwise the backend can't parse the body.
+    const response = await apiClient.post<BaseResponse<User>>("/users", formData);
     return response.data;
   },
 
@@ -87,9 +87,9 @@ export const userService = {
     }
     formData.append("photo", data.photo);
 
-    const response = await apiClient.patch<BaseResponse<User>>(`/users/${id}`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    // Do NOT set Content-Type manually — axios/browser must set it with the
+    // multipart boundary itself, otherwise the backend can't parse the body.
+    const response = await apiClient.patch<BaseResponse<User>>(`/users/${id}`, formData);
     return response.data;
   },
 

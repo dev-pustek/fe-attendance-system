@@ -945,7 +945,7 @@ const AttendanceList: React.FC = () => {
 
                         <div className="grid grid-cols-1 gap-5 items-end md:grid-cols-3">
                             <div className="md:col-span-2 space-y-1.5">
-                                <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Nama Siswa / NIS</Label>
+                                <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Nama Pengguna / NIS</Label>
                                 <div className="relative">
                                     <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
                                     <input
@@ -958,7 +958,7 @@ const AttendanceList: React.FC = () => {
                                                 setPage(1);
                                             }
                                         }}
-                                        placeholder="Cari berdasarkan Nama Siswa atau NIS..."
+                                        placeholder="Cari berdasarkan Nama Pengguna atau NIS..."
                                         className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-4 text-sm text-gray-900 transition-colors focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-white/[0.08] dark:bg-white/[0.02] dark:text-white dark:focus:border-brand-400 dark:focus:ring-brand-400"
                                     />
                                 </div>

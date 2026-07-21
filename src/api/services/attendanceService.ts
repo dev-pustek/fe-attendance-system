@@ -71,9 +71,9 @@ export const attendanceService = {
   },
 
   createManualAttendance: async (data: FormData): Promise<ApiResponse<AttendanceRecord>> => {
-      const response = await apiClient.post<ApiResponse<AttendanceRecord>>("/attendance/admin/manual", data, {
-          headers: { "Content-Type": "multipart/form-data" }
-      });
+      // Do NOT set Content-Type manually — axios/browser must set it with the
+      // multipart boundary itself, otherwise the backend can't parse the body.
+      const response = await apiClient.post<ApiResponse<AttendanceRecord>>("/attendance/admin/manual", data);
       return response.data;
   },
 
@@ -119,9 +119,7 @@ export const attendanceService = {
               }
           }
       });
-      const response = await apiClient.post<ApiResponse<AttendanceRecord>>("/attendance/check-in", formData, {
-          headers: { "Content-Type": "multipart/form-data" }
-      });
+      const response = await apiClient.post<ApiResponse<AttendanceRecord>>("/attendance/check-in", formData);
       return response.data;
   },
 
@@ -136,9 +134,7 @@ export const attendanceService = {
               }
           }
       });
-      const response = await apiClient.post<ApiResponse<AttendanceRecord>>("/attendance/check-out", formData, {
-          headers: { "Content-Type": "multipart/form-data" }
-      });
+      const response = await apiClient.post<ApiResponse<AttendanceRecord>>("/attendance/check-out", formData);
       return response.data;
   },
 
