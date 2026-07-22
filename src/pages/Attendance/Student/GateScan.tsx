@@ -103,7 +103,7 @@ const GateScan = () => {
       setIsProcessing(true);
 
       try {
-        const deviceId = isSelfScan ? `mobile_${user?.id}` : "gate_kiosk_1";
+        const deviceId = isSelfScan ? `mobile_${user?.id || user?.public_id}` : "gate_kiosk_1";
 
         // Cooldown Check: Prevent scanning the same code within 5 seconds
         const now = Date.now();
@@ -132,7 +132,7 @@ const GateScan = () => {
 
   const submitScan = async (code: string, explicitPhoto?: string) => {
       try {
-        const deviceId = isSelfScan ? `mobile_${user?.id}` : "gate_kiosk_1";
+        const deviceId = isSelfScan ? `mobile_${user?.id || user?.public_id}` : "gate_kiosk_1";
         let latitude: number | undefined;
         let longitude: number | undefined;
 
@@ -199,7 +199,7 @@ const GateScan = () => {
 
   const submitDirectCheckIn = async (explicitPhoto?: string) => {
       try {
-        const deviceId = isSelfScan ? `mobile_${user?.id}` : "gate_kiosk_1";
+        const deviceId = isSelfScan ? `mobile_${user?.id || user?.public_id}` : "gate_kiosk_1";
         let latitude: number | undefined;
         let longitude: number | undefined;
 
