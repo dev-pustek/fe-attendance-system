@@ -54,9 +54,14 @@ export const userService = {
     }
     formData.append("photo", data.photo);
 
-    // Do NOT set Content-Type manually — axios/browser must set it with the
-    // multipart boundary itself, otherwise the backend can't parse the body.
-    const response = await apiClient.post<BaseResponse<User>>("/users", formData);
+    // apiClient has a default Content-Type: application/json header on the
+    // instance. Axios's own transformRequest JSON-stringifies FormData bodies
+    // whenever the resolved Content-Type looks like JSON, silently destroying
+    // any Blob/File parts. Must explicitly clear it (not omit it) so axios
+    // lets the browser set the real multipart boundary.
+    const response = await apiClient.post<BaseResponse<User>>("/users", formData, {
+      headers: { "Content-Type": undefined },
+    });
     return response.data;
   },
 
@@ -87,9 +92,14 @@ export const userService = {
     }
     formData.append("photo", data.photo);
 
-    // Do NOT set Content-Type manually — axios/browser must set it with the
-    // multipart boundary itself, otherwise the backend can't parse the body.
-    const response = await apiClient.patch<BaseResponse<User>>(`/users/${id}`, formData);
+    // apiClient has a default Content-Type: application/json header on the
+    // instance. Axios's own transformRequest JSON-stringifies FormData bodies
+    // whenever the resolved Content-Type looks like JSON, silently destroying
+    // any Blob/File parts. Must explicitly clear it (not omit it) so axios
+    // lets the browser set the real multipart boundary.
+    const response = await apiClient.patch<BaseResponse<User>>(`/users/${id}`, formData, {
+      headers: { "Content-Type": undefined },
+    });
     return response.data;
   },
 

@@ -77,7 +77,9 @@ export const guestService = {
     if (data.evidenceId) formData.append("evidenceId", data.evidenceId.toString());
     formData.append("photoUrl", data.photoUrl);
 
-    const response = await apiClient.post<Guest>("/guests", formData);
+    const response = await apiClient.post<Guest>("/guests", formData, {
+      headers: { "Content-Type": undefined },
+    });
     return response.data;
   },
 
@@ -97,7 +99,9 @@ export const guestService = {
     if (data.evidenceId) formData.append("evidenceId", data.evidenceId.toString());
     formData.append("photoUrl", data.photoUrl);
 
-    const response = await apiClient.patch<Guest>(`/guests/${id}`, formData);
+    const response = await apiClient.patch<Guest>(`/guests/${id}`, formData, {
+      headers: { "Content-Type": undefined },
+    });
     return response.data;
   },
 
@@ -135,7 +139,7 @@ export const guestService = {
     const response = await apiClient.post<{ created: number; updated: number; errors: string[] }>(
       "/guests/import",
       formData,
-      { headers: { "Content-Type": "multipart/form-data" } }
+      { headers: { "Content-Type": undefined } }
     );
     return response.data;
   },
@@ -188,7 +192,9 @@ export const guestService = {
     if (data.evidenceId) formData.append("evidenceId", data.evidenceId.toString());
     formData.append("photoUrl", data.photoUrl);
 
-    const response = await apiClient.post<GuestVisit>("/guests/visits", formData);
+    const response = await apiClient.post<GuestVisit>("/guests/visits", formData, {
+      headers: { "Content-Type": undefined },
+    });
     return response.data;
   },
 

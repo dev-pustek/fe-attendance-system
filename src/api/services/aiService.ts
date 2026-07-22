@@ -7,7 +7,10 @@ export const aiService = {
     const formData = new FormData();
     formData.append("file", file);
     await apiClient.post("/ai/register", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
+      // apiClient defaults Content-Type to application/json on the instance,
+      // and a literal "multipart/form-data" string (no boundary) blocks the
+      // browser from auto-generating the real boundary. Must clear it instead.
+      headers: { "Content-Type": undefined },
     });
   },
 
@@ -15,7 +18,10 @@ export const aiService = {
     const formData = new FormData();
     formData.append("file", file);
     const response = await apiClient.post("/ai/verify", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
+      // apiClient defaults Content-Type to application/json on the instance,
+      // and a literal "multipart/form-data" string (no boundary) blocks the
+      // browser from auto-generating the real boundary. Must clear it instead.
+      headers: { "Content-Type": undefined },
     });
     return response.data;
   },

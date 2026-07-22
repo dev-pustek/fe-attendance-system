@@ -85,7 +85,7 @@ export const academicService = {
     const response = await apiClient.post<{ created: number; updated: number; errors: string[] }>(
       "/academic-years/import",
       formData,
-      { headers: { "Content-Type": "multipart/form-data" } }
+      { headers: { "Content-Type": undefined } }
     );
     return response.data;
   },
@@ -141,7 +141,7 @@ export const academicService = {
     const response = await apiClient.post<{ created: number; updated: number; errors: string[] }>(
       "/classes/import",
       formData,
-      { headers: { "Content-Type": "multipart/form-data" } }
+      { headers: { "Content-Type": undefined } }
     );
     return response.data;
   },
@@ -279,7 +279,7 @@ export const academicService = {
     const formData = new FormData();
     formData.append("file", file);
     const response = await apiClient.post("/majors/import", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
+      headers: { "Content-Type": undefined },
     });
     return response.data;
   },
@@ -503,7 +503,7 @@ export const academicService = {
     const response = await apiClient.post<{ created: number; updated: number; errors: string[] }>(
       "/academic/teaching-unit-policies/import",
       formData,
-      { headers: { "Content-Type": "multipart/form-data" } }
+      { headers: { "Content-Type": undefined } }
     );
     return response.data;
   },

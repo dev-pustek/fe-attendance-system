@@ -71,9 +71,14 @@ export const attendanceService = {
   },
 
   createManualAttendance: async (data: FormData): Promise<ApiResponse<AttendanceRecord>> => {
-      // Do NOT set Content-Type manually — axios/browser must set it with the
-      // multipart boundary itself, otherwise the backend can't parse the body.
-      const response = await apiClient.post<ApiResponse<AttendanceRecord>>("/attendance/admin/manual", data);
+      // apiClient has a default Content-Type: application/json header on the
+      // instance. Axios's own transformRequest JSON-stringifies FormData bodies
+      // whenever the resolved Content-Type looks like JSON, silently destroying
+      // any Blob/File parts. Must explicitly clear it (not omit it) so axios
+      // lets the browser set the real multipart boundary.
+      const response = await apiClient.post<ApiResponse<AttendanceRecord>>("/attendance/admin/manual", data, {
+          headers: { "Content-Type": undefined },
+      });
       return response.data;
   },
 
@@ -120,7 +125,9 @@ export const attendanceService = {
               }
           }
       });
-      const response = await apiClient.post<ApiResponse<AttendanceRecord>>("/attendance/check-in", formData);
+      const response = await apiClient.post<ApiResponse<AttendanceRecord>>("/attendance/check-in", formData, {
+          headers: { "Content-Type": undefined },
+      });
       return response.data;
   },
 
@@ -136,7 +143,9 @@ export const attendanceService = {
               }
           }
       });
-      const response = await apiClient.post<ApiResponse<AttendanceRecord>>("/attendance/check-out", formData);
+      const response = await apiClient.post<ApiResponse<AttendanceRecord>>("/attendance/check-out", formData, {
+          headers: { "Content-Type": undefined },
+      });
       return response.data;
   },
 

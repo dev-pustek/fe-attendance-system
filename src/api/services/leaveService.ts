@@ -56,7 +56,8 @@ export const leaveService = {
     formData.append("file", file);
     const { data } = await apiClient.post<ApiResponse<{ created: number; updated: number; errors: string[] }>>(
       "/leaves/types/import",
-      formData
+      formData,
+      { headers: { "Content-Type": undefined } }
     );
     return data;
   },
@@ -87,7 +88,9 @@ export const leaveService = {
       formData.append("image", data.image);
     }
 
-    const { data: response } = await apiClient.post<ApiResponse<null>>("/leaves", formData);
+    const { data: response } = await apiClient.post<ApiResponse<null>>("/leaves", formData, {
+      headers: { "Content-Type": undefined },
+    });
     return response;
   },
 
@@ -101,7 +104,9 @@ export const leaveService = {
             formData.append(key, value instanceof File ? value : String(value));
           }
         });
-        const { data: response } = await apiClient.patch<ApiResponse<null>>(`/leaves/${public_id}`, formData);
+        const { data: response } = await apiClient.patch<ApiResponse<null>>(`/leaves/${public_id}`, formData, {
+          headers: { "Content-Type": undefined },
+        });
         return response;
     } else {
         const { data: response } = await apiClient.patch<ApiResponse<null>>(`/leaves/${public_id}`, data);
@@ -154,7 +159,8 @@ export const leaveService = {
     formData.append("file", file);
     const { data } = await apiClient.post<ApiResponse<{ created: number; updated: number; errors: string[] }>>(
       "/leaves/import",
-      formData
+      formData,
+      { headers: { "Content-Type": undefined } }
     );
     return data;
   },
