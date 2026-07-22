@@ -375,9 +375,9 @@ const GateScan = () => {
   const handleConfirmPhoto = async () => {
         setIsProcessing(true);
         if (pendingScanCode === "MANUAL_CHECKIN") {
-            await submitDirectCheckIn(capturedPhoto || undefined);
+            await submitDirectCheckIn(photoEvidence || undefined);
         } else if (pendingScanCode) {
-            await submitScan(pendingScanCode, capturedPhoto || undefined);
+            await submitScan(pendingScanCode, photoEvidence || undefined);
         }
         setRequireSelfie(false);
         setPendingScanCode(null);

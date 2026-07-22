@@ -113,7 +113,8 @@ export const attendanceService = {
       Object.entries(data).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
               if (value instanceof Blob) {
-                  formData.append(key, value);
+                  // Some backends require a filename to correctly identify the file extension
+                  formData.append(key, value, key === 'photo' ? 'photo.jpg' : 'file.bin');
               } else {
                   formData.append(key, String(value));
               }
@@ -128,7 +129,8 @@ export const attendanceService = {
       Object.entries(data).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
               if (value instanceof Blob) {
-                  formData.append(key, value);
+                  // Some backends require a filename to correctly identify the file extension
+                  formData.append(key, value, key === 'photo' ? 'photo.jpg' : 'file.bin');
               } else {
                   formData.append(key, String(value));
               }
