@@ -360,14 +360,10 @@ const GateScan = () => {
             setCapturedPhoto(photoEvidence);
             setIsProcessing(false);
         } else {
-            // Fallback if capture fails completely
-            if (pendingScanCode === "MANUAL_CHECKIN") {
-                await submitDirectCheckIn();
-            } else {
-                await submitScan(pendingScanCode);
-            }
-            setRequireSelfie(false);
-            setPendingScanCode(null);
+            // Capture failed (camera not ready yet, etc.) — do NOT silently
+            // submit without a photo, since the backend requires it and will
+            // just reject the request with a confusing error. Let the user retry.
+            toast.error("Gagal mengambil foto. Pastikan kamera sudah siap, lalu coba lagi.");
             setIsProcessing(false);
         }
   };
